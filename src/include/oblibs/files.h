@@ -45,4 +45,9 @@ extern int file_write_unsafe(char const *dst,char const *name,char const *conten
  * @Return 0 on fail */
 extern int file_get_fromdir(genalloc *ga,char const *srcdir) ;
 
+/** Append @sa with the contents of file @file find in @src
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int file_readputsa(stralloc *sa,char const *src,char const *file) ;
+
 #endif
