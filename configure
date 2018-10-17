@@ -5,12 +5,16 @@
 usage () {
   cat <<EOF
 Usage: $0 [OPTION]... [TARGET]
+
 Defaults for the options are specified in brackets.
+
 System types:
   --target=TARGET               configure to run on target TARGET [detected]
   --host=TARGET                 same as --target
+
 Installation directories:
   --prefix=PREFIX               main installation prefix [/]
+
 Fine tuning of the installation directories:
   --dynlibdir=DIR               shared library files [PREFIX/lib]
   --libdir=DIR                  static library files [PREFIX/lib/$package]
@@ -18,16 +22,18 @@ Fine tuning of the installation directories:
   --datadir=DIR                 global configuration files [PREFIX/etc]
  If no --prefix option is given, by default libdir will be /usr/lib/$package,
  includedir will be /usr/include.
+
 Dependencies:
-  --with-sysdeps=DIR            use sysdeps in DIR [PREFIX/lib/skalibs/sysdeps]
-  --with-include=DIR            add DIR to the list of searched directories for headers
+   --with-include=DIR            add DIR to the list of searched directories for headers
   --with-lib=DIR                add DIR to the list of searched directories for static libraries
   --with-dynlib=DIR             add DIR to the list of searched directories for shared libraries
+
 Optional features:
   --disable-shared              do not build shared libraries [enabled]
   --disable-static              do not build static libraries [enabled]
   --enable-all-pic              build everything as PIC [enabled iff toolchain builds PIE]
   --enable-slashpackage[=ROOT]  assume /package installation at ROOT [disabled]
+
 $package options:
   --with-default-path=PATH      default executable search path [/usr/bin:/bin]
 EOF
@@ -121,7 +127,6 @@ dynlibdir='$prefix/lib'
 libdir='$prefix/lib/$package'
 includedir='$prefix/include'
 datadir='$prefix/etc'
-sysdeps='$prefix/lib/skalibs/sysdeps'
 shared=true
 static=true
 allpic=detect
@@ -147,7 +152,6 @@ for arg ; do
     --dynlibdir=*) dynlibdir=${arg#*=} ;;
     --libdir=*) libdir=${arg#*=} ;;
     --includedir=*) includedir=${arg#*=} ;;
-    --with-sysdeps=*) sysdeps=${arg#*=} manualsysdeps=true ;;
     --datadir=*) datadir=${arg#*=} ;;
     --with-include=*) var=${arg#*=} ; stripdir var ; addincpath="$addincpath -I$var" ;;
     --with-lib=*) var=${arg#*=} ; stripdir var ; addlibspath="$addlibspath -L$var" ; vpaths="$vpaths $var" ;;
@@ -180,14 +184,11 @@ if test -z "$prefix" ; then
   if test "$includedir" = '$prefix/include' ; then
     includedir=/usr/include
   fi
-  if test "$sysdeps" = '$prefix/lib/skalibs/sysdeps' ; then
-    sysdeps=/usr/lib/skalibs/sysdeps
-  fi
 fi
 
 # Expand installation directories
 stripdir prefix
-for i in exec_prefix dynlibdir libdir includedir datadir sproot skalibs sysdeps ; do
+for i in exec_prefix dynlibdir libdir includedir datadir sproot skalibs ; do
   eval tmp=\${$i}
   eval $i=$tmp
   stripdir $i
@@ -212,11 +213,6 @@ trap 'rm -f "$tmpc" "$tmpe"' EXIT ABRT INT QUIT TERM HUP
 if $slashpackage ; then
   home=${sproot}/package/${category}/${package}-${version}
   exthome=${sproot}/package/${category}/${package}
-  if $manualsysdeps ; then
-    :
-  else
-    sysdeps=${sproot}/package/prog/skalibs/sysdeps
-  fi
   binprefix=${home}/command
   extbinprefix=${exthome}/command
   dynlibdir=${home}/library.so
@@ -271,15 +267,6 @@ if test -z "$target" ; then
 fi
 echo "  ... $target"
 
-if test ! -d $sysdeps || test ! -f $sysdeps/target ; then
-  echo "$0: error: $sysdeps is not a valid sysdeps directory"
-  exit 1
-fi
-if [ "x$target" != "x$(cat $sysdeps/target)" ] ; then
-  echo "$0: error: target $target does not match the contents of $sysdeps/target"
-  exit 1
-fi
-
 if test $allpic = detect ; then
   echo "Checking whether we need to build everything as PIC..."
   if $CC_AUTO $CPPFLAGS_AUTO $CPPFLAGS $CPPFLAGS_POST $CFLAGS_AUTO $CFLAGS $CFLAGS_POST -dM -E - < /dev/null | grep -qF __PIE__ ; then
@@ -293,13 +280,6 @@ fi
 if $allpic ; then
   tryflag CFLAGS_AUTO -fPIC
 fi
-
-
-rt_lib=$(cat $sysdeps/rt.lib)
-socket_lib=$(cat $sysdeps/socket.lib)
-sysclock_lib=$(cat $sysdeps/sysclock.lib)
-tainnow_lib=$(cat $sysdeps/tainnow.lib)
-util_lib=$(cat $sysdeps/util.lib)
 
 tryflag CFLAGS_AUTO -std=c99
 tryflag CFLAGS -fomit-frame-pointer
@@ -339,7 +319,6 @@ datadir := $datadir
 dynlibdir := $dynlibdir
 libdir := $libdir
 includedir := $includedir
-sysdeps := $sysdeps
 slashpackage := $slashpackage
 version := $version
 sproot := $sproot
