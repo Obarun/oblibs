@@ -350,12 +350,12 @@ if test -n "$vpathd" ; then
 fi
 
 if $static ; then
-  echo "STATIC_LIBS := liboblibs.a"
+  echo "STATIC_LIBS := liboblibs.a.xyzzy"
 else
   echo "STATIC_LIBS :="
 fi
 if $shared ; then
-  echo "SHARED_LIBS := liboblibs.so"
+  echo "SHARED_LIBS := liboblibs.so.xyzzy"
 else
   echo "SHARED_LIBS :="
 fi

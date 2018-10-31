@@ -72,8 +72,8 @@ endif
 
 install: install-data install-dynlib install-lib install-include
 install-data: $(ALL_DATA:src/etc/%=$(DESTDIR)$(datadir)/%)
-install-dynlib: $(SHARED_LIBS:lib%.so=$(DESTDIR)$(dynlibdir)/lib%.so)
-install-lib: $(STATIC_LIBS:lib%.a=$(DESTDIR)$(libdir)/lib%.a)
+install-dynlib: $(SHARED_LIBS:lib%.so.xyzzy=$(DESTDIR)$(dynlibdir)/lib%.so)
+install-lib: $(STATIC_LIBS:lib%.a.xyzzy=$(DESTDIR)$(libdir)/lib%.a)
 install-include: $(ALL_INCLUDES:src/include/$(package)/%.h=$(DESTDIR)$(includedir)/$(package)/%.h)
 
 ifneq ($(exthome),)
@@ -83,7 +83,7 @@ $(DESTDIR)$(exthome): $(DESTDIR)$(home)
 
 update: $(DESTDIR)$(exthome)
 
-global-links: $(DESTDIR)$(exthome) $(SHARED_LIBS:lib%.so=$(DESTDIR)$(sproot)/library.so/lib%.so.$(version_M))
+global-links: $(DESTDIR)$(exthome) $(SHARED_LIBS:lib%.so.xyzzy=$(DESTDIR)$(sproot)/library.so/lib%.so.$(version_M))
 
 $(DESTDIR)$(sproot)/library.so/lib%.so.$(version_M): $(DESTDIR)$(home)/library.so/lib%.so.$(version_M)
 	exec $(INSTALL) -D -l ..$(subst $(sproot),,$(exthome))/library.so/$(<F) $@
@@ -95,13 +95,13 @@ endif
 $(DESTDIR)$(datadir)/%: src/etc/%
 	exec $(INSTALL) -D -m 644 $< $@
 
-$(DESTDIR)$(dynlibdir)/%.so: %.so
+$(DESTDIR)$(dynlibdir)/%.so: %.so.xyzzy
 	$(INSTALL) -D -m 755 $< $@.$(version) && \
 	$(INSTALL) -l $(@F).$(version) $@.$(version_m) && \
 	$(INSTALL) -l $(@F).$(version_m) $@.$(version_M) && \
 	exec $(INSTALL) -l $(@F).$(version_M) $@
 
-$(DESTDIR)$(libdir)/lib%.a: lib%.a
+$(DESTDIR)$(libdir)/lib%.a: lib%.a.xyzzy
 	exec $(INSTALL) -D -m 644 $< $@
 
 $(DESTDIR)$(includedir)/$(package)/%.h: src/include/$(package)/%.h
@@ -113,11 +113,11 @@ $(DESTDIR)$(includedir)/$(package)/%.h: src/include/$(package)/%.h
 %.lo: %.c
 	exec $(REALCC) $(CPPFLAGS_ALL) $(CFLAGS_ALL) $(CFLAGS_SHARED) -c -o $@ $<
 
-liboblibs.a: $(ALL_SOBJS)
+liboblibs.a.xyzzy: $(ALL_SOBJS)
 	exec $(AR) rc $@ $^
 	exec $(RANLIB) $@
 
-liboblibs.so: $(ALL_DOBJS)
+liboblibs.so.xyzzy: $(ALL_DOBJS)
 	exec $(REALCC) -o $@ $(CFLAGS_ALL) $(CFLAGS_SHARED) $(LDFLAGS_ALL) $(LDFLAGS_SHARED) -Wl,-soname,liboblibs.so.$(version_M) $^ 
 
 .PHONY: it all clean distclean txz strip install install-data install-dynlib install-lib install-include
