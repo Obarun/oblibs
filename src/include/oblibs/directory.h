@@ -19,6 +19,7 @@
 #include <sys/types.h>
 
 #include <skalibs/stralloc.h>
+#include <skalibs/genalloc.h>
 
 /** Check if the string @s begin by an '/' character
  * and check for space at the begin of the string @s
@@ -54,4 +55,10 @@ extern ssize_t dir_create_under(char const *dst, char const *name, int mode) ;
  * @Return NULL and set errno
  * @Return return the value of tmp directory*/
 extern char *dir_create_tmp(stralloc *tmp,char const *dst, char const *tname) ;
+
+/** get all compoments in @srcdir as mode @mode execpt string @exclude
+ * put the result in genalloc as type stralist
+ * @Return 0 on fail
+ * @Return 1 on success */
+extern int dir_get(genalloc *ga, char const *srcdir,char const *exclude,mode_t mode) ;
 #endif

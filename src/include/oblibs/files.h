@@ -40,11 +40,6 @@ extern int file_create_empty (char const *dst, char const *name,int mode) ;
  * @Return 0 on fail and set errno */
 extern int file_write_unsafe(char const *dst,char const *name,char const *content,size_t contlen) ;
 
-/** Append @ga as type stralist with all files found in @srcdir
- * @Return 1 on success
- * @Return 0 on fail */
-extern int file_get_fromdir(genalloc *ga,char const *srcdir) ;
-
 /** Append @sa with the contents of file @file find in @src
  * @Return 1 on success
  * @Return 0 on fail */

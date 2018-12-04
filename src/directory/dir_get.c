@@ -1,5 +1,5 @@
 /* 
- * file_get_fromdir.c
+ * dir_get.c
  * 
  * Copyright (c) 2018 Eric Vidal <eric@obarun.org>
  * 
@@ -12,20 +12,21 @@
  * except according to the terms contained in the LICENSE file./
  */
  
-#include <oblibs/files.h>
+#include <oblibs/directory.h>
 
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include <oblibs/directory.h>
 #include <oblibs/stralist.h>
+#include <oblibs/string.h>
 
 #include <skalibs/direntry.h>
 #include <skalibs/genalloc.h>
 #include <skalibs/unix-transactional.h>
 
-int file_get_fromdir(genalloc *ga,char const *srcdir)
+
+int dir_get(genalloc *ga, char const *srcdir,char const *exclude,mode_t mode)
 {
 	int fdsrc ;
 	
@@ -46,8 +47,11 @@ int file_get_fromdir(genalloc *ga,char const *srcdir)
 			continue ;
 		if (stat_at(fdsrc, d->d_name, &st) < 0)
 			return 0 ;
-		if (S_ISREG(st.st_mode))
+		if((st.st_mode & S_IFMT) == mode)
+		{
+			if (obstr_equal(d->d_name,exclude)) continue ; 
 			if (!stra_add(ga,d->d_name)) return 0 ;		 
+		}
 	}
 
 	return 1 ;
