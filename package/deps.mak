@@ -8,13 +8,14 @@ src/bytes/byte_tozero.o src/bytes/byte_tozero.lo: src/bytes/byte_tozero.c src/in
 src/directory/dir_create.o src/directory/dir_create.lo: src/directory/dir_create.c src/include/oblibs/directory.h
 src/directory/dir_create_tmp.o src/directory/dir_create_tmp.lo: src/directory/dir_create_tmp.c src/include/oblibs/directory.h
 src/directory/dir_create_under.o src/directory/dir_create_under.lo: src/directory/dir_create_under.c src/include/oblibs/directory.h src/include/oblibs/string.h src/include/oblibs/types.h
+src/directory/dir_get.o src/directory/dir_get.lo: src/directory/dir_get.c src/include/oblibs/directory.h src/include/oblibs/stralist.h src/include/oblibs/string.h
 src/directory/dir_scan_absopath.o src/directory/dir_scan_absopath.lo: src/directory/dir_scan_absopath.c src/include/oblibs/string.h
 src/directory/dir_search.o src/directory/dir_search.lo: src/directory/dir_search.c src/include/oblibs/directory.h src/include/oblibs/error.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/directory/dir_unslash.o src/directory/dir_unslash.lo: src/directory/dir_unslash.c src/include/oblibs/string.h
 src/files/file_create_empty.o src/files/file_create_empty.lo: src/files/file_create_empty.c src/include/oblibs/directory.h src/include/oblibs/files.h src/include/oblibs/string.h
-src/files/file_get_fromdir.o src/files/file_get_fromdir.lo: src/files/file_get_fromdir.c src/include/oblibs/directory.h src/include/oblibs/files.h src/include/oblibs/stralist.h
 src/files/file_get_size.o src/files/file_get_size.lo: src/files/file_get_size.c src/include/oblibs/files.h
 src/files/file_openclose_readonly.o src/files/file_openclose_readonly.lo: src/files/file_openclose_readonly.c src/include/oblibs/files.h
+src/files/file_readputsa.o src/files/file_readputsa.lo: src/files/file_readputsa.c src/include/oblibs/directory.h src/include/oblibs/files.h
 src/files/file_write_unsafe.o src/files/file_write_unsafe.lo: src/files/file_write_unsafe.c src/include/oblibs/files.h
 src/io/die_nomem.o src/io/die_nomem.lo: src/io/die_nomem.c src/include/oblibs/error.h
 src/io/stdout_die.o src/io/stdout_die.lo: src/io/stdout_die.c src/include/oblibs/error.h
@@ -54,7 +55,7 @@ src/str/obstr_sep.o src/str/obstr_sep.lo: src/str/obstr_sep.c src/include/oblibs
 src/str/obstr_sub.o src/str/obstr_sub.lo: src/str/obstr_sub.c src/include/oblibs/memory.h
 src/str/obstr_trim.o src/str/obstr_trim.lo: src/str/obstr_trim.c src/include/oblibs/string.h
 src/str/scan_isspace.o src/str/scan_isspace.lo: src/str/scan_isspace.c src/include/oblibs/string.h
-src/str/scan_mode.o src/str/scan_mode.lo: src/str/scan_mode.c src/include/oblibs/directory.h src/include/oblibs/error.h
+src/str/scan_mode.o src/str/scan_mode.lo: src/str/scan_mode.c src/include/oblibs/types.h
 src/str/scan_timeout.o src/str/scan_timeout.lo: src/str/scan_timeout.c src/include/oblibs/stralist.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/str/scan_uid.o src/str/scan_uid.lo: src/str/scan_uid.c src/include/oblibs/error.h src/include/oblibs/types.h
 src/str/scan_uidlist.o src/str/scan_uidlist.lo: src/str/scan_uidlist.c src/include/oblibs/stralist.h src/include/oblibs/string.h src/include/oblibs/types.h
