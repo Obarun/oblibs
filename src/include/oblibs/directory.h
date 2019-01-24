@@ -61,4 +61,10 @@ extern char *dir_create_tmp(stralloc *tmp,char const *dst, char const *tname) ;
  * @Return 0 on fail
  * @Return 1 on success */
 extern int dir_get(genalloc *ga, char const *srcdir,char const *exclude,mode_t mode) ;
+
+/** compare @src directory name with @dst, if @src name doesn't exist in @dst,save
+ * @src name in @ga. Exclude from the searc @exclude.
+ * @Return 0 on fail
+ * @Return 1 on success */
+extern int dir_cmp(char const *src, char const *dst,char const *exclude, genalloc *ga) ;
 #endif
