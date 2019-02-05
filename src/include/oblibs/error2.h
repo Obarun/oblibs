@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <skalibs/strerr2.h>
 
-#define exitusage() strerr_dieusage(100, USAGE)
+#define exitusage(x1) strerr_dieusage(100, x1)
 #define exitnomem(x1,x2) strerr_dief4x(111, "out of memory : ",x1," into function : ",x2) ;
 #define exitstralloc(x1) exitnomem("stralloc",x1)
 #define warnstralloc(x1) strerr_warnw2x("stralloc: ",x1)
