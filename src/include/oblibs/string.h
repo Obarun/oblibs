@@ -51,6 +51,11 @@ extern ssize_t get_len_until(const char *str, char const end) ;
  * string which have @from as lenght*/
 extern ssize_t get_rlen_until(const char *str, char const end,size_t from) ;
 
+/** same as get_rlen_until but search for a string @search instead of a char
+ * into @str.
+ * each character must correspond e.g str-> ntpd-log search->-log */
+extern ssize_t get_rstrlen_until(char const *str,char const *search) ;
+
 /** Extracts tokens from a string.
  * Replaces strset which is not portable (missing on Solaris).
  * Copyright (c) 2001 by François Gouget <fgouget_at_codeweavers.com>
