@@ -46,6 +46,7 @@ src/str/get_namebyuid.o src/str/get_namebyuid.lo: src/str/get_namebyuid.c src/in
 src/str/get_nbline.o src/str/get_nbline.lo: src/str/get_nbline.c src/include/oblibs/string.h
 src/str/get_nbline_ga.o src/str/get_nbline_ga.lo: src/str/get_nbline_ga.c src/include/oblibs/stralist.h src/include/oblibs/string.h
 src/str/get_rlen_until.o src/str/get_rlen_until.lo: src/str/get_rlen_until.c src/include/oblibs/string.h
+src/str/get_rstrlen_until.o src/str/get_rstrlen_until.lo: src/str/get_rstrlen_until.c src/include/oblibs/string.h
 src/str/get_uidbyname.o src/str/get_uidbyname.lo: src/str/get_uidbyname.c src/include/oblibs/types.h
 src/str/get_wasted_line.o src/str/get_wasted_line.lo: src/str/get_wasted_line.c src/include/oblibs/string.h
 src/str/obcolor.o src/str/obcolor.lo: src/str/obcolor.c src/include/oblibs/display.h
