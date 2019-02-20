@@ -18,7 +18,7 @@
 
 void strakv_free(strakeyval *stra)
 {
-	alloc_free(stra->key.s) ;
-	alloc_free(stra->val.s) ;
+	stralloc_free(&stra->key) ;
+	stralloc_free(&stra->val) ;
 	*stra = strakeyval_zero ;
 }

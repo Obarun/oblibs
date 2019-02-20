@@ -26,19 +26,19 @@
 
 int clean_val(genalloc *ga,char const *line)
 {
-	size_t len ;
+	size_t len = strlen(line) ; 
 	int i,pos,j ;
 	i = pos = j = 0 ;
-	len = strlen(line) ;
-	char key[len + 1] ;
-	for (;(size_t) i<len+1;i++) /** the end of string may not contain space*/
+	size_t inlen = len + 1 ;/** the end of string may not contain space*/
+	char key[len + 1] ; 
+	for (;(size_t) i<inlen;i++)
 	{
 		if(isspace(line[i]) || !line[i])/** !line[i] end of string without space*/
 		{
 			if(pos){
-				key[j] = '\0' ;
+				key[j] = 0 ;
 				if(!stra_add(ga,key)) return 0  ;
-				byte_tozero(key,strlen(key)) ;
+				byte_tozero(key,j) ;
 				j = 0 ;
 			}
 			pos = 0;
@@ -47,7 +47,6 @@ int clean_val(genalloc *ga,char const *line)
 		key[j++] = line[i] ;
 		pos = 1 ;
 	}
-	byte_tozero(key,strlen(key)) ;
-	
+		
 	return 1 ;
 }

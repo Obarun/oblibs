@@ -15,6 +15,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
+
 #include <oblibs/error2.h>
 #include <oblibs/string.h>
 #include <oblibs/directory.h>
@@ -32,11 +33,8 @@ int dir_cmp(char const *src, char const *dst,char const *exclude, genalloc *ga)
 	
 	DIR *dir = opendir(src) ;
 	
-	if (!dir)
-	{
-		strerr_warnwu2sys("open : ", src) ;
-		return 0 ;
-	}
+	if (!dir) return 0 ;
+	
 	fdsrc = dir_fd(dir) ;
 	
 	for (;;)
@@ -48,18 +46,21 @@ int dir_cmp(char const *src, char const *dst,char const *exclude, genalloc *ga)
 		if (d->d_name[0] == '.')
 		if (((d->d_name[1] == '.') && !d->d_name[2]) || !d->d_name[1])
 			continue ;
-		if (stat_at(fdsrc, d->d_name, &st) < 0)
-		{
-			strerr_warnwu4sys("stat ", src, "/", d->d_name) ;
-			return 0 ;
-		}
+		if (stat_at(fdsrc, d->d_name, &st) < 0) goto err ;
+		
 		if (obstr_equal(d->d_name,exclude)) continue ;
 		
 		r = dir_search(dst,d->d_name,S_IFDIR) ;
 		if(!r)
 		{
-			if (!stra_add(ga,d->d_name)) return 0 ;
+			if (!stra_add(ga,d->d_name)) goto err ;
 		}
 	}
+	
+	dir_close(dir) ;
+	
 	return 1 ;
+	err:
+		dir_close(dir) ;
+		return 0 ;
 }

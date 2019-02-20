@@ -32,7 +32,7 @@ int scan_uidlist_wdelim(char const *str, uid_t *array,int delim)
 	r = uid = nuser = 0 ;
 	if (!clean_val_wdelim(&gatmp,str,delim))
 	{
-		genalloc_free(stralist,&gatmp) ;
+		genalloc_deepfree(stralist,&gatmp,stra_free) ;
 		return 0 ;
 	}
 	for (unsigned int i = 0;i<genalloc_len(stralist,&gatmp);i++)

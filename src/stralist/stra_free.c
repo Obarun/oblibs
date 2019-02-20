@@ -18,6 +18,6 @@
 
 void stra_free(stralist *stra)
 {
-	stralloc_free(&(stra->sa)) ;
+	stralloc_free(&stra->sa) ;
 	*stra = stralist_zero ;
 }

@@ -26,14 +26,14 @@ int stra_removeidx(genalloc *ga, unsigned int idx)
 	
 	for(;idx<len;idx++){
 		if(idx == len-1){ /**end of the array */
-			genalloc_s(stralist,ga)[idx].sa.len = 0 ;
+			stra_free(&genalloc_s(stralist,ga)[idx]) ;
 			break ;
 		}
-		genalloc_s(stralist,ga)[idx].sa.len = 0 ;
+		stra_free(&genalloc_s(stralist,ga)[idx]) ;
 		stralloc_copy(&genalloc_s(stralist,ga)[idx].sa,&genalloc_s(stralist,ga)[idx+1].sa) ;
 	}
 
 	genalloc_setlen(stralist,ga,len-1) ;
-	
+
 	return 1 ;
 }

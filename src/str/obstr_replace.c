@@ -17,14 +17,12 @@
 
 #include <oblibs/string.h>
 
-void *obstr_replace(char const *str,int a,int b)
+void obstr_replace(char *str,int a,int b)
 {
 	
 	unsigned int i ;
-	size_t len ;
-	len = 0 ;
-	len = strlen(str) ;
-	char result[len + 1] ;
+	size_t len = strlen(str) ;
+	char result[len+1] ;
 	
 	for(i = 0 ;i < len; i++)
 	{
@@ -35,6 +33,6 @@ void *obstr_replace(char const *str,int a,int b)
 			result[i] = str[i] ;
 	}
 	result[len] = 0 ;
-	
-	return obstr_dup(result);
+	memcpy(str,result,len) ;
+	str[len] = 0 ;
 }

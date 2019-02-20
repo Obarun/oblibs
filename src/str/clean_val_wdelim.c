@@ -14,18 +14,17 @@
 
 #include <oblibs/string.h>
 
-#include <stdlib.h>//free
-
 #include <skalibs/genalloc.h>
 
 int clean_val_wdelim(genalloc *ga,char const *line,int delim)
 {
-	char *s ;
-	s = obstr_replace(line,delim,' ') ;
+	size_t slen = strlen(line) ;
+	char s[slen] ;
+	memcpy(s,line,slen) ;
+	s[slen] = 0 ;
+	obstr_replace(s,delim,' ') ;
 
 	if (!clean_val(ga,s)) return 0 ;
-	
-	free(s) ;
-	
+		
 	return 1 ;
 }

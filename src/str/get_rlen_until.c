@@ -23,8 +23,11 @@ ssize_t get_rlen_until(const char *str, char const end,size_t from)
 	len = strlen(str) ;
 	f = len-from ;
 	len = len-f ;
+	char tmp[len + 1] ;
+	memcpy(tmp,str,len) ;
+	tmp[len] = 0 ;
 	for (i = len; i >=0 ;i--)
-		if (str[i] == end) return i ;
+		if (tmp[i] == end) return i ;
 	
 	return -1 ;
 }

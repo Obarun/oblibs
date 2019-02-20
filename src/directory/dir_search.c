@@ -34,7 +34,7 @@ ssize_t dir_search (char const *srcdir, char const *search,mode_t mode)
 	DIR *dir = opendir(srcdir) ;
 	if (!dir){
 		errno = ENOENT ;
-		goto err ;
+		goto out ;
 	}
 	for (;;)
     {
@@ -64,9 +64,10 @@ ssize_t dir_search (char const *srcdir, char const *search,mode_t mode)
 	}
 	
 	errno = ENOENT ;
-		
+	
 	err:
 		dir_close(dir) ;
+	out:
 		stralloc_free(&dst) ;
 		return e ;
 }

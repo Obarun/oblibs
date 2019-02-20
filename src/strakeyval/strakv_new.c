@@ -28,9 +28,5 @@ int strakv_new(genalloc *ga,char const *key,size_t klen,char const *val,size_t v
 	if(!stralloc_0(&tmp.val)) return 0 ;
 	tmp.n = genalloc_len(strakeyval,ga) ;
 	if(!genalloc_append(strakeyval,ga,&tmp)) return 0 ;
-	
-	tmp = strakeyval_zero ;
-	strakv_free(&tmp) ;
-	
 	return 1 ;
 }

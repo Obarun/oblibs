@@ -26,7 +26,9 @@ int scan_uint32(char *s)
 	char buff[UINT_FMT] ;
 	uint32_t u ;
 	ssize_t r ;
-	memcpy(buff,s,UINT_FMT) ;
+	size_t slen = strlen(s) ;
+	memcpy(buff,s,slen) ;
+	buff[slen] = 0 ;
 	r = get_len_until(buff,'\n') ;
 	buff[r] = 0 ;
 	return (!uint320_scan(buff,&u)) ? 0 : 1 ;

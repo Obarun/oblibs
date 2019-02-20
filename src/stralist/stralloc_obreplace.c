@@ -17,14 +17,14 @@
 #include <oblibs/error2.h>
 
 #include <skalibs/stralloc.h>
+#include <skalibs/posixplz.h>
 
 int stralloc_obreplace(stralloc *sa, char const *s)
 {
-	size_t slen ;
+	size_t slen = 0 ;
 	slen = strlen(s) ;
-	*sa = stralloc_zero ;
+	sa->len = 0 ;
 	if (!stralloc_catb(sa,s,slen)) return 0 ;
-	if (!stralloc_shrink(sa)) return 0 ;
 	if (!stralloc_0(sa)) return 0 ;
 	return 1 ;
 }

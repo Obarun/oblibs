@@ -31,11 +31,8 @@ extern int obstr_trim(char *str, int occ) ;
  * @Return 1 on success else 0*/
 extern int obstr_equal(const char *str1, const char *str2) ;
 
-/** replace all occurence of @a by @b into @str
- * @Rreturn a new pointer of the result
- * if a is not found the new pointer contain 
- * exactly the same string as @str*/
-extern void *obstr_replace(char const *str,int a,int b) ;
+/** replace all occurence of @a by @b into @str*/
+extern void obstr_replace(char *str,int a,int b) ;
 
 /** duplicate a string, allocate a memory
  * return a * to @str which can be used by free()

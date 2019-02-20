@@ -30,7 +30,7 @@ unsigned int get_nbline_ga(char const *str, size_t len, genalloc *ga)
 	while ((pos < len) && (r != -1))
 	{
 		r = get_len_until(str+pos,'\n') ;
-		stra_new(ga,str+pos,r+1) ;
+		if (!stra_new(ga,str+pos,r+1)) return 0 ;
 		pos = r+pos+1 ;/**+1 to skip the \n character*/
 		loop++ ;
 	}

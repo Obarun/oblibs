@@ -26,7 +26,5 @@ int stra_new(genalloc *ga,char const *s,size_t len)
 	if (!stralloc_catb(&tmp,s,len)) return 0 ;
 	if (!stralloc_0(&tmp)) return 0 ;
 	if (!genalloc_append(stralist,ga,&tmp)) return 0 ;
-	tmp = stralloc_zero ;
-	stralloc_free(&tmp) ;
 	return 1 ;
 }

@@ -31,20 +31,20 @@ int strakv_addwithsep(genalloc *ga,char *s,char const *sep)
 	k = s ;
 	v = s ;
 	obstr_sep(&v,sep) ;
-	if (v == NULL) return 0 ;
-	if (!obstr_trim(v,' ')) return 0 ;
+	if (v == NULL) goto err ;
+	if (!obstr_trim(v,' ')) goto err ;
 	obstr_trim(v,'\n') ;
-	if (!obstr_trim(k,' ')) return 0 ;
+	if (!obstr_trim(k,' ')) goto err ;
 	
-	if(!stralloc_catb(&tmp.key,k,strlen(k))) return 0 ; 
-	if(!stralloc_0(&tmp.key)) return 0 ;
-	if(!stralloc_catb(&tmp.val,v,strlen(v))) return 0 ;
-	if(!stralloc_0(&tmp.val)) return 0 ;
+	if(!stralloc_catb(&tmp.key,k,strlen(k))) goto err ; 
+	if(!stralloc_0(&tmp.key)) goto err ;
+	if(!stralloc_catb(&tmp.val,v,strlen(v))) goto err ;
+	if(!stralloc_0(&tmp.val)) goto err ;
 	tmp.n++;
-	if(!genalloc_append(strakeyval,ga,&tmp)) return 0 ;
-	
-	tmp = strakeyval_zero ;
-	strakv_free(&tmp) ;
-	
+	if(!genalloc_append(strakeyval,ga,&tmp)) goto err ;
+		
 	return 1 ;
+	err:
+		strakv_free(&tmp) ;
+		return 0 ;
 }

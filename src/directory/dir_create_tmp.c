@@ -19,19 +19,20 @@
 
 #include <skalibs/stralloc.h>
 
-char *dir_create_tmp(stralloc *tmp,char const *dst, char const *tname)
+char *dir_create_tmp(stralloc *sa, char const *dst, char const *tname)
 {	
-	int fdscan ;
-	
+	int fdscan = 0  ;
+	size_t dstlen = strlen(dst) ;
+	size_t tlen = strlen(tname) ;	
 	fdscan = dir_scan_absopath(dst) ;
 	if (fdscan < 0) return 0 ;
 	
-	if (!stralloc_cats(tmp,dst)) return 0 ;
-	if (!stralloc_cats(tmp,"/")) return 0 ;
-	if (!stralloc_cats(tmp,tname)) return 0 ;
-	if (!stralloc_cats(tmp,":")) return 0 ;
-	if (!stralloc_cats(tmp,"XXXXXX")) return 0 ;
-	if (!stralloc_0(tmp)) return 0 ;
+	if (!stralloc_catb(sa,dst,dstlen)) return 0 ;
+	if (!stralloc_catb(sa,"/",1)) return 0 ;
+	if (!stralloc_catb(sa,tname,tlen)) return 0 ;
+	if (!stralloc_catb(sa,":",1)) return 0 ;
+	if (!stralloc_catb(sa,"XXXXXX",6)) return 0 ;
+	if (!stralloc_0(sa)) return 0 ;
 	
-	return mkdtemp(tmp->s) ;
+	return mkdtemp(sa->s) ;
 }

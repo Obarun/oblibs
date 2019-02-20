@@ -35,7 +35,7 @@ int file_openclose_readonly(char *buffile, char const *filename, size_t buffsize
 		return -1 ;
 	}
 	res = read(fd,buffile,buffsize) ;
-	if (res < 0) return -1 ;
+	if (res < 0){ fd_close (fd) ; return -1 ; }
 	fd_close(fd) ;
 	errno = e ;
 	return fd;

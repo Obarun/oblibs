@@ -13,7 +13,6 @@
  */
 
 #include <stdlib.h>
-#include <stddef.h>
 
 #include <oblibs/memory.h>
 
@@ -22,6 +21,6 @@ void free_mem(void **ptr)
 	if (ptr)
 	{
 		free(*ptr) ;
-		*ptr = NULL ;
+		*ptr = 0 ;
 	}
 }

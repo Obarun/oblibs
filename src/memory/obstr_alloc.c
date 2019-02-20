@@ -30,6 +30,6 @@ void *obstr_alloc(size_t size)
 		ptr[i]= 0 ;
 		i++ ;
 	}
-	ptr[i] = '\0' ;
+	ptr[i] = 0 ;
 	return ptr ;
 }

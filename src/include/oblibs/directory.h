@@ -54,7 +54,7 @@ extern ssize_t dir_create_under(char const *dst, char const *name, int mode) ;
 /** Create a tmp directory at @dst with @tname as template
  * @Return NULL and set errno
  * @Return return the value of tmp directory*/
-extern char *dir_create_tmp(stralloc *tmp,char const *dst, char const *tname) ;
+extern char *dir_create_tmp(stralloc *sa,char const *dst, char const *tname) ;
 
 /** get all compoments in @srcdir as mode @mode execpt string @exclude
  * put the result in genalloc as type stralist

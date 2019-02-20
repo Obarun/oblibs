@@ -20,16 +20,16 @@
 char *obstr_dup(const char *str)
 {
 	int i ;
-	char *ptr = NULL ;
+	char *ptr = 0 ;
 	if (!(ptr=malloc(sizeof(char) * strlen(str)+1)))
-		return NULL ;
+		return 0 ;
 	i = 0 ;
 	while(str[i])
 	{
 		ptr[i]=str[i] ;
 		i++ ;
 	}
-	ptr[i]='\0' ;
+	ptr[i] = 0 ;
 	
 	return ptr ;
 }
