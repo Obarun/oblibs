@@ -1,5 +1,13 @@
 Changelog for oblibs
 
+In 0.0.1.0
+----------
+
+	- build everything as PIC by default
+	- fix HEAP memory management
+	- add get_rstrlen_until
+	- strerr_dieusage take arguments instead of USAGE
+	
 In 0.0.0.3
 --------
 	
