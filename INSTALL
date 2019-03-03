@@ -6,7 +6,8 @@ Build Instructions
 
   - A POSIX-compliant C development environment
   - GNU make version 3.81 or later
-  - skalibs version 2.7.0.0 or later: http://skarnet.org/software/skalibs/
+  - skalibs version 2.7.0.0 at least commit e99801ab4bdd096b5e2e3e4619f1a8317a8aedf8 
+  or later: http://skarnet.org/software/skalibs/
   - If cross-compiling: the sysdeps for your target architecture
     (see the "Cross-compilation" section below)
 
