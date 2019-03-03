@@ -1,7 +1,7 @@
 /* 
  * obgetopt.h
  * 
- * Copyright (c) 2018 Eric Vidal <eric@obarun.org>
+ * Copyright (c) 2018-2019 Eric Vidal <eric@obarun.org>
  * 
  * All rights reserved.
  * 
@@ -19,7 +19,7 @@
 
 /** This function is a modified version of subgetopt_r function coming
  * from skarnet library.
- * Copyright (c) 2011-2018 by Laurent Bercot <ska-skaware@skarnet.org>.
+ * Copyright (c) 2011-2018-2019 by Laurent Bercot <ska-skaware@skarnet.org>.
  * Modified by Eric Vidal <eric@obarun.org>.
  * The original version do not allow multiple arguments in the command
  * line after the definition of the options, this version does.
