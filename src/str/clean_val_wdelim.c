@@ -19,7 +19,7 @@
 int clean_val_wdelim(genalloc *ga,char const *line,int delim)
 {
 	size_t slen = strlen(line) ;
-	char s[slen] ;
+	char s[slen+1] ;
 	memcpy(s,line,slen) ;
 	s[slen] = 0 ;
 	obstr_replace(s,delim,' ') ;
