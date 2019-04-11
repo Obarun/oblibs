@@ -91,6 +91,22 @@ so if you plan on making static executables, you should consider
 using another libc, which you also need to use when compiling
 oblibs. musl is recommended: http://musl-libc.org/
 
+* Cross-compilation
+  -----------------
+
+ skarnet.org packages centralize all the difficulty of
+cross-compilation in one place: skalibs. Once you have
+cross-compiled skalibs, the rest is easy.
+
+ * Use the --host=HOST option to configure, HOST being the triplet
+for your target.
+ * Make sure your cross-toolchain binaries (i.e. prefixed with HOST-)
+are accessible via your PATH environment variable.
+ * Make sure to use the correct version of skalibs for your target,
+and the correct sysdeps directory, making use of the
+--with-include, --with-lib, --with-dynlib and --with-sysdeps
+options as necessary.
+
 * The slashpackage convention
   ---------------------------
 
