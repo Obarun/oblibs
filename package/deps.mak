@@ -7,6 +7,7 @@ src/bytes/byte_tosearch.o src/bytes/byte_tosearch.lo: src/bytes/byte_tosearch.c 
 src/bytes/byte_tozero.o src/bytes/byte_tozero.lo: src/bytes/byte_tozero.c src/include/oblibs/bytes.h
 src/directory/dir_cmp.o src/directory/dir_cmp.lo: src/directory/dir_cmp.c src/include/oblibs/directory.h src/include/oblibs/error2.h src/include/oblibs/stralist.h src/include/oblibs/string.h
 src/directory/dir_create.o src/directory/dir_create.lo: src/directory/dir_create.c src/include/oblibs/directory.h
+src/directory/dir_create_parent.o src/directory/dir_create_parent.lo: src/directory/dir_create_parent.c src/include/oblibs/directory.h
 src/directory/dir_create_tmp.o src/directory/dir_create_tmp.lo: src/directory/dir_create_tmp.c src/include/oblibs/directory.h
 src/directory/dir_create_under.o src/directory/dir_create_under.lo: src/directory/dir_create_under.c src/include/oblibs/directory.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/directory/dir_get.o src/directory/dir_get.lo: src/directory/dir_get.c src/include/oblibs/directory.h src/include/oblibs/stralist.h src/include/oblibs/string.h

@@ -67,4 +67,12 @@ extern int dir_get(genalloc *ga, char const *srcdir,char const *exclude,mode_t m
  * @Return 0 on fail
  * @Return 1 on success */
 extern int dir_cmp(char const *src, char const *dst,char const *exclude, genalloc *ga) ;
+
+/** Create @dst directory with mode @mode
+ * If parent of @dst doesn't exist it will created with mode @mode and do it
+ * recursively like mkdir -p behaviour.
+ * @Return 0 on fail, errno is set
+ * @Return 1 on success */
+extern ssize_t dir_create_parent(char const *dst, int mode) ;
+
 #endif
