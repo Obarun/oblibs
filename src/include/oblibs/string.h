@@ -102,4 +102,14 @@ extern int clean_val_wdelim(genalloc *ga,char const *line,int delim) ;
  * enough allocation of memory to add 0 at the end*/
 extern void str_append_check (char *str,char c) ;
 
+/** Appends the basename of filename @path to @dst
+ * @Return 1 on success
+ * @Return 0 on fail and set errno */ 
+extern int basename(char *dst,char const *path) ;
+
+/** Appends the dirname of filename @path to @dst
+ * @Return 1 on success
+ * @Return 0 on fail and set errno */
+extern int dirname(char *dst,char const *path) ;
+
 #endif
