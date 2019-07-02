@@ -5,12 +5,13 @@
 src/include/oblibs/error.h: src/include/oblibs/display.h
 src/bytes/byte_tosearch.o src/bytes/byte_tosearch.lo: src/bytes/byte_tosearch.c src/include/oblibs/bytes.h
 src/bytes/byte_tozero.o src/bytes/byte_tozero.lo: src/bytes/byte_tozero.c src/include/oblibs/bytes.h
+src/directory/dir_beabsolute.o src/directory/dir_beabsolute.lo: src/directory/dir_beabsolute.c src/include/oblibs/directory.h
 src/directory/dir_cmp.o src/directory/dir_cmp.lo: src/directory/dir_cmp.c src/include/oblibs/directory.h src/include/oblibs/error2.h src/include/oblibs/stralist.h src/include/oblibs/string.h
 src/directory/dir_create.o src/directory/dir_create.lo: src/directory/dir_create.c src/include/oblibs/directory.h
 src/directory/dir_create_parent.o src/directory/dir_create_parent.lo: src/directory/dir_create_parent.c src/include/oblibs/directory.h
 src/directory/dir_create_tmp.o src/directory/dir_create_tmp.lo: src/directory/dir_create_tmp.c src/include/oblibs/directory.h
 src/directory/dir_create_under.o src/directory/dir_create_under.lo: src/directory/dir_create_under.c src/include/oblibs/directory.h src/include/oblibs/string.h src/include/oblibs/types.h
-src/directory/dir_get.o src/directory/dir_get.lo: src/directory/dir_get.c src/include/oblibs/directory.h src/include/oblibs/stralist.h src/include/oblibs/string.h
+src/directory/dir_get.o src/directory/dir_get.lo: src/directory/dir_get.c src/include/oblibs/directory.h src/include/oblibs/stralist.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/directory/dir_scan_absopath.o src/directory/dir_scan_absopath.lo: src/directory/dir_scan_absopath.c src/include/oblibs/string.h
 src/directory/dir_search.o src/directory/dir_search.lo: src/directory/dir_search.c src/include/oblibs/directory.h src/include/oblibs/error.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/directory/dir_unslash.o src/directory/dir_unslash.lo: src/directory/dir_unslash.c src/include/oblibs/string.h
@@ -40,8 +41,13 @@ src/oblist/oblist_new.o src/oblist/oblist_new.lo: src/oblist/oblist_new.c src/in
 src/oblist/oblist_reverse.o src/oblist/oblist_reverse.lo: src/oblist/oblist_reverse.c src/include/oblibs/oblist.h
 src/oblist/oblist_zero.o src/oblist/oblist_zero.lo: src/oblist/oblist_zero.c src/include/oblibs/oblist.h
 src/opts/getopt_args.o src/opts/getopt_args.lo: src/opts/getopt_args.c src/include/oblibs/obgetopt.h
+src/sastr/sastr_cmp.o src/sastr/sastr_cmp.lo: src/sastr/sastr_cmp.c src/include/oblibs/sastr.h
+src/sastr/sastr_dir_get.o src/sastr/sastr_dir_get.lo: src/sastr/sastr_dir_get.c src/include/oblibs/sastr.h src/include/oblibs/types.h
+src/str/basename.o src/str/basename.lo: src/str/basename.c src/include/oblibs/string.h
 src/str/clean_val.o src/str/clean_val.lo: src/str/clean_val.c src/include/oblibs/bytes.h src/include/oblibs/error2.h src/include/oblibs/memory.h src/include/oblibs/stralist.h src/include/oblibs/string.h
 src/str/clean_val_wdelim.o src/str/clean_val_wdelim.lo: src/str/clean_val_wdelim.c src/include/oblibs/string.h
+src/str/dirname.o src/str/dirname.lo: src/str/dirname.c src/include/oblibs/string.h
+src/str/get_flags.o src/str/get_flags.lo: src/str/get_flags.c src/include/oblibs/types.h
 src/str/get_len_until.o src/str/get_len_until.lo: src/str/get_len_until.c src/include/oblibs/string.h
 src/str/get_namebyuid.o src/str/get_namebyuid.lo: src/str/get_namebyuid.c src/include/oblibs/types.h
 src/str/get_nbline.o src/str/get_nbline.lo: src/str/get_nbline.c src/include/oblibs/string.h
