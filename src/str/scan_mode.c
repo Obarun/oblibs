@@ -16,19 +16,11 @@
 
 #include <sys/stat.h>
 
-
-mode_t get_flags(mode_t mode, int flags)
-{
-	if (mode & flags) return flags ;
-	return 0 ;
-}
-
 ssize_t scan_mode (char const *str,mode_t mode)
 {
 	struct stat st ;	
 	if (stat(str,&st) == -1) return 0 ;
-	mode_t stmode = st.st_mode & S_IFMT   ;
-	mode_t r = get_flags(mode,stmode) ;
+	mode_t r = get_flags(mode,st.st_mode) ;
 	if (!r) return -1 ;
 	else return  1 ;
 }

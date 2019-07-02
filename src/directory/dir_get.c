@@ -20,11 +20,11 @@
 
 #include <oblibs/stralist.h>
 #include <oblibs/string.h>
+#include <oblibs/types.h>
 
 #include <skalibs/direntry.h>
 #include <skalibs/genalloc.h>
 #include <skalibs/unix-transactional.h>
-
 
 int dir_get(genalloc *ga, char const *srcdir,char const *exclude,mode_t mode)
 {
@@ -47,7 +47,8 @@ int dir_get(genalloc *ga, char const *srcdir,char const *exclude,mode_t mode)
 			continue ;
 		if (stat_at(fdsrc, d->d_name, &st) < 0)
 			goto dir ;
-		if((st.st_mode & S_IFMT) == mode)
+		mode_t r = get_flags(mode,st.st_mode) ;
+		if (r > 0)
 		{
 			if (obstr_equal(d->d_name,exclude)) continue ; 
 			if (!stra_add(ga,d->d_name)) goto dir ;		 

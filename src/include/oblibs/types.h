@@ -74,4 +74,9 @@ extern int scan_uidlist(char const *str, uid_t *array) ;
  * and replace all occurence of @delim in @str by ' '*/
 extern int scan_uidlist_wdelim(char const *str, uid_t *array,int delim) ;
 
+/** compare @mode with @stmode
+ * @Return @stmode if @mode == @stmode
+ * otherwise @Return 0 */
+extern mode_t get_flags(mode_t mode, mode_t stmode) ;
+
 #endif
