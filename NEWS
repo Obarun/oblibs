@@ -1,5 +1,11 @@
 Changelog for oblibs
 
+In 0.0.1.2
+----------
+
+	- Add dir_create_parent, dir_beabsolute, basename, dirname, sastr_?, get_flags functions
+	- Check multiple flags at scan_mode, dir_get functions
+
 In 0.0.1.1
 ----------
 
