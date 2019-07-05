@@ -77,5 +77,5 @@ extern ssize_t dir_create_parent(char const *dst, int mode) ;
 /** retrieve the absolute path of @dir and write the result in @dst
  * @Return 1 on success
  * @Return 0 on fail and set errno */
-int dir_beabsolute(char *dst,char const *dir) ;
+extern int dir_beabsolute(char *dst,char const *dir) ;
 #endif
