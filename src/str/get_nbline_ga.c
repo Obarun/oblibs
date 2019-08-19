@@ -23,7 +23,7 @@
 unsigned int get_nbline_ga(char const *str, size_t len, genalloc *ga)
 {
 	unsigned int pos, loop ;
-	ssize_t r ;
+	ssize_t r = 0 ;
 	pos = loop = 0 ;
 
 	

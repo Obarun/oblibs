@@ -20,7 +20,7 @@
 unsigned int get_nbline(char const *str, size_t len)
 {
 	unsigned int pos, loop ;
-	ssize_t r ;
+	ssize_t r = 0 ;
 	pos = loop = 0 ;
 
 	
