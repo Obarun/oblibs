@@ -22,7 +22,7 @@
 #include <skalibs/buffer.h>
 
 // set to 1 to debug the parser
-uint8_t MILL_DBG = 0 ;
+#define MILL_DBG 0 
 #define DBG(...) do \
 { \
 	bprintf(buffer_1, __VA_ARGS__) ; \
@@ -99,36 +99,24 @@ enum parse_enum_e
 	EFILE
 } ;
 
-// Usefull and general parse_mill_t
-parse_mill_t MILL_GET_LINE = \
-{ \
-	.close = '\n', .end = "\n", \
-	.endlen = 1, .forceclose = 1, .forceopen = 1, \
-	.inner.debug = "get_line" } ;
 
-parse_mill_t MILL_GET_SPACE_NCLEAN = \
-{ \
-	.skip = " \n\t\r", .skiplen = 4, \
-	.forceclose = 1, .forceopen = 1, .forceskip = 1, \
-	.inner.debug = "get_clean_space" } ;
-								
-parse_mill_t MILL_GET_COMMENT_NCLEAN = \
-{ \
-	.jump = "#", .jumplen = 1, .flush = 0, \
-	.inner.debug = "get_comment_nclean" } ;
 
 // general function
-char mill_next(char const *s,size_t *pos) ;
-uint8_t mill_cclass (parse_mill_t *p) ;
-int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos) ;
-int mill_prepare(stralloc *dst, char const *string,parse_mill_t *sep,size_t *pos) ;
-int mill_element(stralloc *dst, char const *string, parse_mill_t *sep,size_t *pos) ;
-int mill_string(stralloc *dst, char const *string, parse_mill_t *sep) ;
-int mill_nstring(stralloc *dst, char const *string, parse_mill_t *sep) ;
+extern char mill_next(char const *s,size_t *pos) ;
+extern uint8_t mill_cclass (parse_mill_t *p) ;
+extern int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos) ;
+extern int mill_prepare(stralloc *dst, char const *string,parse_mill_t *sep,size_t *pos) ;
+extern int mill_element(stralloc *dst, char const *string, parse_mill_t *sep,size_t *pos) ;
+extern int mill_string(stralloc *dst, char const *string, parse_mill_t *sep) ;
+extern int mill_nstring(stralloc *dst, char const *string, parse_mill_t *sep) ;
 //helper
-void wild_zero(parse_mill_t *m) ;
-void wild_zero_nline(parse_mill_t *m) ;
-int mill_inner_loop(char curr,char const *s,size_t len) ;
-int mill_rebuild_in_online(stralloc *sa) ;
-int mill_rebuild_in_nline(stralloc *sa) ;
+extern void wild_zero(parse_mill_t *m) ;
+extern void wild_zero_nline(parse_mill_t *m) ;
+extern int mill_inner_loop(char curr,char const *s,size_t len) ;
+extern int mill_rebuild_in_online(stralloc *sa) ;
+extern int mill_rebuild_in_nline(stralloc *sa) ;
+//usefull config
+extern parse_mill_t MILL_GET_LINE ;
+extern parse_mill_t MILL_GET_SPACE_NCLEAN ;
+extern parse_mill_t MILL_GET_COMMENT ;
 #endif
