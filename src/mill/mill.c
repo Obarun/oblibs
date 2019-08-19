@@ -384,3 +384,44 @@ void wild_zero_nline(parse_mill_t *m)
 {
 	m->inner.nline = 1 ;
 }
+
+int mill_rebuild_in_online(stralloc *sa) 
+{
+	
+	stralloc tmp = STRALLOC_ZERO ;
+	size_t i = 0, len = sa->len ;
+	for (;i < len; i += strlen(sa->s + i) + 1)
+	{
+		if (!stralloc_cats(&tmp,sa->s+i) ||
+		!stralloc_cats(&tmp," ")) goto err ;
+	}
+	tmp.len--;
+	if (!stralloc_copy(sa,&tmp)) goto err ;
+	if (!stralloc_0(sa)) goto err ;
+	stralloc_free(&tmp) ;
+	return 1 ;
+	err: 
+		stralloc_free(&tmp) ;
+		return 0 ;
+}
+
+int mill_rebuild_in_nline(stralloc *sa)
+{
+	stralloc tmp = STRALLOC_ZERO ;
+	size_t i = 0, len = sa->len ;
+	for (;i < len; i += strlen(sa->s + i) + 1)
+	{
+		if (!stralloc_cats(&tmp,sa->s+i) ||
+		!stralloc_cats(&tmp,"\n")) goto err ;
+	}
+	tmp.len--;
+	if (!stralloc_copy(sa,&tmp)) goto err ;
+	if (!stralloc_0(sa)) goto err ;
+	stralloc_free(&tmp) ;
+	return 1 ;
+	err: 
+		stralloc_free(&tmp) ;
+		return 0 ;
+
+}
+

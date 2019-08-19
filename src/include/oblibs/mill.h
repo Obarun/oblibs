@@ -129,4 +129,6 @@ int mill_nstring(stralloc *dst, char const *string, parse_mill_t *sep) ;
 void wild_zero(parse_mill_t *m) ;
 void wild_zero_nline(parse_mill_t *m) ;
 int mill_inner_loop(char curr,char const *s,size_t len) ;
+int mill_rebuild_in_online(stralloc *sa) ;
+int mill_rebuild_in_nline(stralloc *sa) ;
 #endif
