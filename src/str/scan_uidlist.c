@@ -29,7 +29,8 @@ int scan_uidlist(char const *str, uid_t *array)
 
 	genalloc gatmp = GENALLOC_ZERO ;
 	
-	r = uid = nuser = 0 ;
+	r = uid = 0 ;
+	nuser = array[0] ;
 	if (!clean_val(&gatmp,str)) return 0 ;
 	
 	for (unsigned int i = 0;i<genalloc_len(stralist,&gatmp);i++){
@@ -38,9 +39,9 @@ int scan_uidlist(char const *str, uid_t *array)
 			genalloc_deepfree(stralist,&gatmp,stra_free) ;
 			return 0 ;
 		}
-		nuser++ ;
+		nuser++;
 		array[0] = nuser ;
-		array[i+1] = uid ;
+		array[nuser] = uid ;
 	}
 	genalloc_deepfree(stralist,&gatmp,stra_free) ;
 			
