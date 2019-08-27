@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
  
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef OB_TYPES_H
+#define OB_TYPES_H
 
 #include <sys/types.h>
 
@@ -35,7 +35,7 @@ extern int scan_uint32(char *s) ;
 /** get the uid of @name
  * and store it at @uid
  * @Return 1 on success
- * @Return 0 on fail and set errno */
+ * @Return -1 on fail and set errno */
 extern int get_uidbyname(const char *name,uid_t *uid) ;
 
 /** get the name of @uid

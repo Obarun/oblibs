@@ -17,17 +17,13 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <errno.h>
-
-
+#include <stddef.h>
 
 int get_uidbyname(const char *name,uid_t *uid)
 {
+	errno = 0 ;
 	struct passwd *pw = getpwnam(name); 
-    if (!pw)
-	{
-		if (!errno) errno = ESRCH ;
-		return 0 ;
-	}
+    if (pw == NULL) return 0 ;
     *uid = pw->pw_uid ;
    
     return 1 ;
