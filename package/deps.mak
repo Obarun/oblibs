@@ -15,6 +15,21 @@ src/directory/dir_get.o src/directory/dir_get.lo: src/directory/dir_get.c src/in
 src/directory/dir_scan_absopath.o src/directory/dir_scan_absopath.lo: src/directory/dir_scan_absopath.c src/include/oblibs/string.h
 src/directory/dir_search.o src/directory/dir_search.lo: src/directory/dir_search.c src/include/oblibs/directory.h src/include/oblibs/error.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/directory/dir_unslash.o src/directory/dir_unslash.lo: src/directory/dir_unslash.c src/include/oblibs/string.h
+src/environ/environ_add_key_val.o src/environ/environ_add_key_val.lo: src/environ/environ_add_key_val.c src/include/oblibs/environ.h
+src/environ/environ_clean_envfile.o src/environ/environ_clean_envfile.lo: src/environ/environ_clean_envfile.c src/include/oblibs/environ.h
+src/environ/environ_clean_line.o src/environ/environ_clean_line.lo: src/environ/environ_clean_line.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h
+src/environ/environ_clean_nline.o src/environ/environ_clean_nline.lo: src/environ/environ_clean_nline.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h
+src/environ/environ_get_clean_env.o src/environ/environ_get_clean_env.lo: src/environ/environ_get_clean_env.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h
+src/environ/environ_get_envfile.o src/environ/environ_get_envfile.lo: src/environ/environ_get_envfile.c src/include/oblibs/environ.h src/include/oblibs/files.h src/include/oblibs/sastr.h src/include/oblibs/types.h
+src/environ/environ_get_envfile_error.o src/environ/environ_get_envfile_error.lo: src/environ/environ_get_envfile_error.c src/include/oblibs/environ.h
+src/environ/environ_get_envfile_n_merge.o src/environ/environ_get_envfile_n_merge.lo: src/environ/environ_get_envfile_n_merge.c src/include/oblibs/environ.h src/include/oblibs/sastr.h
+src/environ/environ_get_key_nclean.o src/environ/environ_get_key_nclean.lo: src/environ/environ_get_key_nclean.c src/include/oblibs/environ.h src/include/oblibs/mill.h
+src/environ/environ_get_num_of_line.o src/environ/environ_get_num_of_line.lo: src/environ/environ_get_num_of_line.c src/include/oblibs/environ.h src/include/oblibs/mill.h
+src/environ/environ_get_val.o src/environ/environ_get_val.lo: src/environ/environ_get_val.c src/include/oblibs/environ.h src/include/oblibs/mill.h
+src/environ/environ_get_val_of_key.o src/environ/environ_get_val_of_key.lo: src/environ/environ_get_val_of_key.c src/include/oblibs/environ.h src/include/oblibs/sastr.h
+src/environ/environ_rebuild_line.o src/environ/environ_rebuild_line.lo: src/environ/environ_rebuild_line.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/string.h
+src/environ/environ_remove_unexport.o src/environ/environ_remove_unexport.lo: src/environ/environ_remove_unexport.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h
+src/environ/environ_substitute.o src/environ/environ_substitute.lo: src/environ/environ_substitute.c src/include/oblibs/environ.h
 src/files/file_create_empty.o src/files/file_create_empty.lo: src/files/file_create_empty.c src/include/oblibs/directory.h src/include/oblibs/files.h src/include/oblibs/string.h
 src/files/file_get_size.o src/files/file_get_size.lo: src/files/file_get_size.c src/include/oblibs/files.h
 src/files/file_openclose_readonly.o src/files/file_openclose_readonly.lo: src/files/file_openclose_readonly.c src/include/oblibs/files.h
@@ -26,6 +41,8 @@ src/io/stdout_die_sys.o src/io/stdout_die_sys.lo: src/io/stdout_die_sys.c src/in
 src/memory/free_mem.o src/memory/free_mem.lo: src/memory/free_mem.c src/include/oblibs/memory.h
 src/memory/obstr_alloc.o src/memory/obstr_alloc.lo: src/memory/obstr_alloc.c src/include/oblibs/memory.h
 src/memory/obstr_del.o src/memory/obstr_del.lo: src/memory/obstr_del.c src/include/oblibs/memory.h
+src/mill/mill.o src/mill/mill.lo: src/mill/mill.c src/include/oblibs/mill.h
+src/mill/mill_config.o src/mill/mill_config.lo: src/mill/mill_config.c src/include/oblibs/mill.h
 src/oblist/oblist_addhead.o src/oblist/oblist_addhead.lo: src/oblist/oblist_addhead.c src/include/oblibs/oblist.h
 src/oblist/oblist_addtail.o src/oblist/oblist_addtail.lo: src/oblist/oblist_addtail.c src/include/oblibs/oblist.h
 src/oblist/oblist_compare.o src/oblist/oblist_compare.lo: src/oblist/oblist_compare.c src/include/oblibs/oblist.h src/include/oblibs/string.h
@@ -41,8 +58,16 @@ src/oblist/oblist_new.o src/oblist/oblist_new.lo: src/oblist/oblist_new.c src/in
 src/oblist/oblist_reverse.o src/oblist/oblist_reverse.lo: src/oblist/oblist_reverse.c src/include/oblibs/oblist.h
 src/oblist/oblist_zero.o src/oblist/oblist_zero.lo: src/oblist/oblist_zero.c src/include/oblibs/oblist.h
 src/opts/getopt_args.o src/opts/getopt_args.lo: src/opts/getopt_args.c src/include/oblibs/obgetopt.h
+src/sastr/sastr_clean_element.o src/sastr/sastr_clean_element.lo: src/sastr/sastr_clean_element.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/sastr/sastr_cmp.o src/sastr/sastr_cmp.lo: src/sastr/sastr_cmp.c src/include/oblibs/sastr.h
 src/sastr/sastr_dir_get.o src/sastr/sastr_dir_get.lo: src/sastr/sastr_dir_get.c src/include/oblibs/sastr.h src/include/oblibs/types.h
+src/sastr/sastr_find.o src/sastr/sastr_find.lo: src/sastr/sastr_find.c src/include/oblibs/sastr.h
+src/sastr/sastr_get_double_quote.o src/sastr/sastr_get_double_quote.lo: src/sastr/sastr_get_double_quote.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
+src/sastr/sastr_rebuild_in_nline.o src/sastr/sastr_rebuild_in_nline.lo: src/sastr/sastr_rebuild_in_nline.c src/include/oblibs/sastr.h
+src/sastr/sastr_rebuild_in_oneline.o src/sastr/sastr_rebuild_in_oneline.lo: src/sastr/sastr_rebuild_in_oneline.c src/include/oblibs/sastr.h
+src/sastr/sastr_replace.o src/sastr/sastr_replace.lo: src/sastr/sastr_replace.c src/include/oblibs/sastr.h
+src/sastr/sastr_split_element_in_nline.o src/sastr/sastr_split_element_in_nline.lo: src/sastr/sastr_split_element_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
+src/sastr/sastr_split_string_in_nline.o src/sastr/sastr_split_string_in_nline.lo: src/sastr/sastr_split_string_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/str/basename.o src/str/basename.lo: src/str/basename.c src/include/oblibs/string.h
 src/str/clean_val.o src/str/clean_val.lo: src/str/clean_val.c src/include/oblibs/bytes.h src/include/oblibs/error2.h src/include/oblibs/memory.h src/include/oblibs/stralist.h src/include/oblibs/string.h
 src/str/clean_val_wdelim.o src/str/clean_val_wdelim.lo: src/str/clean_val_wdelim.c src/include/oblibs/string.h
@@ -54,6 +79,7 @@ src/str/get_nbline.o src/str/get_nbline.lo: src/str/get_nbline.c src/include/obl
 src/str/get_nbline_ga.o src/str/get_nbline_ga.lo: src/str/get_nbline_ga.c src/include/oblibs/stralist.h src/include/oblibs/string.h
 src/str/get_rlen_until.o src/str/get_rlen_until.lo: src/str/get_rlen_until.c src/include/oblibs/string.h
 src/str/get_rstrlen_until.o src/str/get_rstrlen_until.lo: src/str/get_rstrlen_until.c src/include/oblibs/string.h
+src/str/get_sep_before.o src/str/get_sep_before.lo: src/str/get_sep_before.c src/include/oblibs/string.h
 src/str/get_uidbyname.o src/str/get_uidbyname.lo: src/str/get_uidbyname.c src/include/oblibs/types.h
 src/str/get_wasted_line.o src/str/get_wasted_line.lo: src/str/get_wasted_line.c src/include/oblibs/string.h
 src/str/obcolor.o src/str/obcolor.lo: src/str/obcolor.c src/include/oblibs/display.h
