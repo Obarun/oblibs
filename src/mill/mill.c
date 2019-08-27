@@ -12,19 +12,17 @@
  * except according to the terms contained in the LICENSE file./
  * */
 
+#include <sys/types.h>
 #include <oblibs/mill.h>
 
 #include <string.h>
 #include <skalibs/stralloc.h>
 #include <skalibs/types.h>
 
-static char tend[64+2] ;
-//static char topen[64+2] ;
-
 char mill_next(char const *s,size_t *pos)
 {
 	char c ;
-	if (*pos >= strlen(s)) return -1 ;
+	if (*pos > strlen(s)) return -1 ;
 	c = s[*pos] ;
 	(*pos) += 1 ;
 	return c ;
@@ -94,6 +92,7 @@ uint8_t mill_cclass (parse_mill_t *p)
 	/** end */
 	r = mill_inner_loop(curr,p->end,p->endlen) ;
 	if (r) return END ;
+	
 		
 	if ((*nopen) && !(*nclose))
 	{
@@ -148,8 +147,8 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
 	while (res < -1)
 	{	
 		if (MILL_DBG) {
-			DBG ("	parse line:%s",string+(*pos)) ;
-			DBG ("	len of line:%li",strlen(string)) ;
+			DBG ("	parse line:%s:",string+(*pos)) ;
+			DBG ("	len of line:%li:",strlen(string)) ;
 		}
 		p->inner.curr = mill_next(string, pos) ;
 		// end of file	
@@ -166,8 +165,8 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
 		//if (p->inner.curr == -1) what = EFILE ;
 		if (MILL_DBG)
 		{
-			DBG ("	pos:%li::current:%c",*pos,p->inner.curr) ;
-			DBG ("	nopen:%i::nclose:%i::what:%li::\n	----\n",p->inner.nopen, p->inner.nclose,what) ;
+			DBG ("	pos:%li::current:%c:",*pos,p->inner.curr) ;
+			DBG ("	nopen:%i::nclose:%i::what:%li:\n	----\n",p->inner.nopen, p->inner.nclose,what) ;
 		}
 		switch(what)
 		{
@@ -176,7 +175,7 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
 					if (!stralloc_catb(kp,&p->inner.curr,1)) 
 						return -1 ;
 				if (MILL_DBG)
-					DBG("	string state: %s\n",kp->s) ;
+					DBG("	string state:%s:\n",kp->s) ;
 				break ;
 			case JUMP:
 					while (j != '\n')
@@ -211,14 +210,15 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
 	{
 		if (!stralloc_0(kp)) return 0 ;
 		kp->len-- ;
+	//	if (kp->len == 1) kp->len = 0 ;
 	}
 	if (MILL_DBG)
 	{	
-		DBG("what:%s:efile:%i:res:%i", !what ? "ign" : \
+		DBG("what:%s:efile:%i:res:%i:", !what ? "ign" : \
 								what == 1 ? "keep" : \
 								what == 2 ? "jump" : \
 								what == 3 ? "end" : "efile",efile,res) ;
-		DBG ("string kept::%s::len:%li",kp->s,kp->len) ; 
+		DBG ("string kept::%s::len:%li:",kp->s,kp->len) ; 
 		DBG("[PARSE PROCESS OF %s END]\n", p->inner.debug) ;
 	}
 
@@ -226,8 +226,11 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
 		if (p->search && !p->inner.search) return 0 ;
 		else if (p->jump && !p->inner.jumped) return 0 ;
 	
-		if (p->open && !p->inner.nopen){ kp->len = 0 ; return 0 ; }
-		if (p->close && !p->inner.nclose){ kp->len = 0 ; return 0 ; }
+		if (!p->forceopen)
+			if (p->open && !p->inner.nopen){ kp->len = 0 ; return 0 ; }
+		
+		if (!p->forceclose)
+			if (p->close && !p->inner.nclose){ kp->len = 0 ; return 0 ; }
 	}
 		
 	if (p->check && p->inner.nopen != p->inner.nclose)
@@ -237,7 +240,7 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
 		char sepopen[2] = { p->open,0 } ;
 		char sepclose[2] = { p->close,0 } ;
 		strerr_warnw6x("umatched ",(p->inner.nopen > p->inner.nclose) ? sepopen : sepclose," in: ",file," at line: ",fmt) ;
-		return -1 ;
+		return 0 ;
 	}
 	return res ;
 }
@@ -245,63 +248,65 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
 int mill_prepare(stralloc *dst, char const *string,parse_mill_t *sep,size_t *pos)
 {
 	int r ;
-	size_t stringlen = strlen(string), newpos = (*pos), ebase = sep->endlen, i = 0 ;
-	if (!stringlen) return -1 ;
+	size_t newpos = (*pos), ebase = sep->endlen, i = 0 ;
 	stralloc kp = STRALLOC_ZERO ;
+	static char tend[64+2] ;
+
+	parse_mill_t csep = PARSE_MILL_ZERO ;
+	mill_copy(&csep,sep) ;
+		
+	csep.inner.nclose = csep.inner.nopen = 0 ; 
 	
-	sep->inner.nclose = sep->inner.nopen = 0 ; 
-	
-	/** end and skip cannot be the same
-	 * open,close and end cannot be the same */
-	for (; i < sep->endlen ; i++)
+	/** end and skip cannot be the same */
+	for (; i < csep.endlen ; i++)
 	{
-		if (mill_inner_loop(sep->end[i],sep->skip,sep->skiplen))
-			return -1 ;
-		if (sep->end[i] == sep->open) return -1 ;
-		if (sep->end[i] == sep->close) return -1 ;
+		if (mill_inner_loop(csep.end[i],csep.skip,csep.skiplen))
+			goto err ;
 	}
+	
 	/** open,close and skip cannot be the same */
 	i = 0 ;
-	for (;i < sep->skiplen ; i++)
-		if ((sep->skip[i] == sep->open)  || (sep->skip[i] == sep->close)) 
-			return -1 ;
-	/** In case of search and jump 
+	for (;i < csep.skiplen ; i++)
+		if ((csep.skip[i] == csep.open)  || (csep.skip[i] == csep.close)) 
+			goto err ;
+			
+	/** prepare sep->end */
+	i = 0 ;
+	while (i < ebase){
+		tend[i] = csep.end[i] ;
+		i++ ;
+	}
+	 /** In case of search and jump 
 	 * open, close, check, skip,
 	 * forceopen, forceclose, forceskip must be 0
 	 * this limit avoid complex exit status.
 	 * Reverse is also true */
 	
-	if (sep->search || sep->jump)
+	if (csep.search || csep.jump)
 	{
-		sep->open = sep->close = sep->check = sep->skiplen = 0 ;
-		sep->skip = 0 ;
-		sep->forceopen = sep->forceclose = sep->forceskip = 0 ;
+		csep.open = csep.close = csep.check = csep.skiplen = 0 ;
+		csep.skip = 0 ;
+		csep.forceopen = csep.forceclose = csep.forceskip = 0 ;
 	}
 	else
 	{
-		sep->jumplen = sep->searchlen = 0 ;
-		sep->search = sep->jump = 0 ;
-		if (sep->forceopen)
-			sep->open = string[(*pos)] ;
-	
-		if (sep->forceclose)
+		csep.jumplen = csep.searchlen = 0 ;
+		csep.search = csep.jump = 0 ;
+		if (csep.forceopen)
+			csep.open = string[(*pos)] ;
+			
+		if (csep.forceclose)
 		{	
-			i = 0 ;
-			while (i < ebase){
-				tend[i] = sep->end[i] ;
-				i++ ;
-			} 
 			tend[i++] = string[strlen(string)] ;
-			tend[i] = 0 ;
-			sep->end = tend ;
-			sep->endlen = ebase + 1 ;
+			csep.endlen = ebase + 1 ;
 		}
 	}
 	
-	r = mill_config(sep,string,&kp,&newpos) ;
-	tend[ebase] = 0 ;
-	sep->end = tend ;
-	sep->endlen = ebase ;
+	tend[i] = 0 ;
+	csep.end = tend ;
+	r = mill_config(&csep,string,&kp,&newpos) ;
+	sep->inner.pos = newpos ;
+	sep->inner.nline = csep.inner.nline ;
 	if (r == -1) goto err ;
 	else if (!r || !kp.len) goto freed ;
 	if (!stralloc_catb(dst,kp.s,strlen(kp.s)+1)) goto err ;
@@ -335,32 +340,37 @@ int mill_element(stralloc *dst, char const *string, parse_mill_t *sep,size_t *po
 		return -1 ;
 }
 
-int mill_string(stralloc *dst, char const *string, parse_mill_t *sep)
+int mill_string(stralloc *dst, stralloc *sa, parse_mill_t *sep)
 {
-	size_t len = strlen(string), newpos = 0, pos = 0 ;
-	if (!len) return 0 ;
+	int r ;
+	if (!sa->len) return 0 ;
+	size_t len = sa->len, newpos = 0, pos = 0 ;
 	
 	while (pos < len)
 	{
 		newpos = 0 ;
-		if (mill_element(dst,string+pos,sep,&newpos) == -1) return -1 ;
+		r = mill_element(dst,sa->s+pos,sep,&newpos) ;
+		if (r == -1) return -1 ;
+		if (!r) return 0 ;
 		pos += newpos ;
 		sep->inner.pos = pos ;
 	}
 	return 1 ;
 }
 
-int mill_nstring(stralloc *dst, char const *string, parse_mill_t *sep)
+int mill_nstring(stralloc *dst, stralloc *sa, parse_mill_t *sep)
 {
-	size_t len = strlen(string), newpos = 0, pos = 0 ;
-	if (!len) return 0 ;
-	
-	for (;pos < len; pos += strlen(string + pos)+1)
+	int r ;
+	if (!sa->len) return 0 ;
+	size_t len = sa->len, newpos = 0, pos = 0 ;
+		
+	for (;pos < len; pos += strlen(sa->s + pos)+1)
 	{
 		newpos = 0 ;
-		if (mill_element(dst,string+pos,sep,&newpos) == -1) return -1 ;
-		pos += newpos ;
-		sep->inner.pos = pos ;
+		r = mill_element(dst,sa->s+pos,sep,&newpos) ;
+		if (r == -1) return -1 ;
+		if (!r) return 0 ;
+		sep->inner.pos += newpos ;
 	}
 	return 1 ;
 }
@@ -385,43 +395,47 @@ void wild_zero_nline(parse_mill_t *m)
 	m->inner.nline = 1 ;
 }
 
-int mill_rebuild_in_online(stralloc *sa) 
+void wild_zero_pos(parse_mill_t *m)
 {
-	
-	stralloc tmp = STRALLOC_ZERO ;
-	size_t i = 0, len = sa->len ;
-	for (;i < len; i += strlen(sa->s + i) + 1)
-	{
-		if (!stralloc_cats(&tmp,sa->s+i) ||
-		!stralloc_cats(&tmp," ")) goto err ;
-	}
-	tmp.len--;
-	if (!stralloc_copy(sa,&tmp)) goto err ;
-	if (!stralloc_0(sa)) goto err ;
-	stralloc_free(&tmp) ;
-	return 1 ;
-	err: 
-		stralloc_free(&tmp) ;
-		return 0 ;
+	m->inner.pos = m->inner.lastclose = 0 ;
 }
 
-int mill_rebuild_in_nline(stralloc *sa)
+void wild_zero_all(parse_mill_t *m)
 {
-	stralloc tmp = STRALLOC_ZERO ;
-	size_t i = 0, len = sa->len ;
-	for (;i < len; i += strlen(sa->s + i) + 1)
-	{
-		if (!stralloc_cats(&tmp,sa->s+i) ||
-		!stralloc_cats(&tmp,"\n")) goto err ;
-	}
-	tmp.len--;
-	if (!stralloc_copy(sa,&tmp)) goto err ;
-	if (!stralloc_0(sa)) goto err ;
-	stralloc_free(&tmp) ;
-	return 1 ;
-	err: 
-		stralloc_free(&tmp) ;
-		return 0 ;
+	wild_zero(m) ;
+	wild_zero_nline(m) ;
+	wild_zero_pos(m) ;
+}
 
+void mill_copy(parse_mill_t *cp, parse_mill_t *m)
+{
+	cp->file = m->file ;
+	cp->open = m->open ;
+	cp->close = m->close ;
+	cp->skip = m->skip ;
+	cp->skiplen = m->skiplen ;
+	cp->end = m->end ;
+	cp->endlen = m->endlen ;
+	cp->jump = m->jump ;
+	cp->jumplen = m->jumplen ;
+	cp->search = m->search ;
+	cp->searchlen = m->searchlen ;
+	cp->check = m->check ;
+	cp->flush = m->flush ;
+	cp->keepopen = m->keepopen ;
+	cp->keepclose = m->keepclose ;
+	cp->forceskip = m->forceskip ;
+	cp->forceopen = m->forceopen ;
+	cp->forceclose = m->forceclose ;
+	cp->inner.curr = m->inner.curr ;
+	cp->inner.nline = m->inner.nline ;
+	cp->inner.nopen = m->inner.nopen ;
+	cp->inner.nclose = m->inner.nclose ;
+	cp->inner.jumped = m->inner.jumped ;
+	cp->inner.flushed = m->inner.flushed ;
+	cp->inner.search = m->inner.search ;
+	cp->inner.debug = m->inner.debug ;
+	cp->inner.pos = m->inner.pos ;
+	cp->inner.lastclose = m->inner.lastclose ;	
 }
 

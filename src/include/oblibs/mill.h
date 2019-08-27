@@ -12,10 +12,13 @@
  * except according to the terms contained in the LICENSE file./
  */
  
-#ifndef MILL_H
-#define MILL_H
+#ifndef OB_MILL_H
+#define OB_MILL_H
 
 #include <string.h>
+#include <stdarg.h>
+#include <sys/types.h>
+
 #include <skalibs/stralloc.h>
 #include <skalibs/types.h>
 #include <skalibs/lolstdio.h>
@@ -40,8 +43,8 @@ struct parse_mill_inner_s
 	uint8_t flushed ;//flush was made or not 1->no,0->yes
 	uint8_t search ;//elements searched was found or not 0->no,1->yes
 	char const *debug ;//name of the parse_mill_t used
-	uint8_t pos ;// current position
-	uint8_t lastclose ; //position of the last close
+	size_t pos ;// current position
+	size_t lastclose ; //position of the last close
 } ;
 
 #define PARSE_MILL_INNER_ZERO { .curr = 0, \
@@ -107,16 +110,25 @@ extern uint8_t mill_cclass (parse_mill_t *p) ;
 extern int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos) ;
 extern int mill_prepare(stralloc *dst, char const *string,parse_mill_t *sep,size_t *pos) ;
 extern int mill_element(stralloc *dst, char const *string, parse_mill_t *sep,size_t *pos) ;
-extern int mill_string(stralloc *dst, char const *string, parse_mill_t *sep) ;
-extern int mill_nstring(stralloc *dst, char const *string, parse_mill_t *sep) ;
+extern int mill_string(stralloc *dst, stralloc *sa, parse_mill_t *sep) ;
+extern int mill_nstring(stralloc *dst, stralloc *sa, parse_mill_t *sep) ;
 //helper
 extern void wild_zero(parse_mill_t *m) ;
 extern void wild_zero_nline(parse_mill_t *m) ;
+extern void wild_zero_pos(parse_mill_t *m) ;
+extern void wild_zero_all(parse_mill_t *m) ;
 extern int mill_inner_loop(char curr,char const *s,size_t len) ;
-extern int mill_rebuild_in_online(stralloc *sa) ;
-extern int mill_rebuild_in_nline(stralloc *sa) ;
+extern void mill_copy(parse_mill_t *cp, parse_mill_t *m) ;
 //usefull config
 extern parse_mill_t MILL_GET_LINE ;
-extern parse_mill_t MILL_GET_SPACE_NCLEAN ;
 extern parse_mill_t MILL_GET_COMMENT ;
+extern parse_mill_t MILL_GET_CLEAN_LINE ;
+extern parse_mill_t MILL_GET_DOUBLE_QUOTE ;
+extern parse_mill_t MILL_GET_KEY_NCLEAN ;
+extern parse_mill_t MILL_CLEAN_SPLITTED_VALUE ;
+extern parse_mill_t MILL_CLEAN_LINE ;
+extern parse_mill_t MILL_SPLIT_ELEMENT ;
+extern parse_mill_t MILL_SPLIT_LINE ;
+extern parse_mill_t MILL_GET_VAL ;
+extern parse_mill_t MILL_GET_VAL_FROM_NLINE ;
 #endif

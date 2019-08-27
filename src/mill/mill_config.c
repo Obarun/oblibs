@@ -22,13 +22,56 @@ parse_mill_t MILL_GET_LINE = \
 	.endlen = 1, .forceclose = 1, .forceopen = 1, \
 	.inner.debug = "get_line" } ;
 
-parse_mill_t MILL_GET_SPACE_NCLEAN = \
-{ \
-	.skip = " \n\t\r", .skiplen = 4, \
-	.forceclose = 1, .forceopen = 1, .forceskip = 1, \
-	.inner.debug = "get_clean_space" } ;
-								
 parse_mill_t MILL_GET_COMMENT = \
 { \
-	.jump = "#", .jumplen = 1, .flush = 0, \
+	.forceopen = 1, .keepopen = 1, \
+	.jump = "#", .jumplen = 1, \
+	.end = "=", .endlen = 1, \
 	.inner.debug = "get_comment" } ;
+
+parse_mill_t MILL_GET_DOUBLE_QUOTE = \
+{ \
+	.open = '"', .close = '"', \
+	.skip = " \t\r", .skiplen = 3,
+	.forceclose = 1, \
+	.inner.debug = "get_double_quote" } ;
+
+parse_mill_t MILL_GET_KEY_NCLEAN = \
+{ \
+	.close = '=', .forceclose = 1, \
+	.forceopen = 1, .keepopen = 1, \
+	.skip = " \t\r", .skiplen = 3, .forceskip = 1, \
+	.inner.debug = "get_key_nclean" } ;
+
+parse_mill_t MILL_GET_VAL = \
+{ \
+	.open = '=', .end = "\n", \
+	.endlen = 1, .inner.debug = "get_val" } ;
+	
+parse_mill_t MILL_CLEAN_SPLITTED_VALUE = \
+{ \
+	.skip = " \n\t\r", .skiplen = 4, \
+	.close = 0, .forceclose = 1, \
+	.forceopen = 1, .forceskip = 1, \
+	.inner.debug = "clean_value" } ;
+
+parse_mill_t MILL_CLEAN_LINE = \
+{ \
+	.forceopen = 1, .keepopen = 1, \
+	.skip = " \t\r", .skiplen = 3, .forceskip = 1, \
+	.end = "\n", .endlen = 1, \
+	.inner.debug = "clean_line" } ;
+
+parse_mill_t MILL_SPLIT_ELEMENT = \
+{ \
+	.close = ' ', .forceopen = 1, \
+	.forceclose = 1, .keepopen = 1, \
+	.end= "\n", .endlen = 1, \
+	.inner.debug = "split_element" } ;
+	
+parse_mill_t MILL_SPLIT_LINE = \
+{ \
+	.close = '\n', .forceopen = 1, .forceclose = 1, \
+	.keepopen = 1, \
+	.end= "\n", .endlen = 1, \
+	.inner.debug = "split_line" } ;
