@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
  
-#ifndef STRING_H
-#define STRING_H
+#ifndef OB_STRING_H
+#define OB_STRING_H
 
 #include <sys/types.h>
 
@@ -52,6 +52,13 @@ extern ssize_t get_rlen_until(const char *str, char const end,size_t from) ;
  * into @str.
  * each character must correspond e.g str-> ntpd-log search->-log */
 extern ssize_t get_rstrlen_until(char const *str,char const *search) ;
+
+/** count the length of the string until the @sepstart
+ * character was found. 
+ * @Return -1 if @septart was not found before @sepend
+ * @Return 0 if @sepend is not found
+ * @Return length on success*/
+extern ssize_t get_sep_before (char const *line, char const sepstart, char const sepend) ;
 
 /** Extracts tokens from a string.
  * Replaces strset which is not portable (missing on Solaris).

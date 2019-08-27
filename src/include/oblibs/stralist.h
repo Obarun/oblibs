@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
  
-#ifndef STRALIST_H
-#define STRALIST_H
+#ifndef OB_STRALIST_H
+#define OB_STRALIST_H
 
 #include <skalibs/stralloc.h>
 #include <skalibs/genalloc.h>

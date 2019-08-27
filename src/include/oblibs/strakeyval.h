@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
  
-#ifndef STRAKEYVAL_H
-#define STRAKEYVAL_H
+#ifndef OB_STRAKEYVAL_H
+#define OB_STRAKEYVAL_H
 
 #include <stddef.h>
 

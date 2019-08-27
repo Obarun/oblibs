@@ -13,8 +13,8 @@
  */
 
 
-#ifndef DISPLAY_H
-#define DISPLAY_H
+#ifndef OB_DISPLAY_H
+#define OB_DISPLAY_H
 
 #define NOCOLOR       "\033[0m"
 #define BOLD          "\033[0;1m"

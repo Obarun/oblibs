@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#ifndef ERROR_H
-#define ERROR_H
+#ifndef OB_ERROR_H
+#define OB_ERROR_H
 
 
 #include <unistd.h>

@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
  
-#ifndef OBGETOPT_H
-#define OBGETOPT_H
+#ifndef OB_GETOPT_H
+#define OB_GETOPT_H
 
 #include <skalibs/sgetopt.h>
 

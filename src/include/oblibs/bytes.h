@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
  
-#ifndef BYTES_H
-#define BYTES_H
+#ifndef OB_BYTES_H
+#define OB_BYTES_H
 
 #include <stddef.h>
 

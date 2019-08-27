@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
  
-#ifndef FILES_H
-#define FILES_H
+#ifndef OB_FILES_H
+#define OB_FILES_H
 
 #include <sys/types.h>
 

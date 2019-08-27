@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#ifndef ERROR2_H
-#define ERROR2_H
+#ifndef OB_ERROR2_H
+#define OB_ERROR2_H
 
 #include <errno.h>
 #include <skalibs/strerr2.h>

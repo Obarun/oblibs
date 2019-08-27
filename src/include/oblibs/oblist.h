@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
  
-#ifndef OBLIST_H
-#define OBLIST_H
+#ifndef OB_OBLIST_H
+#define OB_OBLIST_H
 
 #include <string.h>
 

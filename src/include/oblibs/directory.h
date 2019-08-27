@@ -13,8 +13,8 @@
  */
 
 
-#ifndef DIRECTORY_H
-#define DIRECTORY_H
+#ifndef OB_DIRECTORY_H
+#define OB_DIRECTORY_H
 
 #include <sys/types.h>
 

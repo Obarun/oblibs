@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#ifndef MEMORY_H
-#define MEMORY_H
+#ifndef OB_MEMORY_H
+#define OB_MEMORY_H
 
 #include <stddef.h>
 
