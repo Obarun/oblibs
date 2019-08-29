@@ -66,6 +66,7 @@ src/sastr/sastr_get_double_quote.o src/sastr/sastr_get_double_quote.lo: src/sast
 src/sastr/sastr_rebuild_in_nline.o src/sastr/sastr_rebuild_in_nline.lo: src/sastr/sastr_rebuild_in_nline.c src/include/oblibs/sastr.h
 src/sastr/sastr_rebuild_in_oneline.o src/sastr/sastr_rebuild_in_oneline.lo: src/sastr/sastr_rebuild_in_oneline.c src/include/oblibs/sastr.h
 src/sastr/sastr_replace.o src/sastr/sastr_replace.lo: src/sastr/sastr_replace.c src/include/oblibs/sastr.h
+src/sastr/sastr_replace_all.o src/sastr/sastr_replace_all.lo: src/sastr/sastr_replace_all.c src/include/oblibs/sastr.h
 src/sastr/sastr_split_element_in_nline.o src/sastr/sastr_split_element_in_nline.lo: src/sastr/sastr_split_element_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/sastr/sastr_split_string_in_nline.o src/sastr/sastr_split_string_in_nline.lo: src/sastr/sastr_split_string_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/str/basename.o src/str/basename.lo: src/str/basename.c src/include/oblibs/string.h
