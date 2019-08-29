@@ -39,11 +39,16 @@ extern int sastr_rebuild_in_oneline(stralloc *sa) ;
  * @Return 0 on fail */
 extern int sastr_rebuild_in_nline(stralloc *sa) ;
 
-/** Replace first occurence found of @str by @by into @sa
+/** Replace first occurence found of @regex by @by into @sa
  * @str must be matched exactly.
  * @Return 1 on success
  * @Return 0 on fail */
-extern int sastr_replace (stralloc *sa,char const *str,char const *by) ;
+extern int sastr_replace(stralloc *sa,char const *regex,char const *by) ;
+
+/** Same as sastr_replace but for all @regex found into @sa
+ * @Return 1 on success
+ * @Return 0 on fail */ 
+extern int sastr_replace_all(stralloc *sa,char const *regex,char const *by) ;
 
 /** Split each elements of @sa in a chained string
  * on multiple lines where element means everything between
