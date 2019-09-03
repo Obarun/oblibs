@@ -30,7 +30,10 @@ int sastr_replace_all(stralloc *sa,char const *regex,char const *by)
 		tmp.len = 0 ;
 		if (!stralloc_catb(&tmp,sa->s + i,strlen(sa->s+i))) goto err ;
 		if (!stralloc_0(&tmp)) goto err ;
+		tmp.len-- ;
 		if (!sastr_replace(&tmp,regex,by)) goto err ;
+		if (!stralloc_0(&tmp)) goto err ;
+		tmp.len-- ;
 		if (!stralloc_catb(&result,tmp.s,strlen(tmp.s) + 1)) goto err ;
 	}
 	if (!sastr_rebuild_in_nline(&result) ||
