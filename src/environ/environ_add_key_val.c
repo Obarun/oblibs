@@ -29,7 +29,7 @@ int environ_add_key_val (const char *key, const char *val, exlsn_t *info)
 
     if (el_vardupl (key, info->vars.s, info->vars.len)) goto err ;
     if (!stralloc_catb (&info->vars, key, strlen(key) + 1)) goto err ;
-    if (!stralloc_cats (&info->values, val)) goto err ;
+    if (!stralloc_catb (&info->values, val, strlen(val))) goto err ;
    
 	r = el_transform (&info->values, blah.value, &si) ;
 	if (r < 0) goto err;

@@ -32,18 +32,18 @@ int environ_rebuild_line(stralloc *sa)
 	for (;pos < sa->len; pos += strlen(sa->s + pos)+1)
 	{
 		len = strlen(sa->s+pos) ;
-		if (!stralloc_cats(&tmp,sa->s+pos)) goto err ;
+		if (!stralloc_catb(&tmp,sa->s+pos,strlen(sa->s+pos))) goto err ;
 		r = get_len_until(sa->s+pos,'=') ;
 		if (r >= 0) found++ ;
 		/**			  case key= 		case '=' 			multiple '=' ? */
 		if ((!found || (r == len-1) || (!r && (len == 1))) && found < 2) continue ;
 		/* case '=val'			case key=val */	
 		if ((!r && len > 1) || (r > 1 && !idx)) {
-			if (!stralloc_cats(&tmp," ")) goto err ;
+			if (!stralloc_catb(&tmp," ",1)) goto err ;
 			space++ ;
 		}
 		else { 
-			if (!stralloc_cats(&tmp," ")) goto err ;
+			if (!stralloc_catb(&tmp," ",1)) goto err ;
 			space++ ;
 		}
 		idx++ ;

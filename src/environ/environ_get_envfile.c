@@ -37,7 +37,7 @@ int environ_get_envfile(stralloc *modifs,char const *src)
 		if (filesize > MAXENV){ e = -6 ; goto err ; }
 		if (!openreadfileclose(src,&sa,filesize)){ e = -5 ; goto err ; }
 		if (!environ_clean_envfile(modifs,&sa)){ e = -4 ; goto err ; }
-		if (!stralloc_cats(modifs,"\n")) goto err ;
+		if (!stralloc_catb(modifs,"\n",1)) goto err ;
 	}
 	else if (!r)
 	{ 
@@ -56,7 +56,7 @@ int environ_get_envfile(stralloc *modifs,char const *src)
 			if (!file_readputsa(&sa,src,toparse.s+pos)){ e = -5 ; goto err ; }
 			if (sa.len > MAXENV){ e = -6 ; goto err ; }
 			if (!environ_clean_envfile(modifs,&sa)){ e = -4 ; goto err ; }
-			if (!stralloc_cats(modifs,"\n")) goto err ;
+			if (!stralloc_catb(modifs,"\n",1)) goto err ;
 		}
 	}
 	nvar = environ_get_num_of_line(&sa) ;
