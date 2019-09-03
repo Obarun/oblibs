@@ -25,7 +25,7 @@ int sastr_rebuild_in_oneline(stralloc *sa)
 	size_t i = 0, len = sa->len ;
 	for (;i < len; i += strlen(sa->s + i) + 1)
 	{
-		if (!stralloc_cats(&tmp,sa->s+i) ||
+		if (!stralloc_catb(&tmp,sa->s+i,strlen(sa->s+i)) ||
 		!stralloc_cats(&tmp," ")) goto err ;
 	}
 	tmp.len--;
