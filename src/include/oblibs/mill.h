@@ -24,8 +24,12 @@
 #include <skalibs/lolstdio.h>
 #include <skalibs/buffer.h>
 
-// set to 1 to debug the parser
-#define MILL_DBG 0 
+#ifdef DEBUG_PARSER
+#define MILL_DBG 1
+#else
+#define MILL_DBG 0
+#endif
+
 #define DBG(...) do \
 { \
 	bprintf(buffer_1, __VA_ARGS__) ; \
