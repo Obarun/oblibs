@@ -25,10 +25,16 @@ int environ_get_val_of_key(stralloc *sa,char const *key)
 {
 	if (!sa->len) return 0 ;
 	ssize_t pos = -1 ;
+	stralloc tmp = STRALLOC_ZERO ;
+	if (!stralloc_copy(&tmp,sa)) goto err ;
 	pos = sastr_find(sa,key) ;
-	if (pos == -1) return 0 ;
-	if (!environ_get_key_nclean(sa,(size_t *)&pos)) return 0 ;
+	if (pos == -1) goto err ;
+	if (!environ_get_key_nclean(&tmp,(size_t *)&pos)) goto err ;
 	pos-- ;
-	if (!environ_get_val(sa,(size_t *)&pos)) return 0 ;
+	if (!environ_get_val(sa,(size_t *)&pos)) goto err ;
+	stralloc_free(&tmp) ;
 	return 1 ;
+	err:
+		stralloc_free(&tmp) ;
+		return 0 ;
 }
