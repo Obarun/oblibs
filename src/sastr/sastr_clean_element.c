@@ -29,7 +29,6 @@ int sastr_clean_element(stralloc *sa)
 	if (!sastr_split_element_in_nline(&split)) goto err ;
 	r = mill_nstring(&clean,&split,&MILL_CLEAN_SPLITTED_VALUE) ;
 	if (r == -1 || !r) goto err ;
-	if (clean.len) if (!sastr_rebuild_in_oneline(&clean)) goto err ;
 	if (!stralloc_copy(sa,&clean)) goto err ;
 	stralloc_free(&split) ;
 	stralloc_free(&clean) ;
