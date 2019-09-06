@@ -25,7 +25,7 @@ static int auto_create(char const *dst,int mode)
 	return 1 ;	
 }
 
-ssize_t dir_create_parent(char const *dst, int mode)
+int dir_create_parent(char const *dst, int mode)
 {
 	size_t n = strlen(dst), i = 0 ;
 	char tmp[n + 1] ;
