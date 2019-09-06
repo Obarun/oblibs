@@ -86,4 +86,7 @@ extern int sastr_split_string_in_nline(stralloc *sa) ;
  * else @Return -1 */
 extern ssize_t sastr_find (stralloc *sa,char const *str) ;
 
+/** Return the len of a chained stralloc */
+extern size_t sastr_len(stralloc *sa) ;
+
 #endif
