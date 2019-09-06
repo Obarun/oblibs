@@ -53,7 +53,7 @@ parse_mill_t MILL_CLEAN_SPLITTED_VALUE = \
 	.skip = " \n\t\r", .skiplen = 4, \
 	.close = 0, .forceclose = 1, \
 	.forceopen = 1, .forceskip = 1, \
-	.inner.debug = "clean_value" } ;
+	.inner.debug = "clean_splitted_value" } ;
 
 parse_mill_t MILL_CLEAN_LINE = \
 { \
