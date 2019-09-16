@@ -13,37 +13,40 @@
  */
  
 #include <sys/types.h>
+#include <sys/string.h>
 
 #include <oblibs/types.h>
-#include <oblibs/string.h>
-#include <oblibs/stralist.h>
+#include <oblibs/sastr.h>
 
-#include <skalibs/genalloc.h>
-
+#include <skalibs/stralloc.h>
 
 int scan_uidlist(char const *str, uid_t *array)
 {
 	int r ;
-	size_t nuser ;
-	uid_t uid ;
-
-	genalloc gatmp = GENALLOC_ZERO ;
+	size_t pos = 0 ;
+	uid_t uid, nuser ;
+	
+	stralloc tmp = STRALLOC_ZERO ;
 	
 	r = uid = 0 ;
 	nuser = array[0] ;
-	if (!clean_val(&gatmp,str)) return 0 ;
 	
-	for (unsigned int i = 0;i<genalloc_len(stralist,&gatmp);i++){
-		r = get_uidbyname(gaistr(&gatmp,i),&uid) ;
-		if(!r){
-			genalloc_deepfree(stralist,&gatmp,stra_free) ;
-			return 0 ;
-		}
+	if (!stralloc_cats(&tmp,str) ||
+	!stralloc_0(&tmp)) return 0 ;
+	if (!sastr_clean_element(&tmp)) return 0 ;
+
+	for (;pos < tmp.len; pos += strlen(tmp.s + pos)+1)
+	{
+		char *val = tmp.s + pos ;
+		r = get_uidbyname(val,&uid) ;
+		if(r == -1)	goto err ;
 		nuser++;
 		array[0] = nuser ;
 		array[nuser] = uid ;
 	}
-	genalloc_deepfree(stralist,&gatmp,stra_free) ;
-			
+	stralloc_free(&tmp) ;
 	return 1 ;
+	err:
+		stralloc_free(&tmp) ;
+		return 0 ;
 }

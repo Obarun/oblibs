@@ -22,7 +22,7 @@ int scan_uid(char const *str,uid_t *uid)
 {
 	int r = 0 ;
 	r = get_uidbyname(str,uid) ;
-	if(!r) return 0 ;
+	if(r == -1) return 0 ;
 	
 	return 1 ;
 }

@@ -23,7 +23,7 @@ int get_uidbyname(const char *name,uid_t *uid)
 {
 	errno = 0 ;
 	struct passwd *pw = getpwnam(name); 
-    if (pw == NULL) return 0 ;
+    if (pw == NULL) return -1 ;
     *uid = pw->pw_uid ;
    
     return 1 ;
