@@ -23,7 +23,7 @@
 #include <skalibs/djbunix.h>
 
 
-int file_create_empty (char const *dst, char const *name,int mode)
+int file_create_empty (char const *dst, char const *name,mode_t mode)
 {
 	int fd, r ;
 	size_t dstlen = strlen(dst) ;

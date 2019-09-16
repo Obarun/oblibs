@@ -32,7 +32,7 @@ extern int file_openclose_readonly(char *buffile, char const *filename, size_t b
 /** Create an empty @name file at @dst directory with mode @mode
  * @Return 1 on success
  * @Return 0 on fail and set errno*/
-extern int file_create_empty (char const *dst, char const *name,int mode) ;
+extern int file_create_empty (char const *dst, char const *name,mode_t mode) ;
 
 /** Write @name at @dst with @content as content
  * The previous contents of @name are destroyed even if the function fails
