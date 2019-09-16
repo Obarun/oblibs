@@ -18,7 +18,7 @@
 #include <sys/stat.h>
 #include <string.h>
 
-int dir_create (char const *dst, int mode)
+int dir_create (char const *dst, mode_t mode)
 {
 	int fd ;
 	fd = dir_scan_absopath(dst) ;

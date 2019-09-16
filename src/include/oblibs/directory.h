@@ -42,7 +42,7 @@ extern ssize_t dir_search (char const *srcdir, char const *search,mode_t mode) ;
 /** Create @dst as directory with mode @mode
  * @Return 0 on fail, errno is set
  * @Return 1 on success */
-extern int dir_create (char const *dst, int mode) ;
+extern int dir_create (char const *dst, mode_t mode) ;
 
 /** Create @name as sub-directory on @dst directory with mode @mode
  * If @dst doesn't exist it will created with mode @mode and do it
@@ -74,7 +74,7 @@ extern int dir_cmp(char const *src, char const *dst,char const *exclude, genallo
  * recursively like mkdir -p behaviour.
  * @Return 0 on fail, errno is set
  * @Return 1 on success */
-extern int dir_create_parent(char const *dst, int mode) ;
+extern int dir_create_parent(char const *dst, mode_t mode) ;
 
 /** retrieve the absolute path of @dir and write the result in @dst
  * @Return 1 on success

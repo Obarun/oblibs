@@ -18,14 +18,14 @@
 #include <string.h>
 #include <sys/stat.h>
 
-static int auto_create(char const *dst,int mode)
+static int auto_create(char const *dst,mode_t mode)
 {
 	if (mkdir(dst, mode) < 0)
 		if (errno != EEXIST) return 0 ;
 	return 1 ;	
 }
 
-int dir_create_parent(char const *dst, int mode)
+int dir_create_parent(char const *dst, mode_t mode)
 {
 	size_t n = strlen(dst), i = 0 ;
 	char tmp[n + 1] ;
