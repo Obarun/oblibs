@@ -12,6 +12,5 @@ build:
   - make -j9
  
   only:
-    refs:
-      - master
+    - tags
     
