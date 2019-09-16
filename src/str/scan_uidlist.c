@@ -13,7 +13,7 @@
  */
  
 #include <sys/types.h>
-#include <sys/string.h>
+#include <string.h>
 
 #include <oblibs/types.h>
 #include <oblibs/sastr.h>
