@@ -1,0 +1,17 @@
+image: obarun/base:latest
+
+before_script:
+  - pacman -Syu --noconfirm
+  - pacman -S autoconf automake binutils bison file flex gcc gettext groff libtool m4 make patch pkgconf texinfo which --noconfirm
+  - pacman -S skalibs execline --noconfirm
+  
+build:
+  stage: build
+  script:
+  - ./configure --disable-shared
+  - make -j9
+ 
+  only:
+    refs:
+      - master
+    
