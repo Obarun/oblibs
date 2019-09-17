@@ -63,6 +63,11 @@ extern int sastr_split_element_in_nline(stralloc *sa) ;
  * @Return 0 on fail*/
 extern int sastr_clean_element(stralloc *sa) ;
 
+/** Append @sa with @string and call sastr_clean_element
+ * @Return 1 on sucess
+ * @Return 0 on fail */
+extern int sastr_clean_string(stralloc *sa,char const *string) ;
+
 /** Get the content between double quote and
  * call sastr_clean_element to clean up
  * Replace the content of @sa with the
