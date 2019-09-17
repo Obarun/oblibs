@@ -12,32 +12,33 @@
  * except according to the terms contained in the LICENSE file./
  */
  
-#include <sys/types.h>
 #include <stdint.h>
 
-#include <oblibs/string.h>
 #include <oblibs/types.h>
-#include <oblibs/stralist.h>
+#include <oblibs/sastr.h>
 
-#include <skalibs/genalloc.h>
+#include <skalibs/stralloc.h>
 #include <skalibs/types.h>
 
-int scan_timeout(char *str, uint32_t *array, int row)
+int scan_timeout(char const *str, uint32_t *array, int row)
 {
-	genalloc gatmp = GENALLOC_ZERO ;
+	stralloc kp = STRALLOC_ZERO ;
 	
-	if (!clean_val(&gatmp,str)) return 0 ;
-	if(!scan_uint32(gastr(&gatmp)))
+	if (!sastr_clean_string(&kp,str)) goto err ;
+	
+	if (!scan_uint32(kp.s))
 	{
-		genalloc_deepfree(stralist,&gatmp,stra_free) ;
+		stralloc_free(&kp) ;
 		return -1 ;
 	}
-	if(!*(array+row*UINT_FMT)){
-		uint32_scan(gastr(&gatmp),&(*(array+row*UINT_FMT))) ;
-	}else{
-		genalloc_deepfree(stralist,&gatmp,stra_free) ;
-		return 0 ;
+	if(!*(array+row*UINT_FMT))
+	{
+		uint32_scan(kp.s,&(*(array+row*UINT_FMT))) ;
 	}
-	genalloc_deepfree(stralist,&gatmp,stra_free) ;
+	else goto err ;
+	stralloc_free(&kp) ;
 	return 1 ;
+	err:
+		stralloc_free(&kp) ;
+		return 0 ;
 }
