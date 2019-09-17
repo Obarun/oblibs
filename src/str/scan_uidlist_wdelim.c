@@ -15,38 +15,36 @@
 #include <sys/types.h>
 
 #include <oblibs/types.h>
-#include <oblibs/string.h>
-#include <oblibs/stralist.h>
+#include <oblibs/mill.h>
+#include <oblibs/sastr.h>
 
-
-#include <skalibs/genalloc.h>
+#include <skalibs/stralloc.h>
 
 int scan_uidlist_wdelim(char const *str, uid_t *array,int delim) 
 {
 	int r ;
-	size_t nuser ;
-	uid_t uid ;
+	stralloc kp = STRALLOC_ZERO ;
+	stralloc sa = STRALLOC_ZERO ;
+	parse_mill_t MILL_GET_DELIM = {
+		.close = delim, .forceopen = 1, .keepopen = 1,
+		.forceclose = 1 , .skip = " \t\r", .skiplen = 3,
+		.forceskip = 1, .inner.debug = "get_delim" } ;
 
-	genalloc gatmp = GENALLOC_ZERO ;
+	if (!stralloc_cats(&sa,str) ||
+	!stralloc_0(&sa)) goto err ;
+
+	wild_zero_all(&MILL_GET_DELIM) ;
+
+	r = mill_string(&kp,&sa,&MILL_GET_DELIM) ;
+	if (r == -1 || !r) goto err ;
+	if (!sastr_rebuild_in_oneline(&kp)) goto err ;
+	if (!scan_uidlist(kp.s,array)) goto err ;
 	
-	r = uid = nuser = 0 ;
-	if (!clean_val_wdelim(&gatmp,str,delim))
-	{
-		genalloc_deepfree(stralist,&gatmp,stra_free) ;
-		return 0 ;
-	}
-	for (unsigned int i = 0;i<genalloc_len(stralist,&gatmp);i++)
-	{
-		r = get_uidbyname(gaistr(&gatmp,i),&uid) ;
-		if(!r){
-			genalloc_deepfree(stralist,&gatmp,stra_free) ;
-			return 0 ;
-		}
-		nuser++ ;
-		array[0] = nuser ;
-		array[i+1] = uid ;
-	}
-	genalloc_deepfree(stralist,&gatmp,stra_free) ;
-			
+	stralloc_free(&sa) ;
+	stralloc_free(&kp) ;
 	return 1 ;
+	err:
+		stralloc_free(&sa) ;
+		stralloc_free(&kp) ;
+		return 0 ;
 }
