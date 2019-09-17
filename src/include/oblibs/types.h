@@ -30,13 +30,13 @@ extern ssize_t scan_mode(char const *str,mode_t mode) ;
 /** Check if @s is an uint32_t type
  * @s mustn't contain space
  * @Return 1 on success else 0*/
-extern int scan_uint32(char *s) ;
+extern int scan_uint32(char const *s) ;
 
 /** get the uid of @name
  * and store it at @uid
  * @Return 1 on success
  * @Return -1 on fail and set errno */
-extern int get_uidbyname(const char *name,uid_t *uid) ;
+extern int get_uidbyname(char const *name,uid_t *uid) ;
 
 /** get the name of @uid
  * and store it at @name
@@ -50,7 +50,7 @@ extern int get_namebyuid(uid_t uid,stralloc *name) ;
  * @Return -1 if @str is not an uint32 type
  * @Return 0 if array[row] is already set
  * This function assume that @str is different than 0 */ 
-extern int scan_timeout(char *str, uint32_t *array, int row) ;
+extern int scan_timeout(char const *str, uint32_t *array, int row) ;
 
 /** Check if @str is valid user
  * and store it in @uid

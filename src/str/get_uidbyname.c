@@ -18,7 +18,7 @@
 #include <pwd.h>
 #include <errno.h>
 
-int get_uidbyname(const char *name,uid_t *uid)
+int get_uidbyname(char const *name,uid_t *uid)
 {
 	errno = 0 ;
 	struct passwd *pw = getpwnam(name) ; 

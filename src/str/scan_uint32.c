@@ -21,7 +21,7 @@
 
 #include <skalibs/types.h>
 
-int scan_uint32(char *s)
+int scan_uint32(char const *s)
 {
 	char buff[UINT_FMT] ;
 	uint32_t u ;
