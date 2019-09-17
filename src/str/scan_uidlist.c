@@ -31,9 +31,7 @@ int scan_uidlist(char const *str, uid_t *array)
 	r = uid = 0 ;
 	nuser = array[0] ;
 	
-	if (!stralloc_cats(&tmp,str) ||
-	!stralloc_0(&tmp)) return 0 ;
-	if (!sastr_clean_element(&tmp)) return 0 ;
+	if (!sastr_clean_string(&tmp,str)) return 0 ;
 
 	for (;pos < tmp.len; pos += strlen(tmp.s + pos)+1)
 	{
