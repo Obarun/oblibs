@@ -58,7 +58,9 @@ src/oblist/oblist_new.o src/oblist/oblist_new.lo: src/oblist/oblist_new.c src/in
 src/oblist/oblist_reverse.o src/oblist/oblist_reverse.lo: src/oblist/oblist_reverse.c src/include/oblibs/oblist.h
 src/oblist/oblist_zero.o src/oblist/oblist_zero.lo: src/oblist/oblist_zero.c src/include/oblibs/oblist.h
 src/opts/getopt_args.o src/opts/getopt_args.lo: src/opts/getopt_args.c src/include/oblibs/obgetopt.h
+src/sastr/sastr_add_string.o src/sastr/sastr_add_string.lo: src/sastr/sastr_add_string.c src/include/oblibs/sastr.h
 src/sastr/sastr_clean_element.o src/sastr/sastr_clean_element.lo: src/sastr/sastr_clean_element.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
+src/sastr/sastr_clean_string.o src/sastr/sastr_clean_string.lo: src/sastr/sastr_clean_string.c src/include/oblibs/sastr.h
 src/sastr/sastr_cmp.o src/sastr/sastr_cmp.lo: src/sastr/sastr_cmp.c src/include/oblibs/sastr.h
 src/sastr/sastr_dir_get.o src/sastr/sastr_dir_get.lo: src/sastr/sastr_dir_get.c src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/sastr/sastr_find.o src/sastr/sastr_find.lo: src/sastr/sastr_find.c src/include/oblibs/sastr.h
@@ -93,7 +95,7 @@ src/str/obstr_sub.o src/str/obstr_sub.lo: src/str/obstr_sub.c src/include/oblibs
 src/str/obstr_trim.o src/str/obstr_trim.lo: src/str/obstr_trim.c src/include/oblibs/string.h
 src/str/scan_isspace.o src/str/scan_isspace.lo: src/str/scan_isspace.c src/include/oblibs/string.h
 src/str/scan_mode.o src/str/scan_mode.lo: src/str/scan_mode.c src/include/oblibs/types.h
-src/str/scan_timeout.o src/str/scan_timeout.lo: src/str/scan_timeout.c src/include/oblibs/stralist.h src/include/oblibs/string.h src/include/oblibs/types.h
+src/str/scan_timeout.o src/str/scan_timeout.lo: src/str/scan_timeout.c src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/str/scan_uid.o src/str/scan_uid.lo: src/str/scan_uid.c src/include/oblibs/error.h src/include/oblibs/types.h
 src/str/scan_uidlist.o src/str/scan_uidlist.lo: src/str/scan_uidlist.c src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/str/scan_uidlist_wdelim.o src/str/scan_uidlist_wdelim.lo: src/str/scan_uidlist_wdelim.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/types.h
