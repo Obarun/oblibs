@@ -94,4 +94,9 @@ extern ssize_t sastr_find (stralloc *sa,char const *str) ;
 /** Return the len of a chained stralloc */
 extern size_t sastr_len(stralloc *sa) ;
 
+/** Append @sa with @str
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int sastr_add_string(stralloc *sa,char const *str) ;
+
 #endif
