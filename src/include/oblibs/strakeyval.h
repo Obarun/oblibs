@@ -20,6 +20,7 @@
 #include <skalibs/stralloc.h>
 #include <skalibs/genalloc.h>
 #include <skalibs/types.h>
+#include <skalibs/gccattributes.h>
 
 typedef struct strakeyval_s strakeyval, *strakeyval_ref ;
 struct strakeyval_s
@@ -29,7 +30,7 @@ struct strakeyval_s
 	uint32_t n ;
 } ;
 #define STRAKEYVAL_ZERO { .key = STRALLOC_ZERO, .val = STRALLOC_ZERO, .n = 0 }
-extern strakeyval const strakeyval_zero ;
+extern strakeyval const strakeyval_zero gccattr_deprecated ;
 
 /** strakeyval type*/
 #define gakvkey(ga) genalloc_s(strakeyval,ga)->key.s
@@ -42,18 +43,18 @@ extern strakeyval const strakeyval_zero ;
 #define gaikvvallen(ga,i) strlen(genalloc_s(strakeyval,ga)[i].val.s)
 
 /** Freed @ga*/
-extern void strakv_free(strakeyval *ga) ;
+extern void strakv_free(strakeyval *ga) gccattr_deprecated ;
 
 /** add @key @val pair into an genalloc array @ga
  * @Return 1 on success 
  * @Return 0 if the allocation fail */
-extern int strakv_new(genalloc *ga,char const *key,size_t klen,char const *val,size_t vlen) ;
+extern int strakv_new(genalloc *ga,char const *key,size_t klen,char const *val,size_t vlen) gccattr_deprecated ;
 #define strakv_add(ga,k,v) strakv_new(ga,k,strlen(k),v,strlen(v))
 
 /** Parse @s with @sep as delim and store the result in @ga
  * @Return 1 on sucess
  * @Return 0 on fail*/
-extern int strakv_addwithsep(genalloc *ga,char *s,char const *sep) ;
+extern int strakv_addwithsep(genalloc *ga,char *s,char const *sep) gccattr_deprecated ;
 #define strakv_addequal(ga,s) strakv_addwithsep(ga,s,"=")
 
 

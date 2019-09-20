@@ -26,7 +26,7 @@
  * and check for space at the begin of the string @s
  * @Return the position of '/' on @s 
  * @Return -1 on failure*/
-extern int dir_scan_absopath(char const *s) ;
+extern int dir_scan_absopath(char const *s) gccattr_deprecated ;
 
 /** Remove a slash if exist at the end of @str
  * and replace it by '\0' */
@@ -61,13 +61,13 @@ extern char *dir_create_tmp(stralloc *sa,char const *dst, char const *tname) ;
  * put the result in genalloc as type stralist
  * @Return 0 on fail
  * @Return 1 on success */
-extern int dir_get(genalloc *ga, char const *srcdir,char const *exclude,mode_t mode) ;
+extern int dir_get(genalloc *ga, char const *srcdir,char const *exclude,mode_t mode) gccattr_deprecated ;
 
 /** compare @src directory name with @dst, if @src name doesn't exist in @dst,save
  * @src name in @ga. Exclude from the searc @exclude.
  * @Return 0 on fail
  * @Return 1 on success */
-extern int dir_cmp(char const *src, char const *dst,char const *exclude, genalloc *ga) ;
+extern int dir_cmp(char const *src, char const *dst,char const *exclude, genalloc *ga) gccattr_deprecated ;
 
 /** Create @dst directory with mode @mode
  * If parent of @dst doesn't exist it will created with mode @mode and do it

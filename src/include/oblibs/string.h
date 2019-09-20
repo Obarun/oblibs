@@ -18,6 +18,7 @@
 #include <sys/types.h>
 
 #include <skalibs/genalloc.h>
+#include <skalibs/gccattributes.h>
 
 #if !defined(nb_el)
     #define nb_el(x) (sizeof((x)) / sizeof((x)[0]))
@@ -76,7 +77,7 @@ extern unsigned int get_nbline(char const *str, size_t len) ;
 
 /** return the number of line of @str
  * copy each line into @ga*/
-extern unsigned int get_nbline_ga(char const *str, size_t len, genalloc *ga) ;
+extern unsigned int get_nbline_ga(char const *str, size_t len, genalloc *ga) gccattr_deprecated ;
 
 /** copy @len bytes character from @str beginning at @index
  * @Return a new pointer to the copy
@@ -97,17 +98,17 @@ extern unsigned int scan_isspace(char const *line) ;
  * and store it on @ga which is a stralist type
  * @Return 1 on success
  * @Return 0 on fail*/
-extern int clean_val(genalloc *ga, char const *line) ;
+extern int clean_val(genalloc *ga, char const *line) gccattr_deprecated ;
 
 /** Same as clean_val but parse @line first and
  * replace all occurence of @delim in @line by ' '*/
-extern int clean_val_wdelim(genalloc *ga,char const *line,int delim) ;
+extern int clean_val_wdelim(genalloc *ga,char const *line,int delim) gccattr_deprecated ;
 
 /** Append @str with @c if the last character
  * of @str differs of @c, terminate the @str
  * with 0. This function assume that @str are
  * enough allocation of memory to add 0 at the end*/
-extern void str_append_check (char *str,char c) ;
+extern void str_append_check (char *str,char c) gccattr_deprecated ;
 
 /** Appends the basename of filename @path to @dst
  * @Return 1 on success

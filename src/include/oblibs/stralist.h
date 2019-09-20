@@ -17,6 +17,7 @@
 
 #include <skalibs/stralloc.h>
 #include <skalibs/genalloc.h>
+#include <skalibs/gccattributes.h>
 
 typedef struct stralist_s stralist ;
 struct stralist_s
@@ -35,47 +36,47 @@ extern stralist const stralist_zero ;
 #define gaistrlen(ga,i) strlen(genalloc_s(stralist,ga)[i].sa.s)
 
 /** Freed @stra*/
-extern void stra_free(stralist *stra) ;
+extern void stra_free(stralist *stra) gccattr_deprecated ;
 
 /** add @s string into an genalloc array @ga
  * @Return 1 on success else 0 if the allocation fail */
-extern int stra_new(genalloc *ga,char const *s,size_t len) ;
+extern int stra_new(genalloc *ga,char const *s,size_t len) gccattr_deprecated ;
 #define stra_add(ga,s) stra_new(ga,s,strlen(s))
 
 /** compare the @s string with @ga at index @idx
  * @Return 1 on success else 0*/
-extern int stra_cmpone(genalloc *ga,char const *s,unsigned int idx) ;
+extern int stra_cmpone(genalloc *ga,char const *s,unsigned int idx) gccattr_deprecated ;
 
 /** compare each elements of @ga with @s 
  * @Return 1 on success else 0*/
-extern int stra_cmp(genalloc *ga,char const *s) ;
+extern int stra_cmp(genalloc *ga,char const *s) gccattr_deprecated ;
 
 /** return the index number of the @s string into @ga 
  * else return -1 */
-extern int stra_findidx(genalloc *ga,char const *s) ;
+extern int stra_findidx(genalloc *ga,char const *s) gccattr_deprecated ;
 
 /** remove an elements at index @idx from @ga genalloc array 
  * @Return 1 on success else 0*/
-extern int stra_removeidx(genalloc *ga, unsigned int idx) ;
+extern int stra_removeidx(genalloc *ga, unsigned int idx) gccattr_deprecated ;
 
 /** remove @s from @ga
  * @Return 1 on success else 0*/
-extern int stra_remove(genalloc *ga, char const *s) ;
+extern int stra_remove(genalloc *ga, char const *s) gccattr_deprecated ;
 
 /** Copy @ga which have stralist as type
  * to @buf*/
-extern void stra_cpytobuf(char *buf,genalloc *ga) ;
+extern void stra_cpytobuf(char *buf,genalloc *ga) gccattr_deprecated ;
 
 /** Copy @ga which have stralist as type
  * to @buf from @start*/
-extern void stra_icpytobuf(char *buf,genalloc *ga,int start) ;
+extern void stra_icpytobuf(char *buf,genalloc *ga,int start) gccattr_deprecated ;
 
 /** Copy @ga which have stralist as type
  * to @buf from @start to @end */
-extern void stra_iecpytobuf(char *buf,genalloc *ga,int start,int end) ;
+extern void stra_iecpytobuf(char *buf,genalloc *ga,int start,int end) gccattr_deprecated ;
 
 /** Replace @sa.s by @s
  * @Return 1 on success
  * @Return 0 on fail*/
-extern int stralloc_obreplace(stralloc *sa, char const *s) ;
+extern int stralloc_obreplace(stralloc *sa, char const *s) gccattr_deprecated ;
 #endif
