@@ -21,20 +21,18 @@
 
 #include <skalibs/stralloc.h>
 #include <skalibs/types.h>
-#include <skalibs/lolstdio.h>
 #include <skalibs/buffer.h>
 
 #ifdef DEBUG_PARSER
-#define MILL_DBG 1
-#else
-#define MILL_DBG 0
-#endif
-
-#define DBG(...) do \
+#include <skalibs/lolstdio.h>
+#define DBG_PARSER(...) do \
 { \
 	bprintf(buffer_1, __VA_ARGS__) ; \
 	buffer_putflush(buffer_1,"\n",1) ; \
 } while (0)
+#else
+#define DBG_PARSER(...)
+#endif
 
 typedef struct parse_mill_inner_s parse_mill_inner_t, *parse_mill_inner_t_ref ;
 struct parse_mill_inner_s

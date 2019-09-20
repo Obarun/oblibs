@@ -18,6 +18,7 @@
 #include <string.h>
 #include <skalibs/stralloc.h>
 #include <skalibs/types.h>
+#include <skalibs/strerr2.h>
 
 char mill_next(char const *s,size_t *pos)
 {
@@ -34,7 +35,7 @@ uint8_t mill_cclass (parse_mill_t *p)
 	uint8_t *nclose = &p->inner.nclose ;
 	uint8_t opclequal = 0 ;
 	uint8_t range = 0 ;// 0-> out, 1->in
-	uint8_t firstopen = 0, firstclose = 0 ;	
+	uint8_t firstopen = 0 ;	
 	uint8_t r = 0 ;
 	char curr = p->inner.curr ;
 		
@@ -50,7 +51,7 @@ uint8_t mill_cclass (parse_mill_t *p)
 	/** close */
 	if (curr == p->close)
 	{
-		if (!(*nclose)) firstclose = 1 ;
+		//if (!(*nclose)) firstclose = 1 ;
 		/** we can have a close before an open*/
 		if (*nopen)
 		{
@@ -72,8 +73,7 @@ uint8_t mill_cclass (parse_mill_t *p)
 	if ((*nopen))
 		if (!(*nclose) || (*nopen) != (*nclose)) range = 1 ;
 	
-	if (MILL_DBG)
-		DBG ("	nopen:%i::nclose:%i::opclequal:%i::firstopen:%i::firstclose:%i",*nopen,*nclose,opclequal,firstopen,firstclose) ;
+	DBG_PARSER ("	nopen:%i::nclose:%i::opclequal:%i::firstopen:%i::",*nopen,*nclose,opclequal,firstopen) ;
 
 	/** jump */
 	r = mill_inner_loop(curr,p->jump,p->jumplen) ;
@@ -132,24 +132,22 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
 	char const *file = p->file ;
 	char j = 0 ;
 	int res = -2 ; 
-	if (MILL_DBG)
-	{
-		DBG ("[PARSE PROCESS OF %s STARTS]", p->inner.debug) ;	
-		DBG ("open:%i:%c:",p->open,p->open) ;
-		DBG ("close:%i:%c:",p->close,p->close) ;
-		DBG ("keepopen:%i:",p->keepopen) ;
-		DBG ("keeclose:%i:",p->keepclose) ;
-		DBG ("forceopen:%i:",p->forceopen) ;
-		DBG ("forceclose:%i:",p->forceclose) ;
-		DBG ("forceskip:%i:",p->forceskip) ;
-		DBG ("flush:%i:\n----\n",p->flush) ;
-	}
+
+	DBG_PARSER ("[PARSE PROCESS OF %s STARTS]", p->inner.debug) ;	
+	DBG_PARSER ("open:%i:%c:",p->open,p->open) ;
+	DBG_PARSER ("close:%i:%c:",p->close,p->close) ;
+	DBG_PARSER ("keepopen:%i:",p->keepopen) ;
+	DBG_PARSER ("keeclose:%i:",p->keepclose) ;
+	DBG_PARSER ("forceopen:%i:",p->forceopen) ;
+	DBG_PARSER ("forceclose:%i:",p->forceclose) ;
+	DBG_PARSER ("forceskip:%i:",p->forceskip) ;
+	DBG_PARSER ("flush:%i:\n----\n",p->flush) ;
+
 	while (res < -1)
 	{	
-		if (MILL_DBG) {
-			DBG ("	parse line:%s:",string+(*pos)) ;
-			DBG ("	len of line:%li:",strlen(string)) ;
-		}
+		DBG_PARSER ("	parse line:%s:",string+(*pos)) ;
+		DBG_PARSER ("	len of line:%li:",strlen(string)) ;
+		
 		p->inner.curr = mill_next(string, pos) ;
 		// end of file	
 		if (p->inner.curr == -1) what = EFILE ;
@@ -163,19 +161,17 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
 		}
 		// end of file	
 		//if (p->inner.curr == -1) what = EFILE ;
-		if (MILL_DBG)
-		{
-			DBG ("	pos:%li::current:%c:",*pos,p->inner.curr) ;
-			DBG ("	nopen:%i::nclose:%i::what:%li:\n	----\n",p->inner.nopen, p->inner.nclose,what) ;
-		}
+		DBG_PARSER ("	pos:%li::current:%c:",*pos,p->inner.curr) ;
+		DBG_PARSER ("	nopen:%i::nclose:%i::what:%li:\n	----\n",p->inner.nopen, p->inner.nclose,what) ;
+		
 		switch(what)
 		{
 			case KEEP:
 				if (p->inner.nopen)
 					if (!stralloc_catb(kp,&p->inner.curr,1)) 
 						return -1 ;
-				if (MILL_DBG)
-					DBG("	string state:%s:\n",kp->s) ;
+				
+				DBG_PARSER("	string state:%s:\n",kp->s) ;
 				break ;
 			case JUMP:
 					while (j != '\n')
@@ -212,16 +208,13 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
 		kp->len-- ;
 	//	if (kp->len == 1) kp->len = 0 ;
 	}
-	if (MILL_DBG)
-	{	
-		DBG("what:%s:efile:%i:res:%i:", !what ? "ign" : \
+	DBG_PARSER("what:%s:efile:%i:res:%i:", !what ? "ign" : \
 								what == 1 ? "keep" : \
 								what == 2 ? "jump" : \
 								what == 3 ? "end" : "efile",efile,res) ;
-		DBG ("string kept::%s::len:%li:",kp->s,kp->len) ; 
-		DBG("[PARSE PROCESS OF %s END]\n", p->inner.debug) ;
-	}
-
+	DBG_PARSER ("string kept::%s::len:%li:",kp->s,kp->len) ; 
+	DBG_PARSER ("[PARSE PROCESS OF %s END]\n", p->inner.debug) ;
+	
 	{
 		if (p->search && !p->inner.search) return 0 ;
 		else if (p->jump && !p->inner.jumped) return 0 ;
