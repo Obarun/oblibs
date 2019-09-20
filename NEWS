@@ -1,5 +1,16 @@
 Changelog for oblibs
 
+In 0.0.2.0
+----------
+	
+	- Bugs fix
+	- Implementation of the mill parser
+	- New functions: get_sep_before, sastr_?, environ_?
+	- Function dir_create_under is deprecated, use dir_create_parent instead
+	- Rewrite of scan_timeout, scan_uidlist, scan_uidlist_wdelim
+	- Deprecated function: All strakeyval, all stralist,dir_{get,cmp,absopath},
+	clean_{val,val_wdelim},get_nbline_ga,str_append_check
+
 In 0.0.1.3
 ----------
 	
