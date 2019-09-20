@@ -30,7 +30,7 @@ src/environ/environ_get_val_of_key.o src/environ/environ_get_val_of_key.lo: src/
 src/environ/environ_rebuild_line.o src/environ/environ_rebuild_line.lo: src/environ/environ_rebuild_line.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/string.h
 src/environ/environ_remove_unexport.o src/environ/environ_remove_unexport.lo: src/environ/environ_remove_unexport.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/environ/environ_substitute.o src/environ/environ_substitute.lo: src/environ/environ_substitute.c src/include/oblibs/environ.h
-src/files/file_create_empty.o src/files/file_create_empty.lo: src/files/file_create_empty.c src/include/oblibs/directory.h src/include/oblibs/files.h src/include/oblibs/string.h
+src/files/file_create_empty.o src/files/file_create_empty.lo: src/files/file_create_empty.c src/include/oblibs/files.h
 src/files/file_get_size.o src/files/file_get_size.lo: src/files/file_get_size.c src/include/oblibs/files.h
 src/files/file_openclose_readonly.o src/files/file_openclose_readonly.lo: src/files/file_openclose_readonly.c src/include/oblibs/files.h
 src/files/file_readputsa.o src/files/file_readputsa.lo: src/files/file_readputsa.c src/include/oblibs/directory.h src/include/oblibs/files.h
