@@ -15,14 +15,19 @@
 #include <oblibs/directory.h>
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <string.h>
+#include <errno.h>
 
 int dir_create (char const *dst, mode_t mode)
 {
-	int fd ;
-	fd = dir_scan_absopath(dst) ;
-	if(fd<0) return 0 ;
+	int e = errno ;
+	errno = 0 ;
+	if (dst[0] != '/')
+	{
+		errno = ENOTDIR ;
+		return 0 ;
+	}
 	if (mkdir(dst, mode) < 0) return 0 ;
+	errno = e ;
 	return 1 ;
 }

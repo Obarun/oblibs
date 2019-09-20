@@ -15,28 +15,26 @@
 #include <oblibs/files.h>
 
 #include <string.h>
+#include <sys/types.h>
 #include <fcntl.h>
-
-#include <oblibs/string.h>
-#include <oblibs/directory.h>
 
 #include <skalibs/djbunix.h>
 
-
 int file_create_empty (char const *dst, char const *name,mode_t mode)
 {
-	int fd, r ;
+	int fd, end = 0 ;
 	size_t dstlen = strlen(dst) ;
 	size_t namelen = strlen(name) ;
-	char file[dstlen + namelen + 2 + 1] ;
-	r = dir_scan_absopath(dst) ;
-	if(r<0) return 0 ;
+	char file[dstlen + 1 + namelen + 1] ;
+	if (dst[0] != '/') return 0 ;
+	if (dst[dstlen-1] != '/') end++ ;
 	memcpy(file,dst,dstlen) ;
-	file[dstlen] = '\0' ;
-	str_append_check(file,'/') ;
-	strcat(file,name) ;
+	if (end)
+		file[dstlen] = '/' ;
+	memcpy(file + dstlen + end,name,namelen) ;
+	file[dstlen + end + namelen] = 0 ;
 	fd = open3 (file, O_WRONLY | O_NONBLOCK | O_CREAT | O_EXCL, mode) ;
-	if (fd<0){
+	if (fd == -1){
 		fd_close(fd) ;
 		return 0;
 	}
