@@ -21,7 +21,6 @@
 
 char *dir_create_tmp(stralloc *sa, char const *dst, char const *tname)
 {	
-	int fdscan = 0  ;
 	size_t dstlen = strlen(dst) ;
 	size_t tlen = strlen(tname) ;	
 	if (dst[0] != '/') return 0 ;
