@@ -57,7 +57,7 @@ extern int sastr_replace_all(stralloc *sa,char const *regex,char const *by) ;
  * @Return 0 on fail*/
 extern int sastr_split_element_in_nline(stralloc *sa) ;
 
-/** Use sastr_split_element_in_line and remove any
+/** Use sastr_split_element_in_nline and remove any
  *  ' \n\t\r' character of each element.
  * @Return 1 on success
  * @Return 0 on fail*/
@@ -67,6 +67,13 @@ extern int sastr_clean_element(stralloc *sa) ;
  * @Return 1 on sucess
  * @Return 0 on fail */
 extern int sastr_clean_string(stralloc *sa,char const *string) ;
+
+/** Split sting @str with delimiter @delim and clean
+ * each element calling sastr_clean_element. Append @sa
+ * with the result of the process
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int sastr_clean_string_wdelim(stralloc *sa,char const *str,unsigned int delim) ;
 
 /** Get the content between double quote and
  * call sastr_clean_element to clean up
@@ -99,4 +106,8 @@ extern size_t sastr_len(stralloc *sa) ;
  * @Return 0 on fail */
 extern int sastr_add_string(stralloc *sa,char const *str) ;
 
+/** Reverse the contain of @sa
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int sastr_reverse(stralloc *sa) ;
 #endif
