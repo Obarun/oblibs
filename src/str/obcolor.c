@@ -16,10 +16,11 @@
 
 #include <oblibs/display.h>
 
-obstr_color const obcolor = {
-	.normal = BOLD ":: " NOCOLOR,
+set_color_t const obcolor = {
+	.info = BOLD ":: " NOCOLOR,
 	.valid = BGREEN ":: " NOCOLOR,
-	.info = BBLUE ":: " NOCOLOR,
 	.warning = BYELLOW ":warning: " NOCOLOR,
-	.error = BRED ":fatal: " NOCOLOR
+	.blink = BL_BBLUE ":: " NOCOLOR,
+	.error = BRED ":fatal: " NOCOLOR,
+	.off = NOCOLOR
 };
