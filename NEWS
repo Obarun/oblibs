@@ -1,5 +1,10 @@
 Changelog for oblibs
 
+In 0.0.2.1
+----------
+
+	- Fix sastr_replace: replace multiple regex on a same line
+	
 In 0.0.2.0
 ----------
 	
