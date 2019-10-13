@@ -36,6 +36,8 @@ int sastr_replace (stralloc *sa,char const *regex,char const *by)
 		if (found){
 			if (!stralloc_catb(&tmp,by,blen)) goto err ;
 			if (!stralloc_cats(&tmp,sa->s + i + slen)) goto err ;
+			if (!stralloc_0(&tmp)) goto err ;
+			if (!sastr_replace(&tmp,regex,by)) goto err ;
 			break ;			
 		}
 		if (!stralloc_catb(&tmp,sa->s+i,1)) goto err ;	
