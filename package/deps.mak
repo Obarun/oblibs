@@ -6,13 +6,9 @@ src/include/oblibs/error.h: src/include/oblibs/display.h
 src/bytes/byte_tosearch.o src/bytes/byte_tosearch.lo: src/bytes/byte_tosearch.c src/include/oblibs/bytes.h
 src/bytes/byte_tozero.o src/bytes/byte_tozero.lo: src/bytes/byte_tozero.c src/include/oblibs/bytes.h
 src/directory/dir_beabsolute.o src/directory/dir_beabsolute.lo: src/directory/dir_beabsolute.c src/include/oblibs/directory.h
-src/directory/dir_cmp.o src/directory/dir_cmp.lo: src/directory/dir_cmp.c src/include/oblibs/directory.h src/include/oblibs/error2.h src/include/oblibs/stralist.h src/include/oblibs/string.h
 src/directory/dir_create.o src/directory/dir_create.lo: src/directory/dir_create.c src/include/oblibs/directory.h
 src/directory/dir_create_parent.o src/directory/dir_create_parent.lo: src/directory/dir_create_parent.c src/include/oblibs/directory.h
 src/directory/dir_create_tmp.o src/directory/dir_create_tmp.lo: src/directory/dir_create_tmp.c src/include/oblibs/directory.h
-src/directory/dir_create_under.o src/directory/dir_create_under.lo: src/directory/dir_create_under.c src/include/oblibs/directory.h src/include/oblibs/string.h src/include/oblibs/types.h
-src/directory/dir_get.o src/directory/dir_get.lo: src/directory/dir_get.c src/include/oblibs/directory.h src/include/oblibs/stralist.h src/include/oblibs/string.h src/include/oblibs/types.h
-src/directory/dir_scan_absopath.o src/directory/dir_scan_absopath.lo: src/directory/dir_scan_absopath.c src/include/oblibs/string.h
 src/directory/dir_search.o src/directory/dir_search.lo: src/directory/dir_search.c src/include/oblibs/directory.h src/include/oblibs/error.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/directory/dir_unslash.o src/directory/dir_unslash.lo: src/directory/dir_unslash.c src/include/oblibs/string.h
 src/environ/environ_add_key_val.o src/environ/environ_add_key_val.lo: src/environ/environ_add_key_val.c src/include/oblibs/environ.h
@@ -75,14 +71,11 @@ src/sastr/sastr_reverse.o src/sastr/sastr_reverse.lo: src/sastr/sastr_reverse.c 
 src/sastr/sastr_split_element_in_nline.o src/sastr/sastr_split_element_in_nline.lo: src/sastr/sastr_split_element_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/sastr/sastr_split_string_in_nline.o src/sastr/sastr_split_string_in_nline.lo: src/sastr/sastr_split_string_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/str/basename.o src/str/basename.lo: src/str/basename.c src/include/oblibs/string.h
-src/str/clean_val.o src/str/clean_val.lo: src/str/clean_val.c src/include/oblibs/bytes.h src/include/oblibs/error2.h src/include/oblibs/memory.h src/include/oblibs/stralist.h src/include/oblibs/string.h
-src/str/clean_val_wdelim.o src/str/clean_val_wdelim.lo: src/str/clean_val_wdelim.c src/include/oblibs/string.h
 src/str/dirname.o src/str/dirname.lo: src/str/dirname.c src/include/oblibs/string.h
 src/str/get_flags.o src/str/get_flags.lo: src/str/get_flags.c src/include/oblibs/types.h
 src/str/get_len_until.o src/str/get_len_until.lo: src/str/get_len_until.c src/include/oblibs/string.h
 src/str/get_namebyuid.o src/str/get_namebyuid.lo: src/str/get_namebyuid.c src/include/oblibs/types.h
 src/str/get_nbline.o src/str/get_nbline.lo: src/str/get_nbline.c src/include/oblibs/string.h
-src/str/get_nbline_ga.o src/str/get_nbline_ga.lo: src/str/get_nbline_ga.c src/include/oblibs/stralist.h src/include/oblibs/string.h
 src/str/get_rlen_until.o src/str/get_rlen_until.lo: src/str/get_rlen_until.c src/include/oblibs/string.h
 src/str/get_rstrlen_until.o src/str/get_rstrlen_until.lo: src/str/get_rstrlen_until.c src/include/oblibs/string.h
 src/str/get_sep_before.o src/str/get_sep_before.lo: src/str/get_sep_before.c src/include/oblibs/string.h
@@ -102,20 +95,3 @@ src/str/scan_uid.o src/str/scan_uid.lo: src/str/scan_uid.c src/include/oblibs/er
 src/str/scan_uidlist.o src/str/scan_uidlist.lo: src/str/scan_uidlist.c src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/str/scan_uidlist_wdelim.o src/str/scan_uidlist_wdelim.lo: src/str/scan_uidlist_wdelim.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/str/scan_uint32.o src/str/scan_uint32.lo: src/str/scan_uint32.c src/include/oblibs/string.h src/include/oblibs/types.h
-src/str/str_append_check.o src/str/str_append_check.lo: src/str/str_append_check.c src/include/oblibs/string.h
-src/strakeyval/strakeyval_zero.o src/strakeyval/strakeyval_zero.lo: src/strakeyval/strakeyval_zero.c src/include/oblibs/strakeyval.h
-src/strakeyval/strakv_addwithsep.o src/strakeyval/strakv_addwithsep.lo: src/strakeyval/strakv_addwithsep.c src/include/oblibs/error2.h src/include/oblibs/strakeyval.h src/include/oblibs/string.h
-src/strakeyval/strakv_free.o src/strakeyval/strakv_free.lo: src/strakeyval/strakv_free.c src/include/oblibs/strakeyval.h
-src/strakeyval/strakv_new.o src/strakeyval/strakv_new.lo: src/strakeyval/strakv_new.c src/include/oblibs/strakeyval.h
-src/stralist/stra_cmp.o src/stralist/stra_cmp.lo: src/stralist/stra_cmp.c src/include/oblibs/stralist.h
-src/stralist/stra_cmpone.o src/stralist/stra_cmpone.lo: src/stralist/stra_cmpone.c src/include/oblibs/stralist.h src/include/oblibs/string.h
-src/stralist/stra_cpytobuf.o src/stralist/stra_cpytobuf.lo: src/stralist/stra_cpytobuf.c src/include/oblibs/stralist.h
-src/stralist/stra_findidx.o src/stralist/stra_findidx.lo: src/stralist/stra_findidx.c src/include/oblibs/stralist.h
-src/stralist/stra_free.o src/stralist/stra_free.lo: src/stralist/stra_free.c src/include/oblibs/stralist.h
-src/stralist/stra_icpytobuf.o src/stralist/stra_icpytobuf.lo: src/stralist/stra_icpytobuf.c src/include/oblibs/stralist.h
-src/stralist/stra_iecpytobuf.o src/stralist/stra_iecpytobuf.lo: src/stralist/stra_iecpytobuf.c src/include/oblibs/stralist.h
-src/stralist/stra_new.o src/stralist/stra_new.lo: src/stralist/stra_new.c src/include/oblibs/error.h src/include/oblibs/stralist.h
-src/stralist/stra_remove.o src/stralist/stra_remove.lo: src/stralist/stra_remove.c src/include/oblibs/stralist.h
-src/stralist/stra_removeidx.o src/stralist/stra_removeidx.lo: src/stralist/stra_removeidx.c src/include/oblibs/bytes.h src/include/oblibs/stralist.h
-src/stralist/stralist_zero.o src/stralist/stralist_zero.lo: src/stralist/stralist_zero.c src/include/oblibs/stralist.h
-src/stralist/stralloc_obreplace.o src/stralist/stralloc_obreplace.lo: src/stralist/stralloc_obreplace.c src/include/oblibs/error2.h src/include/oblibs/stralist.h
