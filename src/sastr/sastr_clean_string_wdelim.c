@@ -25,7 +25,7 @@ int sastr_clean_string_wdelim(stralloc *sa,char const *str,unsigned int delim)
 	int r ;
 	stralloc kp = STRALLOC_ZERO ;
 	stralloc tmp = STRALLOC_ZERO ;
-	size_t pos = 0 ;
+	size_t pos ;
 		
 	parse_mill_t mill_delim = {
 		.close = delim, .forceopen = 1, .keepopen = 1,
@@ -39,10 +39,10 @@ int sastr_clean_string_wdelim(stralloc *sa,char const *str,unsigned int delim)
 	r = mill_string(&tmp,&kp,&mill_delim) ;
 	if (r == -1 || !r) goto err ;
 	
-	for (size_t i = 0 ; i < tmp.len; i += strlen(tmp.s + i) +1)
+	for (pos = 0 ; pos < tmp.len; pos += strlen(tmp.s + pos) +1)
 	{
 		kp.len = 0 ;
-		if (!stralloc_catb(&kp, tmp.s + i,strlen(tmp.s + i)) ||
+		if (!stralloc_catb(&kp, tmp.s + pos,strlen(tmp.s + pos)) ||
 		!stralloc_0(&kp)) goto err ;
 		if (!sastr_clean_element(&kp)) goto err ;
 		if (!sastr_rebuild_in_oneline(&kp)) goto err ;
