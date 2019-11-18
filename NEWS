@@ -1,5 +1,15 @@
 Changelog for oblibs
 
+In 0.0.3.0
+----------
+	
+	- Remove deprecated function:
+		- all stralist
+		- all strakeyval
+		- directory: dir_cmp, dir_create_under,dir_get,dir_scan_absopath
+		- string: clean_val,clean_val_wdelim,get_nbline_ga,str_append_check
+	- Remove TAINNOW_LIB as sysdeps
+	
 In 0.0.2.1
 ----------
 
