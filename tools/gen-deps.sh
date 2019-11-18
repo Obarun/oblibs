@@ -52,3 +52,22 @@ for dir in src/* ; do
     }
   done
 done
+
+for file in $(ls -1 src/deps-lib) ; do
+	deps=
+	libs=
+	while read dep ; do
+		if echo $dep | grep -q -e ^-l -e '^\${.*_LIB}' ; then
+			libs="$libs $dep"
+		else
+			deps="$deps src/$dir/$dep"
+		fi
+	done < src/deps-lib/$file
+	echo 'ifeq ($(strip $(STATIC_LIBS_ARE_PIC)),)'
+	echo "lib${file}.a.xyzzy:$deps"
+	echo else
+	echo "lib${file}.a.xyzzy:$(echo "$deps" | sed 's/\.o/.lo/g')"
+	echo endif
+	echo "lib${file}.so.xyzzy: EXTRA_LIBS :=$libs"
+	echo "lib${file}.so.xyzzy:$(echo "$deps" | sed 's/\.o/.lo/g')"
+done

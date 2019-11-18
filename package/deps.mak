@@ -95,3 +95,10 @@ src/str/scan_uid.o src/str/scan_uid.lo: src/str/scan_uid.c src/include/oblibs/er
 src/str/scan_uidlist.o src/str/scan_uidlist.lo: src/str/scan_uidlist.c src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/str/scan_uidlist_wdelim.o src/str/scan_uidlist_wdelim.lo: src/str/scan_uidlist_wdelim.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/str/scan_uint32.o src/str/scan_uint32.lo: src/str/scan_uint32.c src/include/oblibs/string.h src/include/oblibs/types.h
+ifeq ($(strip $(STATIC_LIBS_ARE_PIC)),)
+liboblibs.a.xyzzy:
+else
+liboblibs.a.xyzzy:
+endif
+liboblibs.so.xyzzy: EXTRA_LIBS := -lskarnet -lexecline
+liboblibs.so.xyzzy:
