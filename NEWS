@@ -1,5 +1,10 @@
 Changelog for oblibs
 
+In 0.0.3.2
+----------
+
+	- Bug fix: fix empty value for a key at the end of a file
+
 In 0.0.3.1
 ----------
 
