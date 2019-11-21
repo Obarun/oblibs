@@ -22,6 +22,8 @@ int environ_clean_envfile(stralloc *modifs,stralloc *sa)
 	if (!stralloc_0(sa)) return 0 ;
 	sa->len-- ;
 	if (!environ_clean_nline(sa)) return 0 ;
+	if (!stralloc_0(sa)) return 0 ;
+	sa->len-- ;
 	if (!environ_remove_unexport(modifs,sa)) return 0 ;
 	return 1 ;	
 }

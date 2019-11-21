@@ -29,6 +29,8 @@ int environ_remove_unexport(stralloc *modifs,stralloc *sa)
 	stralloc cp = STRALLOC_ZERO ;
 	stralloc tmp = STRALLOC_ZERO ;
 	if (!stralloc_copy(&cp,sa)) goto err ;
+	if (!stralloc_0(&cp)) goto err ;
+	cp.len-- ;
 	if (!sastr_split_string_in_nline(&cp)) goto err ;
 	
 	for (;pos < cp.len; pos += strlen(cp.s + pos)+1)
