@@ -1,5 +1,21 @@
 Changelog for oblibs
 
+In 0.0.4.0
+----------
+	
+	- Add log_? familly function: 
+		- allow to pass any number of string instead of
+		specified it at every use.
+		- easy implemetation of the color
+		- standardization of the exit code
+		- standardization of the verbosity without the need to check it
+		at every output
+		- easy to hack and add additional output function
+	- Remove useless file:
+		- error.h, error2.h
+		- stdout_die_?
+		- obcolor
+
 In 0.0.3.2
 ----------
 
