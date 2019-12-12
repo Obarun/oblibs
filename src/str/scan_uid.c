@@ -16,7 +16,6 @@
 #include <stdint.h>
 
 #include <oblibs/types.h>
-#include <oblibs/error.h>
 
 int scan_uid(char const *str,uid_t *uid)
 {

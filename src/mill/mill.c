@@ -14,11 +14,11 @@
 
 #include <sys/types.h>
 #include <oblibs/mill.h>
+#include <oblibs/log.h>
 
 #include <string.h>
 #include <skalibs/stralloc.h>
 #include <skalibs/types.h>
-#include <skalibs/strerr2.h>
 
 char mill_next(char const *s,size_t *pos)
 {
@@ -232,7 +232,7 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
 		fmt[uint_fmt(fmt, p->inner.nline-1)] = 0 ;
 		char sepopen[2] = { p->open,0 } ;
 		char sepclose[2] = { p->close,0 } ;
-		strerr_warnw6x("umatched ",(p->inner.nopen > p->inner.nclose) ? sepopen : sepclose," in: ",file," at line: ",fmt) ;
+		log_warn("umatched ",(p->inner.nopen > p->inner.nclose) ? sepopen : sepclose," in: ",file," at line: ",fmt) ;
 		return 0 ;
 	}
 	return res ;

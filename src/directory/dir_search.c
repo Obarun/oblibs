@@ -18,7 +18,6 @@
 #include <errno.h>
 
 #include <oblibs/string.h>
-#include <oblibs/error.h>
 #include <oblibs/types.h>
 
 #include <skalibs/direntry.h>

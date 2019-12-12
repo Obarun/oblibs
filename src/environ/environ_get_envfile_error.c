@@ -13,20 +13,19 @@
  */
 
 #include <oblibs/environ.h>
-
-#include <skalibs/strerr2.h>
+#include <oblibs/log.h>
 
 void environ_get_envfile_error(int error,char const *envdir)
 {
 	switch(error)
 	{
-		case -7: strerr_warnw2x("invalid environment: ",envdir) ;
-		case -6: strerr_warnw2x("environment too long: ",envdir) ;
-		case -5: strerr_warnwu2sys("open: ",envdir) ;
-		case -4: strerr_warnwu2x("parse and clean: ",envdir) ;
-		case -3: strerr_warnwu2x("get number of line: ",envdir) ;
-		case -2: strerr_warnw2x("too many variable in: ",envdir) ;
-		case -1: strerr_warnw2x("too many files in: ",envdir) ;
-		case 0: strerr_warnwu1x("merge environment") ;
+		case -7: log_warn("invalid environment: ",envdir) ;
+		case -6: log_warn("environment too long: ",envdir) ;
+		case -5: log_warnusys("open: ",envdir) ;
+		case -4: log_warnu("parse and clean: ",envdir) ;
+		case -3: log_warnu("get number of line: ",envdir) ;
+		case -2: log_warn("too many variable in: ",envdir) ;
+		case -1: log_warn("too many files in: ",envdir) ;
+		case 0:	 log_warnu("merge environment") ;
 	}
 }
