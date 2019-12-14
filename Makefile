@@ -51,7 +51,7 @@ clean:
 	@exec rm -f $(ALL_LIBS) $(ALL_BINS) $(ALL_SOBJS) $(ALL_DOBJS)
 
 distclean: clean
-	@exec rm -rf config.mak package/deps.mak
+	@exec rm -rf config.mak package/deps.mak src/include/$(package)/config.h
 
 txz: distclean
 	@./tools/gen-deps.sh > package/deps.mak 2> /dev/null && \
