@@ -13,7 +13,9 @@
  */
  
 
+#include <oblibs/string.h>
 #include <oblibs/files.h>
+#include <oblibs/types.h>
 
 #include <errno.h>
 #include <string.h>
@@ -34,15 +36,12 @@ int file_readputsa(stralloc *sa,char const *src,char const *file)
 	size_t filen = strlen(file) ;
 	
 	char tmp[srclen + 1 + filen + 1] ;
-		
-	r = dir_search(src,file,S_IFREG) ;
+	
+	auto_strings(tmp,src,"/",file) ;
+	
+	r = scan_mode(tmp,S_IFREG) ;
 	if (r)
-	{
-		memcpy(tmp,src,srclen) ;
-		memcpy(tmp + srclen, "/", 1) ;
-		memcpy(tmp + srclen + 1, file, filen) ;
-		tmp[srclen + 1 + filen] = 0 ;
-		
+	{			
 		size_t filesize=file_get_size(tmp) ;
 		r = openreadfileclose(tmp,sa,filesize) ;
 		if(!r) { errno = ENOENT ; goto err ; }

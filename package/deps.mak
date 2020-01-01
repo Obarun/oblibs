@@ -7,7 +7,7 @@ src/bytes/byte_tozero.o src/bytes/byte_tozero.lo: src/bytes/byte_tozero.c src/in
 src/directory/dir_beabsolute.o src/directory/dir_beabsolute.lo: src/directory/dir_beabsolute.c src/include/oblibs/directory.h
 src/directory/dir_create.o src/directory/dir_create.lo: src/directory/dir_create.c src/include/oblibs/directory.h
 src/directory/dir_create_parent.o src/directory/dir_create_parent.lo: src/directory/dir_create_parent.c src/include/oblibs/directory.h
-src/directory/dir_create_tmp.o src/directory/dir_create_tmp.lo: src/directory/dir_create_tmp.c src/include/oblibs/directory.h
+src/directory/dir_create_tmp.o src/directory/dir_create_tmp.lo: src/directory/dir_create_tmp.c src/include/oblibs/string.h
 src/directory/dir_search.o src/directory/dir_search.lo: src/directory/dir_search.c src/include/oblibs/directory.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/directory/dir_unslash.o src/directory/dir_unslash.lo: src/directory/dir_unslash.c src/include/oblibs/string.h
 src/environ/environ_add_key_val.o src/environ/environ_add_key_val.lo: src/environ/environ_add_key_val.c src/include/oblibs/environ.h
@@ -28,8 +28,8 @@ src/environ/environ_substitute.o src/environ/environ_substitute.lo: src/environ/
 src/files/file_create_empty.o src/files/file_create_empty.lo: src/files/file_create_empty.c src/include/oblibs/files.h
 src/files/file_get_size.o src/files/file_get_size.lo: src/files/file_get_size.c src/include/oblibs/files.h
 src/files/file_openclose_readonly.o src/files/file_openclose_readonly.lo: src/files/file_openclose_readonly.c src/include/oblibs/files.h
-src/files/file_readputsa.o src/files/file_readputsa.lo: src/files/file_readputsa.c src/include/oblibs/directory.h src/include/oblibs/files.h
-src/files/file_write_unsafe.o src/files/file_write_unsafe.lo: src/files/file_write_unsafe.c src/include/oblibs/files.h
+src/files/file_readputsa.o src/files/file_readputsa.lo: src/files/file_readputsa.c src/include/oblibs/directory.h src/include/oblibs/files.h src/include/oblibs/string.h src/include/oblibs/types.h
+src/files/file_write_unsafe.o src/files/file_write_unsafe.lo: src/files/file_write_unsafe.c src/include/oblibs/string.h
 src/io/log.o src/io/log.lo: src/io/log.c src/include/oblibs/log.h
 src/memory/free_mem.o src/memory/free_mem.lo: src/memory/free_mem.c src/include/oblibs/memory.h
 src/memory/obstr_alloc.o src/memory/obstr_alloc.lo: src/memory/obstr_alloc.c src/include/oblibs/memory.h
@@ -67,6 +67,7 @@ src/sastr/sastr_replace_all.o src/sastr/sastr_replace_all.lo: src/sastr/sastr_re
 src/sastr/sastr_reverse.o src/sastr/sastr_reverse.lo: src/sastr/sastr_reverse.c src/include/oblibs/sastr.h
 src/sastr/sastr_split_element_in_nline.o src/sastr/sastr_split_element_in_nline.lo: src/sastr/sastr_split_element_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/sastr/sastr_split_string_in_nline.o src/sastr/sastr_split_string_in_nline.lo: src/sastr/sastr_split_string_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
+src/str/auto.o src/str/auto.lo: src/str/auto.c
 src/str/basename.o src/str/basename.lo: src/str/basename.c src/include/oblibs/string.h
 src/str/dirname.o src/str/dirname.lo: src/str/dirname.c src/include/oblibs/string.h
 src/str/get_flags.o src/str/get_flags.lo: src/str/get_flags.c src/include/oblibs/types.h

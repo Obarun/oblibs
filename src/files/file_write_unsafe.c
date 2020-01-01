@@ -12,7 +12,7 @@
  * except according to the terms contained in the LICENSE file./
  */
  
-#include <oblibs/files.h>
+#include <oblibs/string.h>
 
 #include <string.h>
 
@@ -24,10 +24,7 @@ int file_write_unsafe(char const *dst,char const *name,char const *content,size_
 	size_t namelen = strlen(name) ;
 	char file[dstlen + namelen + 1 + 1] ;
 	
-	memcpy(file,dst,dstlen) ;
-	memcpy(file + dstlen, "/", 1) ;
-	memcpy(file + dstlen + 1,name,namelen) ;
-	file[dstlen + 1 + namelen] = 0 ;
+	auto_strings(file,dst,"/",name) ;
 
 	if (!openwritenclose_unsafe(file,content,contlen)) return 0 ;
 
