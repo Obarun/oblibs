@@ -46,10 +46,7 @@ ssize_t dir_search (char const *srcdir, char const *search,mode_t mode)
 		
 		if (obstr_equal(d->d_name,search))
 		{
-			if(!stralloc_cats(&dst,srcdir)) goto err ;
-			if(!stralloc_cats(&dst,"/")) goto err ;
-			if(!stralloc_cats(&dst,search)) goto err ;
-			if(!stralloc_0(&dst)) goto err ;
+			if (!auto_stra(&dst,srcdir,"/",search)) goto err ;
 			r = scan_mode(dst.s,mode) ;
 			if (!r)	{ errno = ENOENT ; goto err ; }
 			if (r < 0){

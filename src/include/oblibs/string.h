@@ -16,8 +16,10 @@
 #define OB_STRING_H
 
 #include <sys/types.h>
+#include <stdarg.h>
 
 #include <skalibs/genalloc.h>
+#include <skalibs/stralloc.h>
 #include <skalibs/gccattributes.h>
 
 #if !defined(nb_el)
@@ -98,5 +100,24 @@ extern int basename(char *dst,char const *path) ;
  * @Return 1 on success
  * @Return 0 on fail and set errno */
 extern int dirname(char *dst,char const *path) ;
+
+/** Append @dest with a list of string @str
+ * starting at @baselen size. Only accept char const * as string 
+ * @dest is appended with 0 at end of the string*/
+extern void auto_string_builder(char *dest,size_t baselen, char const *str[],...) ;
+
+/** Append @sa with a list of string @str
+ * starting at @baselen size. Only accept char const * as string
+ * @sa is appended with 0 at the end of the string.
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int auto_stra_builder(stralloc *sa,char const *str[],...) ;
+
+#define auto_string_from(dest,baselen,...) auto_string_builder(dest,baselen,(char const *[]){__VA_ARGS__, NULL})
+
+#define auto_strings(dest,...) auto_string_builder(dest,0,(char const *[]){__VA_ARGS__, NULL})
+
+#define auto_stra(sa,...) auto_stra_builder(sa,(char const *[]){__VA_ARGS__, NULL})
+
 
 #endif
