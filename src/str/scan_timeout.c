@@ -23,10 +23,11 @@
 int scan_timeout(char const *str, uint32_t *array, int row)
 {
 	stralloc kp = STRALLOC_ZERO ;
+	uint32_t u ;
 	
 	if (!sastr_clean_string(&kp,str)) goto err ;
 	
-	if (!scan_uint32(kp.s))
+	if (!uint320_scan(kp.s,&u))
 	{
 		stralloc_free(&kp) ;
 		return -1 ;
