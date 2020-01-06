@@ -22,17 +22,6 @@
 #include <skalibs/genalloc.h>
 #include <skalibs/gccattributes.h>
 
-/** Remove a slash if exist at the end of @str
- * and replace it by '\0' */
-extern void dir_unslash (char *str) ;
-
-/** Search for @search in directory @srcdir
- * also check if @search have the corresponding @mode
- * @Return 1 on success
- * @Return 0 on fail 
- * @Return -1 if @search haven't the corresponding @mode */
-extern ssize_t dir_search (char const *srcdir, char const *search,mode_t mode) ;
-
 /** Create @dst as directory with mode @mode
  * @Return 0 on fail, errno is set
  * @Return 1 on success */

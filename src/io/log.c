@@ -91,8 +91,8 @@ void log_color_init(void)
 	LOG_TRACE_MSG[0] = ": " ;
 	LOG_TRACE_MSG[1] = log_color->info ;
 	LOG_TRACE_MSG[2] = "tracing" ;
-	LOG_TRACE_MSG[3] = ": " ;
-	LOG_TRACE_MSG[4] = log_color->off ;
+	LOG_TRACE_MSG[3] = log_color->off ;
+	LOG_TRACE_MSG[4] = ": " ;
 	LOG_TRACE_MSG[5] = 0 ;
 	
 	LOG_USAGE_MSG[0] = ": " ;
