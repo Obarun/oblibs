@@ -118,6 +118,6 @@ liboblibs.a.xyzzy: $(ALL_SOBJS)
 	exec $(RANLIB) $@
 
 liboblibs.so.xyzzy: $(ALL_DOBJS)
-	exec $(REALCC) -o $@ $(CFLAGS_ALL) $(CFLAGS_SHARED) $(LDFLAGS_ALL) $(LDFLAGS_SHARED) -Wl,-soname,liboblibs.so.$(version_M) $^ 
+	exec $(REALCC) -o $@ $(CFLAGS_ALL) $(CFLAGS_SHARED) $(LDFLAGS_ALL) $(LDFLAGS_SHARED) -Wl,-soname,liboblibs.so.$(version_M) $^ $(EXTRA_LIBS) $(LDLIBS)
 
 .PHONY: it all clean distclean txz strip install install-data install-dynlib install-lib install-include
