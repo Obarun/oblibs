@@ -1,5 +1,17 @@
 Changelog for oblibs
 
+In 0.0.5.1
+----------
+
+	- Configuration files build fixs
+	- Remove useless function:
+		- byte_tosearch
+		- byte_tozero
+		- dir_search
+		- dir_unslash
+		- bytes.h
+		- all oblist_?
+
 In 0.0.5.0
 ----------
 
