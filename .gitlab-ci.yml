@@ -2,7 +2,7 @@ image: obarun/base:latest
 
 before_script:
   - pacman -Syu --noconfirm
-  - pacman -S autoconf automake binutils bison file flex gcc gettext groff libtool m4 make patch pkgconf texinfo which --noconfirm
+  - pacman -S autoconf automake binutils bison file flex gcc gettext groff libtool m4 make patch pkgconf texinfo which git --noconfirm
   - ./build_toolchain.sh
 
 test:
