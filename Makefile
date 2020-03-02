@@ -85,7 +85,7 @@ update: $(DESTDIR)$(exthome)
 
 global-links: $(DESTDIR)$(exthome) $(SHARED_LIBS:lib%.so.xyzzy=$(DESTDIR)$(sproot)/library.so/lib%.so.$(version_M))
 
-$(DESTDIR)$(sproot)/library.so/lib%.so.$(version_M): $(DESTDIR)$(home)/library.so/lib%.so.$(version_M)
+$(DESTDIR)$(sproot)/library.so/lib%.so.$(version_M): $(DESTDIR)$(dynlibdir)/lib%.so.$(version_M)
 	exec $(INSTALL) -D -l ..$(subst $(sproot),,$(exthome))/library.so/$(<F) $@
 
 .PHONY: update global-links
@@ -95,10 +95,9 @@ endif
 $(DESTDIR)$(datadir)/%: src/etc/%
 	exec $(INSTALL) -D -m 644 $< $@
 
-$(DESTDIR)$(dynlibdir)/%.so: %.so.xyzzy
+$(DESTDIR)$(dynlibdir)/lib%.so $(DESTDIR)$(dynlibdir)/lib%.so.$(version_M): lib%.so.xyzzy
 	$(INSTALL) -D -m 755 $< $@.$(version) && \
-	$(INSTALL) -l $(@F).$(version) $@.$(version_m) && \
-	$(INSTALL) -l $(@F).$(version_m) $@.$(version_M) && \
+	$(INSTALL) -l $(@F).$(version) $@.$(version_M) && \
 	exec $(INSTALL) -l $(@F).$(version_M) $@
 
 $(DESTDIR)$(libdir)/lib%.a: lib%.a.xyzzy
