@@ -20,9 +20,13 @@
 
 /** get all compoments in @srcdir as mode @mode execpt string @exclude
  * put the result in chained stralloc 
+ * Note: srcdir must contain the last '/' e.g /etc/ 
  * @Return 0 on fail
  * @Return 1 on success */
 extern int sastr_dir_get(stralloc *sa, char const *srcdir,char const *exclude,mode_t mode) ;
+
+/** Same as sastr_dir_get but do it recursively */
+extern int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const *exclude,mode_t mode) ;
 
 /** Compare @s in a chainled stralloc @sa
  * @Return -1 if not found
