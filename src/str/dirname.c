@@ -16,13 +16,5 @@
 
 int dirname(char *dst,char const *path)
 {
-	size_t i ;
-	size_t pathlen = strlen(path) ;
-	char name[pathlen+1] ;
-	if (!basename(name,path)) return 0 ;
-	size_t namelen = strlen(name) ;
-	i = (path[pathlen-namelen-1] == '/') ? 0 : 1 ;
-	memcpy(dst,path,pathlen-namelen-i) ;
-	dst[pathlen-namelen-i] = 0 ;
-	return 1 ;
+	return ob_dirname(dst,path) ;
 }
