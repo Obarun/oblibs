@@ -39,6 +39,7 @@ src/sastr/sastr_clean_string.o src/sastr/sastr_clean_string.lo: src/sastr/sastr_
 src/sastr/sastr_clean_string_wdelim.o src/sastr/sastr_clean_string_wdelim.lo: src/sastr/sastr_clean_string_wdelim.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/sastr/sastr_cmp.o src/sastr/sastr_cmp.lo: src/sastr/sastr_cmp.c src/include/oblibs/sastr.h
 src/sastr/sastr_dir_get.o src/sastr/sastr_dir_get.lo: src/sastr/sastr_dir_get.c src/include/oblibs/sastr.h src/include/oblibs/types.h
+src/sastr/sastr_dir_get_recursive.o src/sastr/sastr_dir_get_recursive.lo: src/sastr/sastr_dir_get_recursive.c src/include/oblibs/sastr.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/sastr/sastr_find.o src/sastr/sastr_find.lo: src/sastr/sastr_find.c src/include/oblibs/sastr.h
 src/sastr/sastr_get_double_quote.o src/sastr/sastr_get_double_quote.lo: src/sastr/sastr_get_double_quote.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/sastr/sastr_len.o src/sastr/sastr_len.lo: src/sastr/sastr_len.c src/include/oblibs/sastr.h
@@ -61,6 +62,8 @@ src/str/get_rstrlen_until.o src/str/get_rstrlen_until.lo: src/str/get_rstrlen_un
 src/str/get_sep_before.o src/str/get_sep_before.lo: src/str/get_sep_before.c src/include/oblibs/string.h
 src/str/get_uidbyname.o src/str/get_uidbyname.lo: src/str/get_uidbyname.c src/include/oblibs/types.h
 src/str/get_wasted_line.o src/str/get_wasted_line.lo: src/str/get_wasted_line.c src/include/oblibs/string.h
+src/str/ob_basename.o src/str/ob_basename.lo: src/str/ob_basename.c src/include/oblibs/string.h
+src/str/ob_dirname.o src/str/ob_dirname.lo: src/str/ob_dirname.c src/include/oblibs/string.h
 src/str/obstr_dup.o src/str/obstr_dup.lo: src/str/obstr_dup.c src/include/oblibs/string.h
 src/str/obstr_equal.o src/str/obstr_equal.lo: src/str/obstr_equal.c src/include/oblibs/string.h
 src/str/obstr_replace.o src/str/obstr_replace.lo: src/str/obstr_replace.c src/include/oblibs/string.h
