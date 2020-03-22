@@ -222,6 +222,13 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 	return ret ; \
 } while (0)
 
+#define log_info_nclean_return(ret,cleaner,...) do { \
+	log_dbg_info_t dbg_info = log_dbg_init ; \
+	LOG_SYS = (size_t *)LOG_SYS_NO ; \
+	log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_INFO,LOG_INFO_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+	return ret ; \
+} while (0)
+
 /** TRACING **/
 
 // prog: tracing: msg
