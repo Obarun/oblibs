@@ -53,7 +53,7 @@ int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const *exclude
 		if (!strcmp(d->d_name,exclude)) continue ;
 		if (S_ISDIR(st.st_mode))
 		{
-			if (!auto_stra(&subdir,srcdir,"/",d->d_name,"/")) goto err ;
+			if (!auto_stra(&subdir,srcdir,"/",d->d_name)) goto err ;
 			if (!sastr_dir_get_recursive(sa,subdir.s,exclude,mode)) goto err ;
 			subdir.len = 0 ;
 		}
