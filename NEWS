@@ -1,5 +1,13 @@
 Changelog for oblibs
 
+In 0.0.6.0
+----------
+	
+	- Rename basename and dirname to ob_basename and ob_dirname respectively
+	- add macro log_info_nclean_return at log.h hearder file
+	- add sastr_dir_get_recursive funciton
+	- remove oblist.h function
+
 In 0.0.5.1
 ----------
 
