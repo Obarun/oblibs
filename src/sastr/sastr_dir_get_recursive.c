@@ -30,13 +30,13 @@ int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const *exclude
 	size_t base = sa->len ;
 	int wasnull = !sa->s ;
 	int fdsrc ;
-	
+
 	stralloc subdir = STRALLOC_ZERO ;
-	
+
 	DIR *dir = opendir(srcdir) ;
 	if (!dir)
 		return 0 ;
-	
+
 	fdsrc = dir_fd(dir) ;
 	for (;;)
     {
@@ -49,7 +49,7 @@ int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const *exclude
 			continue ;
 		if (stat_at(fdsrc, d->d_name, &st) < 0)
 			goto err ;
-		
+
 		if (!strcmp(d->d_name,exclude)) continue ;
 		if (S_ISDIR(st.st_mode))
 		{
@@ -58,12 +58,11 @@ int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const *exclude
 			subdir.len = 0 ;
 		}
 		mode_t r = get_flags(mode,st.st_mode) ;
-		if (r > 0) 
+		if (r > 0)
 		{
-			if (!stralloc_cats(sa,srcdir)) goto err ;		 
-			if (!stralloc_cats(sa,"/")) goto err ;		 
-			if (!stralloc_catb(sa,d->d_name,strlen(d->d_name) + 1)) goto err ;		 
-		
+			if (!stralloc_cats(sa,srcdir)) goto err ;
+			if (!stralloc_cats(sa,"/")) goto err ;
+			if (!stralloc_catb(sa,d->d_name,strlen(d->d_name) + 1)) goto err ;
 		}
 	}
 	dir_close(dir) ;
