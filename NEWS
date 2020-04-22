@@ -1,5 +1,11 @@
 Changelog for oblibs
 
+In 0.0.6.1
+----------
+
+	- Bug fix: implement again oblist.h to keep compatibility with
+	66 version 0.2.5.2 or lower
+
 In 0.0.6.0
 ----------
 	

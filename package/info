@@ -1,4 +1,4 @@
 package=oblibs
-version=0.0.6.0
+version=0.0.6.1
 category=admin
 package_macro_name=OBLIBS
