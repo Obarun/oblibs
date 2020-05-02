@@ -16,10 +16,11 @@
 #define OB_SASTR_H
 
 #include <sys/stat.h>
+#include <skalibs/types.h>
 #include <skalibs/stralloc.h>
 
-/** get all compoments in @srcdir as mode @mode execpt string @exclude
- * put the result in chained stralloc 
+/** get all compoments on @srcdir with mode @mode execpt string @exclude
+ * and append @sa with the result in a chained stralloc 
  * Note: srcdir must contain the last '/' e.g /etc/ 
  * @Return 0 on fail
  * @Return 1 on success */
@@ -27,6 +28,11 @@ extern int sastr_dir_get(stralloc *sa, char const *srcdir,char const *exclude,mo
 
 /** Same as sastr_dir_get but do it recursively */
 extern int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const *exclude,mode_t mode) ;
+
+/** Seach @element on @scrcdir with mode @mode and append @sa
+ * with the result in a chained stralloc if it found, with @scrcdir as
+ * dirname if @include_path is positive. */
+extern int sastr_dir_get_element(stralloc *sa, char const *srcdir,char const *element,mode_t mode,uint8_t include_path) ;
 
 /** Compare @s in a chainled stralloc @sa
  * @Return -1 if not found
