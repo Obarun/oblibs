@@ -39,6 +39,7 @@ src/sastr/sastr_clean_string.o src/sastr/sastr_clean_string.lo: src/sastr/sastr_
 src/sastr/sastr_clean_string_wdelim.o src/sastr/sastr_clean_string_wdelim.lo: src/sastr/sastr_clean_string_wdelim.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/sastr/sastr_cmp.o src/sastr/sastr_cmp.lo: src/sastr/sastr_cmp.c src/include/oblibs/sastr.h
 src/sastr/sastr_dir_get.o src/sastr/sastr_dir_get.lo: src/sastr/sastr_dir_get.c src/include/oblibs/sastr.h src/include/oblibs/types.h
+src/sastr/sastr_dir_get_element.o src/sastr/sastr_dir_get_element.lo: src/sastr/sastr_dir_get_element.c src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/sastr/sastr_dir_get_recursive.o src/sastr/sastr_dir_get_recursive.lo: src/sastr/sastr_dir_get_recursive.c src/include/oblibs/sastr.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/sastr/sastr_find.o src/sastr/sastr_find.lo: src/sastr/sastr_find.c src/include/oblibs/sastr.h
 src/sastr/sastr_get_double_quote.o src/sastr/sastr_get_double_quote.lo: src/sastr/sastr_get_double_quote.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
