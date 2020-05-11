@@ -42,8 +42,11 @@ src/sastr/sastr_dir_get.o src/sastr/sastr_dir_get.lo: src/sastr/sastr_dir_get.c 
 src/sastr/sastr_dir_get_element.o src/sastr/sastr_dir_get_element.lo: src/sastr/sastr_dir_get_element.c src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/sastr/sastr_dir_get_recursive.o src/sastr/sastr_dir_get_recursive.lo: src/sastr/sastr_dir_get_recursive.c src/include/oblibs/sastr.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/sastr/sastr_find.o src/sastr/sastr_find.lo: src/sastr/sastr_find.c src/include/oblibs/sastr.h
+src/sastr/sastr_find_element_byid.o src/sastr/sastr_find_element_byid.lo: src/sastr/sastr_find_element_byid.c src/include/oblibs/sastr.h
+src/sastr/sastr_find_element_byname.o src/sastr/sastr_find_element_byname.lo: src/sastr/sastr_find_element_byname.c src/include/oblibs/sastr.h
 src/sastr/sastr_get_double_quote.o src/sastr/sastr_get_double_quote.lo: src/sastr/sastr_get_double_quote.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/sastr/sastr_len.o src/sastr/sastr_len.lo: src/sastr/sastr_len.c src/include/oblibs/sastr.h
+src/sastr/sastr_nelement.o src/sastr/sastr_nelement.lo: src/sastr/sastr_nelement.c src/include/oblibs/sastr.h
 src/sastr/sastr_rebuild_in_nline.o src/sastr/sastr_rebuild_in_nline.lo: src/sastr/sastr_rebuild_in_nline.c src/include/oblibs/sastr.h
 src/sastr/sastr_rebuild_in_oneline.o src/sastr/sastr_rebuild_in_oneline.lo: src/sastr/sastr_rebuild_in_oneline.c src/include/oblibs/sastr.h
 src/sastr/sastr_replace.o src/sastr/sastr_replace.lo: src/sastr/sastr_replace.c src/include/oblibs/sastr.h
