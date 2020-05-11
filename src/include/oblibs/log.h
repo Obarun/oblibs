@@ -22,80 +22,82 @@
 #include <skalibs/gccattributes.h>
 
 // might we have some colors...
-#define NOCOLOR     "\033[0m"
-#define BOLD        "\033[0;1m"
+#define NOCOLOR     "\x1B[0m"
+#define BOLD        "\x1B[0;1m"
+#define BLINK       "\x1B[5;37m"
+
 //color
-#define BLACK       "\033[0;30m"
-#define RED         "\033[0;31m"
-#define GREEN       "\033[0;32m"
-#define YELLOW      "\033[0;33m"
-#define BLUE        "\033[0;34m"
-#define MAGENTA     "\033[0;35m"
-#define CYAN        "\033[0;36m"
-#define WHITE       "\033[0;37m"
+#define BLACK       "\x1B[0;30m"
+#define RED         "\x1B[0;31m"
+#define GREEN       "\x1B[0;32m"
+#define YELLOW      "\x1B[0;33m"
+#define BLUE        "\x1B[0;34m"
+#define MAGENTA     "\x1B[0;35m"
+#define CYAN        "\x1B[0;36m"
+#define WHITE       "\x1B[0;37m"
 //bold
-#define BBLACK      "\033[1;30m"
-#define BRED        "\033[1;31m"
-#define BGREEN      "\033[1;32m"
-#define BYELLOW     "\033[1;33m"
-#define BBLUE       "\033[1;34m"
-#define BMAGENTA    "\033[1;35m"
-#define BCYAN       "\033[1;36m"
-#define BWHITE      "\033[1;37m"
+#define BBLACK      "\x1B[1;30m"
+#define BRED        "\x1B[1;31m"
+#define BGREEN      "\x1B[1;32m"
+#define BYELLOW     "\x1B[1;33m"
+#define BBLUE       "\x1B[1;34m"
+#define BMAGENTA    "\x1B[1;35m"
+#define BCYAN       "\x1B[1;36m"
+#define BWHITE      "\x1B[1;37m"
 //underline
-#define UBLACK      "\033[4;30m"
-#define URED        "\033[4;31m"
-#define UGREEN      "\033[4;32m"
-#define UYELLOW     "\033[4;33m"
-#define UBLUE       "\033[4;34m"
-#define UMAGENTA    "\033[4;35m"
-#define UCYAN       "\033[4;36m"
-#define UWHITE      "\033[4;37m"
+#define UBLACK      "\x1B[4;30m"
+#define URED        "\x1B[4;31m"
+#define UGREEN      "\x1B[4;32m"
+#define UYELLOW     "\x1B[4;33m"
+#define UBLUE       "\x1B[4;34m"
+#define UMAGENTA    "\x1B[4;35m"
+#define UCYAN       "\x1B[4;36m"
+#define UWHITE      "\x1B[4;37m"
 //background
-#define B_BLACK     "\033[40m"
-#define B_RED       "\033[41m"
-#define B_GREEN     "\033[42m"
-#define B_YELLOW    "\033[43m"
-#define B_BLUE      "\033[44m"
-#define B_MAGENTA   "\033[45m"
-#define B_CYAN      "\033[46m"
-#define B_WHITE     "\033[47m"
+#define B_BLACK     "\x1B[40m"
+#define B_RED       "\x1B[41m"
+#define B_GREEN     "\x1B[42m"
+#define B_YELLOW    "\x1B[43m"
+#define B_BLUE      "\x1B[44m"
+#define B_MAGENTA   "\x1B[45m"
+#define B_CYAN      "\x1B[46m"
+#define B_WHITE     "\x1B[47m"
 //high intensity
-#define IBLACK      "\033[0;90m"
-#define IRED        "\033[0;91m"
-#define IGREEN      "\033[0;92m"
-#define IYELLOW     "\033[0;93m"
-#define IBLUE       "\033[0;94m"
-#define IMAGENTA    "\033[0;95m"
-#define ICYAN       "\033[0;96m"
-#define IWHITE      "\033[0;97m"
+#define IBLACK      "\x1B[0;90m"
+#define IRED        "\x1B[0;91m"
+#define IGREEN      "\x1B[0;92m"
+#define IYELLOW     "\x1B[0;93m"
+#define IBLUE       "\x1B[0;94m"
+#define IMAGENTA    "\x1B[0;95m"
+#define ICYAN       "\x1B[0;96m"
+#define IWHITE      "\x1B[0;97m"
 //bold high intensity
-#define IBBLACK     "\033[1;90m"
-#define IBRED       "\033[1;91m"
-#define IBGREEN     "\033[1;92m"
-#define IBYELLOW    "\033[1;93m"
-#define IBBLUE      "\033[1;94m"
-#define IBMAGENTA   "\033[1;95m"
-#define IBCYAN      "\033[1;96m"
-#define IBWHITE     "\033[1;97m"
+#define IBBLACK     "\x1B[1;90m"
+#define IBRED       "\x1B[1;91m"
+#define IBGREEN     "\x1B[1;92m"
+#define IBYELLOW    "\x1B[1;93m"
+#define IBBLUE      "\x1B[1;94m"
+#define IBMAGENTA   "\x1B[1;95m"
+#define IBCYAN      "\x1B[1;96m"
+#define IBWHITE     "\x1B[1;97m"
 //background high intensity
-#define B_IBLACK    "\033[0;100m"
-#define B_IRED      "\033[0;101m"
-#define B_IGREEN    "\033[0;102m"
-#define B_IYELLOW   "\033[0;103m"
-#define B_IBLUE     "\033[0;104m"
-#define B_IMAGENTA  "\033[0;105m"
-#define B_ICYAN     "\033[0;106m"
-#define B_IWHITE    "\033[0;107m"
+#define B_IBLACK    "\x1B[0;100m"
+#define B_IRED      "\x1B[0;101m"
+#define B_IGREEN    "\x1B[0;102m"
+#define B_IYELLOW   "\x1B[0;103m"
+#define B_IBLUE     "\x1B[0;104m"
+#define B_IMAGENTA  "\x1B[0;105m"
+#define B_ICYAN     "\x1B[0;106m"
+#define B_IWHITE    "\x1B[0;107m"
 //blink bold
-#define BL_BBLACK   "\033[5;1;30m"
-#define BL_BRED     "\033[5;1;31m"
-#define BL_BGREEN   "\033[5;1;32m"
-#define BL_BYELLOW  "\033[5;1;33m"
-#define BL_BBLUE    "\033[5;1;34m"
-#define BL_BMAGENTA "\033[5;1;35m"
-#define BL_BCYAN    "\033[5;1;36m"
-#define BL_BWHITE   "\033[5;1;37m"
+#define BL_BBLACK   "\x1B[5;1;30m"
+#define BL_BRED     "\x1B[5;1;31m"
+#define BL_BGREEN   "\x1B[5;1;32m"
+#define BL_BYELLOW  "\x1B[5;1;33m"
+#define BL_BBLUE    "\x1B[5;1;34m"
+#define BL_BMAGENTA "\x1B[5;1;35m"
+#define BL_BCYAN    "\x1B[5;1;36m"
+#define BL_BWHITE   "\x1B[5;1;37m"
 
 // basic structure for the color scheme
 typedef struct set_color_s set_color_t ;
@@ -106,6 +108,8 @@ struct set_color_s
 	char const *warning ; //byellow
 	char const *blink ; //blink_blue
 	char const *error ; //bred
+	char const *ablink ; //blink
+	char const *blue ; //blink
 	char const *off ; //nocolor
 } ;
 
@@ -172,10 +176,29 @@ extern char const *LOG_USAGE_MSG[6] ;
 extern char const *LOG_NOMEM_MSG[6] ; 
 
 extern unsigned int VERBOSITY ;
+extern unsigned int DOUBLE_OUTPUT ;
+extern unsigned int TRAILING_NEWLINE ;
+extern unsigned int DEFAULT_STREAM ;
+extern unsigned int DEFAULT_MSG ;
+extern unsigned int CLOCK_ENABLED ;
+extern unsigned int CLOCK_TIMESTAMP ;
 extern char const *PROG ;
 
 // initialize color
 extern void log_color_init(void) ;
+
+// output to stderr and stdout
+extern void set_double_output(int enable) ;
+// do not append trailing newline
+extern void set_trailing_newline(int enable) ;
+// reverse stream: stderr -> stdout, stdout->stderr
+extern void set_default_stream(int enable) ;
+// display default message e.g info:, warning:,...
+extern void set_default_msg(int enable) ;
+// display the clock time
+extern void set_clock_enable(int enable) ;
+// format of the time to display, 0 -> TAI, 1 -> ISO
+extern void set_clock_timestamp(int enable) ;
 
 // main function used everywhere
 extern void log_out(char const *str[],...) ;
@@ -258,6 +281,36 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 	log_out_builder(&dbg_info,LOG_LEVEL_TRACE,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 	return ret ; \
 } while (0)
+
+/** tracing with LOG_LEVEL_INFO */
+
+#define log_1_trace(...) do { \
+	log_dbg_info_t dbg_info = log_dbg_init ; \
+	LOG_SYS = (size_t *)LOG_SYS_NO ; \
+	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+} while (0)
+
+// prog: tracing: msg: strerror msg
+#define log_1_tracesys(...) do { \
+	log_dbg_info_t dbg_info = log_dbg_init ; \
+	LOG_SYS = (size_t *)LOG_SYS_NO ; \
+	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+} while (0)
+
+#define log_1_trace_return(ret,...) do { \
+	log_dbg_info_t dbg_info = log_dbg_init ; \
+	LOG_SYS = (size_t *)LOG_SYS_NO ; \
+	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+	return ret ; \
+} while (0)
+
+#define log_1_tracesys_return(ret,...) do { \
+	log_dbg_info_t dbg_info = log_dbg_init ; \
+	LOG_SYS = (size_t *)LOG_SYS_NO ; \
+	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+	return ret ; \
+} while (0)
+
 
 /** WARNING **/
 
@@ -499,6 +552,13 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 	log_dbg_info_t dbg_info = log_dbg_init ; \
 	LOG_SYS = (size_t *)LOG_SYS_YES ; \
 	log_die_nclean_builder(err,cleaner,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+} while (0)
+
+// output fatal msg 
+#define log_fatal(...) do { \
+	log_dbg_info_t dbg_info = log_dbg_init ; \
+	LOG_SYS = (size_t *)LOG_SYS_NO ; \
+	log_out_builder(&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 /** USAGE **/

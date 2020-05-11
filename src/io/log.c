@@ -24,6 +24,8 @@
 #include <skalibs/buffer.h>
 #include <skalibs/env.h>
 #include <skalibs/types.h>
+#include <skalibs/tai.h>
+#include <skalibs/djbtime.h>
 
 // strerror is disabled by default
 // the define of the log function
@@ -32,6 +34,20 @@ size_t *LOG_SYS = LOG_SYS_NO ;
 
 // only error + log_info by default
 unsigned int VERBOSITY = 1 ;
+//only on buffer_1 by default
+unsigned int DOUBLE_OUTPUT = 0 ;
+// append a trailing newline by default
+unsigned int TRAILING_NEWLINE = 1 ;
+// set the default buffer to use
+// 0 -> buffer_2, 1 -> buffer_1
+unsigned int DEFAULT_STREAM = 0 ;
+// display informative message eg. info;, warning:,...
+// 1 -> yes, 0 -> no
+unsigned int DEFAULT_MSG = 1 ;
+// display clock
+unsigned int CLOCK_ENABLED = 0 ;
+// format of display, 0->TAI, 1->ISO
+unsigned int CLOCK_TIMESTAMP = 1 ;
 
 char const *LOG_ERROR_MSG[] ;
 char const *LOG_ERROR_UNABLE_MSG[] ;
@@ -51,6 +67,8 @@ set_color_t log_color_enable = {
 	BYELLOW,  //warning
 	BL_BBLUE, // blink
 	BRED, //error
+	BLINK, //blink
+	BBLUE, //blue
 	NOCOLOR //reset
 } ;
 
@@ -60,8 +78,41 @@ set_color_t log_color_disable = {
 	"",
 	"",
 	"",
+	"",
+	"",
 	""
 } ;
+
+
+void set_double_output(int enable)
+{
+	DOUBLE_OUTPUT = !!enable ;
+}
+
+void set_trailing_newline(int enable)
+{
+	TRAILING_NEWLINE = !!enable ;
+}
+
+void set_default_stream(int enable)
+{
+	DEFAULT_STREAM = !!enable ;
+}
+
+void set_default_msg(int enable)
+{
+	DEFAULT_MSG = !!enable ;
+}
+
+void set_clock_enable(int enable)
+{
+	CLOCK_ENABLED = !!enable ;
+}
+
+void set_clock_timestamp(int enable)
+{
+	CLOCK_TIMESTAMP  = !!enable ;
+}
 
 void log_color_init(void)
 {
@@ -110,16 +161,64 @@ void log_color_init(void)
 	LOG_NOMEM_MSG[5] = 0 ;
 }
 
+void log_clock(buffer *stream)
+{
+	size_t hlen = 0 ;
+	char hstamp[32 + 2] ;
+	char tstamp[TIMESTAMP + 2] ;
+	tain_t now ;
+	tain_wallclock_read(&now) ;
+	char *pstr = 0 ;
+
+	if (!CLOCK_TIMESTAMP)
+	{
+		timestamp_fmt(tstamp, &now) ;
+		tstamp[TIMESTAMP] = ' ' ;
+		tstamp[TIMESTAMP + 1] = 0 ;
+		pstr = &tstamp[0] ;
+	}
+	else
+	{
+		localtmn_t l ;
+		localtmn_from_tain(&l, &now, 1) ;
+		hlen = localtmn_fmt(hstamp, &l) ;
+		hstamp[hlen] = ' ' ;
+		hstamp[hlen + 1] = 0 ;
+		pstr = &hstamp[0] ;
+	}
+	buffer_puts(stream,pstr) ;
+}
+
 void log_out(char const *str[],...)
 { 
 	int e = errno ;
 	va_list alist ;
 	va_start(alist,str) ;
-		
-	while (*str) 
-		buffer_puts(buffer_2, *str++) ; 
-	
-	buffer_putflush(buffer_2, "\n", 1) ; 
+	buffer_t_ref stream_1 = DEFAULT_STREAM ? buffer_2 : buffer_1 ;
+	buffer_t_ref stream_2 = DEFAULT_STREAM ? buffer_1 : buffer_2 ;
+
+	if (CLOCK_ENABLED) 
+	{
+		log_clock(stream_2) ;
+		if (DOUBLE_OUTPUT)
+			log_clock(stream_1) ;
+	}
+	while (*str) {
+		buffer_puts(stream_2, *str) ; 
+		if (DOUBLE_OUTPUT)
+			buffer_puts(stream_1, *str) ;
+		*str++ ;
+	}
+	if (TRAILING_NEWLINE)
+	{
+		buffer_putflush(stream_2, "\n", 1) ; 
+		if (DOUBLE_OUTPUT) buffer_putflush(stream_1, "\n", 1) ; 
+	}
+	else
+	{
+		buffer_flush(stream_2) ;
+		if (DOUBLE_OUTPUT) buffer_flush(stream_1) ; 
+	}
 	va_end(alist) ; 
 	errno = e ;
 }
@@ -140,7 +239,7 @@ void log_out_builder(log_dbg_info_t *db_info,int level, char const *msg[],char c
 		
 		char const *ap[len] ;
 		uint8_t i = 0 ;
-		ap[i++] = PROG ;
+		if (DEFAULT_MSG) ap[i++] = PROG ;
 		if (VERBOSITY >= LOG_LEVEL_DEBUG)
 		{
 			ap[i++] = "(" ;
@@ -152,9 +251,11 @@ void log_out_builder(log_dbg_info_t *db_info,int level, char const *msg[],char c
 			ap[i++] = ")" ;
 		}
 		
-		while (*msg)
-			ap[i++] = *msg++ ;
-		
+		if (DEFAULT_MSG) {
+			while (*msg)
+				ap[i++] = *msg++ ;
+		}
+
 		while (*str)
 			ap[i++] = *str++ ;
 
