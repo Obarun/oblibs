@@ -111,6 +111,9 @@ extern ssize_t sastr_find (stralloc *sa,char const *str) ;
 /** Return the len of a chained stralloc */
 extern size_t sastr_len(stralloc *sa) ;
 
+/** Return the number of element of a chained stralloc */
+extern size_t sastr_nelement(stralloc *sa) ;
+
 /** Append @sa with @str
  * @Return 1 on success
  * @Return 0 on fail */
@@ -120,4 +123,15 @@ extern int sastr_add_string(stralloc *sa,char const *str) ;
  * @Return 1 on success
  * @Return 0 on fail */
 extern int sastr_reverse(stralloc *sa) ;
+
+/** find a specific element @el into chained stralloc @sa
+ * @Return the number of the start of the string of the element if found
+ * @Return -1 in other case */
+extern ssize_t sastr_find_element_byid(stralloc *sa,unsigned int el) ;
+
+/** find a specific element by name @name
+ * @Return the number of the start of the string of the element if found
+ * and set @el to the number of the element
+ * @Return -1 in other case */
+extern ssize_t sastr_find_element_byname(stralloc *sa,char const *name,unsigned int *el) ;
 #endif
