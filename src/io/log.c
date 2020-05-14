@@ -17,7 +17,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <stdio.h>
 
 #include <oblibs/log.h>
 
@@ -163,7 +162,7 @@ void log_color_init(void)
 
 void log_clock(buffer *stream)
 {
-	size_t hlen = 0 ;
+	size_t secless = 22 ;
 	char hstamp[32 + 2] ;
 	char tstamp[TIMESTAMP + 2] ;
 	tain_t now ;
@@ -181,9 +180,9 @@ void log_clock(buffer *stream)
 	{
 		localtmn_t l ;
 		localtmn_from_tain(&l, &now, 1) ;
-		hlen = localtmn_fmt(hstamp, &l) ;
-		hstamp[hlen] = ' ' ;
-		hstamp[hlen + 1] = 0 ;
+		localtmn_fmt(hstamp, &l) ;
+		hstamp[secless] = ' ' ;
+		hstamp[secless + 1] = 0 ;
 		pstr = &hstamp[0] ;
 	}
 	buffer_puts(stream,pstr) ;
