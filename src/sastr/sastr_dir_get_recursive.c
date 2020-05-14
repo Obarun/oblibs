@@ -47,7 +47,7 @@ int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const *exclude
 		if (d->d_name[0] == '.')
 		if (((d->d_name[1] == '.') && !d->d_name[2]) || !d->d_name[1])
 			continue ;
-		if (stat_at(fdsrc, d->d_name, &st) < 0)
+		if (lstat_at(fdsrc, d->d_name, &st) < 0)
 			goto err ;
 
 		if (!strcmp(d->d_name,exclude)) continue ;

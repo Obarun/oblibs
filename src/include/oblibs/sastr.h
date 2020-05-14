@@ -26,7 +26,8 @@
  * @Return 1 on success */
 extern int sastr_dir_get(stralloc *sa, char const *srcdir,char const *exclude,mode_t mode) ;
 
-/** Same as sastr_dir_get but do it recursively */
+/** Same as sastr_dir_get but do it recursively 
+ * it use lstat() and returns information about the link itself in case of symlink*/
 extern int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const *exclude,mode_t mode) ;
 
 /** Seach @element on @scrcdir with mode @mode and append @sa
