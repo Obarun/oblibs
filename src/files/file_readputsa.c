@@ -46,6 +46,7 @@ int file_readputsa(stralloc *sa,char const *src,char const *file)
 		r = openreadfileclose(tmp,sa,filesize) ;
 		if(!r) { errno = ENOENT ; goto err ; }
 		if (!stralloc_0(sa)) goto err ;
+		sa->len-- ;
 		return 1 ;
 	}
 	
