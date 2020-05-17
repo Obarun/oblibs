@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <oblibs/log.h>
 
@@ -25,6 +26,8 @@
 #include <skalibs/types.h>
 #include <skalibs/tai.h>
 #include <skalibs/djbtime.h>
+#include <skalibs/djbunix.h>
+#include <skalibs/unix-transactional.h>
 
 // strerror is disabled by default
 // the define of the log function
@@ -39,7 +42,7 @@ unsigned int DOUBLE_OUTPUT = 0 ;
 unsigned int TRAILING_NEWLINE = 1 ;
 // set the default buffer to use
 // 0 -> buffer_2, 1 -> buffer_1
-unsigned int DEFAULT_STREAM = 0 ;
+unsigned int SWITCH_STREAM = 0 ;
 // display informative message eg. info;, warning:,...
 // 1 -> yes, 0 -> no
 unsigned int DEFAULT_MSG = 1 ;
@@ -47,6 +50,10 @@ unsigned int DEFAULT_MSG = 1 ;
 unsigned int CLOCK_ENABLED = 0 ;
 // format of display, 0->TAI, 1->ISO
 unsigned int CLOCK_TIMESTAMP = 1 ;
+// name of the file for stdout redirection
+char const *REDIRFD_1 = 0 ;
+// name of the file for stderr redirection
+char const *REDIRFD_2 = 0 ;
 
 char const *LOG_ERROR_MSG[] ;
 char const *LOG_ERROR_UNABLE_MSG[] ;
@@ -93,9 +100,9 @@ void set_trailing_newline(int enable)
 	TRAILING_NEWLINE = !!enable ;
 }
 
-void set_default_stream(int enable)
+void set_switch_stream(int enable)
 {
-	DEFAULT_STREAM = !!enable ;
+	SWITCH_STREAM = !!enable ;
 }
 
 void set_default_msg(int enable)
@@ -111,6 +118,18 @@ void set_clock_enable(int enable)
 void set_clock_timestamp(int enable)
 {
 	CLOCK_TIMESTAMP  = !!enable ;
+}
+
+void set_redirfd_1(char const *file)
+{
+	if (file[0] == '0') REDIRFD_1 = 0 ;
+	else REDIRFD_1 = file ;
+}
+
+void set_redirfd_2(char const *file)
+{
+	if (file[0] == '0') REDIRFD_2 = 0 ;
+	else REDIRFD_2 = file ;
 }
 
 void log_color_init(void)
@@ -160,6 +179,39 @@ void log_color_init(void)
 	LOG_NOMEM_MSG[5] = 0 ;
 }
 
+void redir_fd(int fd,char const *file)
+{
+	unsigned int flags = 0 ;
+	flags |= O_CREAT|O_APPEND|O_WRONLY ; 
+	flags &= ~(O_TRUNC|O_EXCL) ;
+
+	int fdmodif ;
+	fdmodif = open3(file, flags, 0666) ;
+	if ((fdmodif == -1) && (errno == ENXIO))
+	{
+		int fdr = open_read(file) ;
+		if (fdr == -1) {
+			REDIRFD_1 = REDIRFD_2 = 0 ;
+			log_dieusys(LOG_EXIT_SYS, "open_read: ", file) ;
+		}
+		fdmodif = open3(file, flags, 0666) ;
+		fd_close(fdr) ;
+	}
+	if (fdmodif == -1) {
+			REDIRFD_1 = REDIRFD_2 = 0 ;
+			log_dieusys(LOG_EXIT_SYS, "open: ", file) ;
+	}
+	if (fd_move(fd, fdmodif) == -1)
+	{
+		char fmt[UINT_FMT] ;
+		fmt[uint_fmt(fmt, fdmodif)] = 0 ;
+		char fdmt[UINT_FMT] ;
+		fdmt[uint_fmt(fdmt, fd)] = 0 ;
+		REDIRFD_1 = REDIRFD_2 = 0 ;
+		log_dieusys(LOG_EXIT_SYS, "move fd ", fmt, " to fd: ",fdmt) ;
+	}
+}
+
 void log_clock(buffer *stream)
 {
 	size_t secless = 22 ;
@@ -193,8 +245,14 @@ void log_out(char const *str[],...)
 	int e = errno ;
 	va_list alist ;
 	va_start(alist,str) ;
-	buffer_t_ref stream_1 = DEFAULT_STREAM ? buffer_2 : buffer_1 ;
-	buffer_t_ref stream_2 = DEFAULT_STREAM ? buffer_1 : buffer_2 ;
+	buffer_t_ref stream_1 = SWITCH_STREAM ? buffer_2 : buffer_1 ;
+	buffer_t_ref stream_2 = SWITCH_STREAM ? buffer_1 : buffer_2 ;
+
+	if (REDIRFD_1)
+		redir_fd(1,REDIRFD_1) ;
+
+	if (REDIRFD_2)
+		redir_fd(2,REDIRFD_2) ;
 
 	if (CLOCK_ENABLED) 
 	{

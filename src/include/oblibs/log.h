@@ -178,12 +178,13 @@ extern char const *LOG_NOMEM_MSG[6] ;
 extern unsigned int VERBOSITY ;
 extern unsigned int DOUBLE_OUTPUT ;
 extern unsigned int TRAILING_NEWLINE ;
-extern unsigned int DEFAULT_STREAM ;
+extern unsigned int SWITCH_STREAM ;
 extern unsigned int DEFAULT_MSG ;
 extern unsigned int CLOCK_ENABLED ;
 extern unsigned int CLOCK_TIMESTAMP ;
 extern char const *PROG ;
-
+extern char const *REDIRFD_1 ;
+extern char const *REDIRFD_2 ;
 // initialize color
 extern void log_color_init(void) ;
 
@@ -192,13 +193,20 @@ extern void set_double_output(int enable) ;
 // do not append trailing newline
 extern void set_trailing_newline(int enable) ;
 // reverse stream: stderr -> stdout, stdout->stderr
-extern void set_default_stream(int enable) ;
+extern void set_switch_stream(int enable) ;
 // display default message e.g info:, warning:,...
 extern void set_default_msg(int enable) ;
 // display the clock time
 extern void set_clock_enable(int enable) ;
 // format of the time to display, 0 -> TAI, 1 -> ISO
 extern void set_clock_timestamp(int enable) ;
+// set the file to use for stdout redirection
+extern void set_redirfd_1(char const *file) ;
+// set the file to use for stderr redirection
+extern void set_redirfd_2(char const *file) ;
+
+// general function to redirect stdout/stderr
+extern void redir_fd(int fd,char const *file) ;
 
 // main function used everywhere
 extern void log_out(char const *str[],...) ;
