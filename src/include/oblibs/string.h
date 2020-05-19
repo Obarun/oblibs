@@ -127,7 +127,9 @@ extern int auto_stra_builder(stralloc *sa,char const *str[],...) ;
 
 /** Scan @str for digit between dot where @ndot is the number
  * of dot expected e.g ndot = 2 -> 0.1.0, ndot = 3 > 1.0.1.0,...
+ * append @sa with the result. 
  * @Return on success
- * @Return 0 on fail */ 
+ * @Return 0 on fail 
+ * @Return -1 system failure */ 
 extern int version_scan(stralloc *sa, char const *str,uint8_t ndot) ;
 #endif
