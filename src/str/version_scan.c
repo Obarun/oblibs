@@ -19,7 +19,7 @@
 #include <skalibs/stralloc.h>
 #include <skalibs/types.h>
 
-int scan_version(stralloc *sa, char const *str,uint8_t ndot)
+int version_scan(stralloc *sa, char const *str,uint8_t ndot)
 {
 	int r ;
 	uint8_t dot = 0 ;
