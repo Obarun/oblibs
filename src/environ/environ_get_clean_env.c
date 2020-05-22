@@ -47,7 +47,8 @@ int environ_get_clean_env(stralloc *sa)
 		}else pos = MILL_GET_COMMENT.inner.pos ;
 		nbline-- ;
 	}
-	if (!sastr_rebuild_in_nline(&tmp)) goto err ;
+	if (tmp.len)
+		if (!sastr_rebuild_in_nline(&tmp)) goto err ;
 	if (!stralloc_copy(sa,&tmp)) goto err ;
 	stralloc_free(&src) ;
 	stralloc_free(&tmp) ;

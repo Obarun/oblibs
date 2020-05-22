@@ -113,7 +113,8 @@ extern int environ_remove_unexport(stralloc *modifs,stralloc *sa) ;
  * of environ_get_clean_env, environ_clean_nline and
  * environ_remove_unexport function.
  * @Return 1 on success
- * @Return 0 on fail */
+ * @Return 0 on fail 
+ * @Return -1 if @modifs is empty meaning no environment variables*/
 extern int environ_clean_envfile(stralloc *modifs,stralloc *sa) ;
 
 /** Get of line from @sa
@@ -138,7 +139,16 @@ extern int environ_get_envfile(stralloc *modifs,char const *src) ;
 extern int environ_get_envfile_n_merge(char const *src,char const *const *envp,char const **newenv, char *tmpenv) ;
 
 /** handle environ_get_envfile and environ_get_envfile_n_merge error.
- * This function do not die, it use strerr_warnwXXX function */
+ * This function do not die, it use log_warnu? function
+ * @Return -8 empty environment
+ * @Return -7 invalid environment
+ * @Return -6 environment too long
+ * @Return -5 unable to open envdir
+ * @Return -4 unable to parse and clean
+ * @Return -3 unable get number of line
+ * @Return -2 too many variable
+ * @Return -1 too many files
+ * @Return 0 merge environment */
 extern void environ_get_envfile_error(int error, char const *envdir) ;
 
 #endif
