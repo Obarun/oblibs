@@ -20,7 +20,7 @@
 
 int sastr_replace (stralloc *sa,char const *regex,char const *by)
 {
-	if (!sa->len || !*regex) return 0 ;
+	if (!sa->len || !*regex || !strcmp(regex,by)) return 0 ;
 	size_t i = 0, j = 0, slen = strlen(regex), blen = strlen(by) ;
 	unsigned int found = 0 ;
 	stralloc tmp = STRALLOC_ZERO ;
