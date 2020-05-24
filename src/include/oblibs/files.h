@@ -45,4 +45,9 @@ extern int file_write_unsafe(char const *dst,char const *name,char const *conten
  * @Return 0 on fail */
 extern int file_readputsa(stralloc *sa,char const *src,char const *file) ;
 
+/** Append @sa with the contents of @file where @file is
+ * absolute path to the file and call file_readputsa
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int file_readputsa_g(stralloc *sa,char const *file) ;
 #endif
