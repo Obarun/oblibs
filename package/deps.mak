@@ -25,6 +25,7 @@ src/files/file_create_empty.o src/files/file_create_empty.lo: src/files/file_cre
 src/files/file_get_size.o src/files/file_get_size.lo: src/files/file_get_size.c src/include/oblibs/files.h
 src/files/file_openclose_readonly.o src/files/file_openclose_readonly.lo: src/files/file_openclose_readonly.c src/include/oblibs/files.h
 src/files/file_readputsa.o src/files/file_readputsa.lo: src/files/file_readputsa.c src/include/oblibs/directory.h src/include/oblibs/files.h src/include/oblibs/string.h src/include/oblibs/types.h
+src/files/file_readputsa_g.o src/files/file_readputsa_g.lo: src/files/file_readputsa_g.c src/include/oblibs/files.h src/include/oblibs/string.h
 src/files/file_write_unsafe.o src/files/file_write_unsafe.lo: src/files/file_write_unsafe.c src/include/oblibs/string.h
 src/io/log.o src/io/log.lo: src/io/log.c src/include/oblibs/log.h
 src/memory/free_mem.o src/memory/free_mem.lo: src/memory/free_mem.c src/include/oblibs/memory.h
