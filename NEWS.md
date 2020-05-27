@@ -2,6 +2,26 @@
 
 ---
 
+In 0.0.8.0
+
+- improve log.c file:
+	- better portability for color declaration
+	- add ablink and blue color at set_color_s struct
+	- add set_double_output, set_trailing_newline, set_switch_stream,set_default_msg, set_clock_enabled, set_clock_timestamp and set_redirfd_{1,2} function
+	- add macro log_1_trace family, log_fatal
+	- add environment variable DOUBLE_OUTPUT, TRAILING_NEWLINE, SWITCH_STREAM, DEFAULT_MSG, CLOCK_ENABLED, CLOCK_TIMESTAMP and REDIRFD_{1,2}
+- sastr_replace:
+	- deny regex to search and regex to replace as the same
+- fix environ_clean_envfile, environ_get_clean_env and environ_clean_envfile in case of empty environment file
+- add version_scan function
+- file_readputsa return a sa->len of zero if the file is empty(previously one due of the stralloc_0() call)
+- add file_readputsa_g function
+- fix sastr_dir_get_recursive:
+	- avoid possible loop with symlink using lstat_at instead of stat_at
+- add sastr_find_element_by{id,name}, sastr_nelement function
+
+---
+
 In 0.0.7.0
 
 - add sastr_dir_get_element function
