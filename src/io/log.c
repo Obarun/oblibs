@@ -54,6 +54,8 @@ unsigned int CLOCK_TIMESTAMP = 1 ;
 char const *REDIRFD_1 = 0 ;
 // name of the file for stderr redirection
 char const *REDIRFD_2 = 0 ;
+// enable or disable color
+unsigned int COLOR_ENABLED = 0 ;
 
 char const *LOG_ERROR_MSG[] ;
 char const *LOG_ERROR_UNABLE_MSG[] ;
@@ -284,6 +286,7 @@ void log_out_builder(log_dbg_info_t *db_info,int level, char const *msg[],char c
 {
 	if (level <= VERBOSITY)
 	{
+		if (COLOR_ENABLED) log_color = &log_color_enable ;
 		log_color_init() ;
 		
 		size_t len = 3 + env_len(str) + env_len(msg) + (size_t)LOG_SYS ;
