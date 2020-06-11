@@ -4,6 +4,18 @@
 
 In 0.0.8.0
 
+- log.c file:
+	- allow to set the color by COLOR_ENABLED environment variable.
+
+- new functions:
+	- get_gidbygroup: get the group's gid.
+	- get_gidbyname: get the user's gid.
+	- get_groupbyid: get the name's group.
+
+---
+
+In 0.0.8.0
+
 - improve log.c file:
 	- better portability for color declaration
 	- add ablink and blue color at set_color_s struct
