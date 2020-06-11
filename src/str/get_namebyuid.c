@@ -22,6 +22,7 @@
 
 int get_namebyuid(uid_t uid,stralloc *name)
 {
+	int e = errno ;
 	errno = 0 ;
 	struct passwd *pw = getpwuid(uid);
 	if (!pw)
@@ -30,7 +31,7 @@ int get_namebyuid(uid_t uid,stralloc *name)
 		return 0 ;
 	}
 	stralloc_cats(name,pw->pw_name) ;
-	
+	errno = e ;
 	return 1 ;
 }
 

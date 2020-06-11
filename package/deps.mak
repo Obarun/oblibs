@@ -59,6 +59,9 @@ src/str/auto.o src/str/auto.lo: src/str/auto.c
 src/str/basename.o src/str/basename.lo: src/str/basename.c src/include/oblibs/string.h
 src/str/dirname.o src/str/dirname.lo: src/str/dirname.c src/include/oblibs/string.h
 src/str/get_flags.o src/str/get_flags.lo: src/str/get_flags.c src/include/oblibs/types.h
+src/str/get_gidbygroup.o src/str/get_gidbygroup.lo: src/str/get_gidbygroup.c src/include/oblibs/types.h
+src/str/get_gidbyname.o src/str/get_gidbyname.lo: src/str/get_gidbyname.c src/include/oblibs/types.h
+src/str/get_groupbygid.o src/str/get_groupbygid.lo: src/str/get_groupbygid.c src/include/oblibs/types.h
 src/str/get_len_until.o src/str/get_len_until.lo: src/str/get_len_until.c src/include/oblibs/string.h
 src/str/get_namebyuid.o src/str/get_namebyuid.lo: src/str/get_namebyuid.c src/include/oblibs/types.h
 src/str/get_nbline.o src/str/get_nbline.lo: src/str/get_nbline.c src/include/oblibs/string.h

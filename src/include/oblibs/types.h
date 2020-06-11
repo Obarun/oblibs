@@ -32,17 +32,35 @@ extern ssize_t scan_mode(char const *str,mode_t mode) ;
  * @Return 1 on success else 0*/
 extern int scan_uint32(char const *s) ;
 
-/** get the uid of @name
- * and store it at @uid
+/** get the uid of user's @name
+ * and store the result in @uid
  * @Return 1 on success
  * @Return -1 on fail and set errno */
 extern int get_uidbyname(char const *name,uid_t *uid) ;
 
-/** get the name of @uid
- * and store it at @name
+/** get the name of user's @uid
+ * and store the result in @name
  * @Return 1 on success
  * @Return 0 on fail and set errno */
 extern int get_namebyuid(uid_t uid,stralloc *name) ;
+
+/** get the gid of user's @name
+ * and store the result in @gid
+ * @Return 1 on success
+ * @Return 0 on fail and set errno */
+extern int get_gidbyname(char const *name,gid_t *gid) ;
+
+/** get the name of group's @gid
+ * and store the result in @name
+ * @Return 1 on success
+ * @Return 0 on fail and set errno */
+extern int get_groupbygid(gid_t gid,stralloc *name) ;
+
+/** get the gid of group's @name
+ * and store the result in @gid
+ * @Return 1 on success
+ * @Return 0 on fail and set errno */
+extern int get_gidbygroup(char const *name,gid_t *gid) ;
 
 /** Check if @str is an uint32_t type
  * store the result in @array at index @row

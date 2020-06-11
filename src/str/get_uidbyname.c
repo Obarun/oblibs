@@ -20,16 +20,17 @@
 
 int get_uidbyname(char const *name,uid_t *uid)
 {
+	int e = errno ;
 	errno = 0 ;
 	struct passwd *pw = getpwnam(name) ; 
-    if (!pw)
-    {
+	if (!pw)
+	{
 		if (!errno) errno = ESRCH ;
 		return -1 ;
 	} 
-    *uid = pw->pw_uid ;
-   
-    return 1 ;
+	*uid = pw->pw_uid ;
+	errno = e ;
+	return 1 ;
 }
 
 
