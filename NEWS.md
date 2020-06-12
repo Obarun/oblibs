@@ -2,7 +2,7 @@
 
 ---
 
-In 0.0.8.0
+In 0.0.9.0
 
 - log.c file:
 	- allow to set the color by COLOR_ENABLED environment variable.
