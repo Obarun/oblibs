@@ -38,7 +38,7 @@ int environ_get_envfile(stralloc *modifs,char const *src)
 		if (!openreadfileclose(src,&sa,filesize)){ e = -5 ; goto err ; }
 		r = environ_clean_envfile(modifs,&sa) ;
 		if (!r) { e = -4 ; goto err ; }
-		if (r == 1) { e = -8 ; goto err ; }
+		if (r == -1) { e = -8 ; goto err ; }
 		if (!stralloc_catb(modifs,"\n",1)) goto err ;
 	}
 	else if (!r)
