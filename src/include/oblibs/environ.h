@@ -23,7 +23,7 @@
 
 #define MAXVAR  50 
 #define MAXFILE 100 
-#define MAXENV 4095 
+#define MAXENV 8191
 #define VAR_UNEXPORT '!'
 
 typedef struct exlsn_s exlsn_t, *exlsn_t_ref ;
