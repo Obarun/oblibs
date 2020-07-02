@@ -19,14 +19,14 @@ void environ_get_envfile_error(int error,char const *envdir)
 {
 	switch(error)
 	{
-		case -8: log_warn("empty environment: ",envdir) ;
-		case -7: log_warn("invalid environment: ",envdir) ;
-		case -6: log_warn("environment too long: ",envdir) ;
-		case -5: log_warnusys("open: ",envdir) ;
-		case -4: log_warnu("parse and clean: ",envdir) ;
-		case -3: log_warnu("get number of line: ",envdir) ;
-		case -2: log_warn("too many variable in: ",envdir) ;
-		case -1: log_warn("too many files in: ",envdir) ;
-		case 0:	 log_warnu("merge environment") ;
+		case -8: log_warn("empty environment: ",envdir) ; break ;
+		case -7: log_warn("invalid environment: ",envdir) ; break ;
+		case -6: log_warn("environment too long: ",envdir) ; break ;
+		case -5: log_warnusys("open: ",envdir) ; break ;
+		case -4: log_warnu("parse and clean: ",envdir) ; break ;
+		case -3: log_warnu("get number of line: ",envdir) ; break ;
+		case -2: log_warn("too many variable in: ",envdir) ; break ;
+		case -1: log_warn("too many files in: ",envdir) ; break ;
+		case 0:	 log_warnu("merge environment") ; break ;
 	}
 }
