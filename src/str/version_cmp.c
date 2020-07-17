@@ -41,7 +41,6 @@ int version_cmp(char const  *a, char const *b, uint8_t ndot)
 		if (anum > bnum) return 1;
 		if (anum < bnum) return -1 ;
 		dot++ ;
-		
 	}
 	return 0 ;
 }

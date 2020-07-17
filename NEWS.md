@@ -2,6 +2,20 @@
 
 ---
 
+In 0.1.0.0
+
+- Bugs fix:
+	- environ_get_envfile_error() break element of the switch statement
+	- environ_get_envfile() check the correct return value of environ_clean_envfile()
+	- cross compilation
+
+- MAXENV has a value now of 8191
+
+- New function:
+	- version_cmp(): compare two version
+
+---
+
 In 0.0.9.0
 
 - log.c file:
