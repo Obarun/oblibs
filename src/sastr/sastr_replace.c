@@ -24,6 +24,8 @@ int sastr_replace (stralloc *sa,char const *regex,char const *by)
 	size_t i = 0, j = 0, slen = strlen(regex), blen = strlen(by) ;
 	unsigned int found = 0 ;
 	stralloc tmp = STRALLOC_ZERO ;
+	stralloc shrink = STRALLOC_ZERO ;
+
 	for (; i < sa->len; i++)
 	{
 		found = 0 ; j = 0 ;
@@ -34,18 +36,22 @@ int sastr_replace (stralloc *sa,char const *regex,char const *by)
 			found++ ;
 		}
 		if (found){
-			if (!stralloc_catb(&tmp,by,blen)) goto err ;
-			if (!stralloc_cats(&tmp,sa->s + i + slen)) goto err ;
-			if (!stralloc_0(&tmp)) goto err ;
-			if (!sastr_replace(&tmp,regex,by)) goto err ;
+			if (!auto_stra(&tmp,by,sa->s + i + slen)) goto err ;
+			shrink.len = 0 ;
+			if (!auto_stra(&shrink,tmp.s + i + blen)) goto err ;
+			if (!sastr_replace(&shrink,regex,by)) goto err ;
+			tmp.len = i + blen ;
+			if (!auto_stra(&tmp,shrink.s)) goto err ;
 			break ;			
 		}
 		if (!stralloc_catb(&tmp,sa->s+i,1)) goto err ;	
 	}
 	if (!stralloc_copy(sa,&tmp)) goto err;
 	stralloc_free(&tmp) ;
+	stralloc_free(&shrink) ;
 	return 1 ;
 	err:
 		stralloc_free(&tmp) ;
+		stralloc_free(&shrink) ;
 		return 0 ;
 }
