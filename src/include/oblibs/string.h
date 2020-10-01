@@ -17,6 +17,7 @@
 
 #include <sys/types.h>
 #include <stdarg.h>
+#include <stdint.h>
 
 #include <skalibs/genalloc.h>
 #include <skalibs/stralloc.h>
@@ -133,7 +134,7 @@ extern int auto_stra_builder(stralloc *sa,char const *str[],...) ;
  * @Return -1 system failure */ 
 extern int version_scan(stralloc *sa, char const *str,uint8_t ndot) ;
 
-/* This function assume that @one and @two only contain numeric
+/** This function assume that @one and @two only contain numeric
  * value and it's on the form digit.digit.digit....
  * @ndot is the number of dot on the format e.g 1.0.1
  * Follow strcmp format return here:
@@ -142,4 +143,10 @@ extern int version_scan(stralloc *sa, char const *str,uint8_t ndot) ;
  * @Return -1 if one < two
  * @Return -2 on system error */
 int version_cmp(char const  *a, char const *b, uint8_t ndot) ;
+
+/** Search string @search in string @str
+ * @Return 1 on success
+ * @Return 0 on fail */
+uint8_t str_contain(char const *str, char const *search) ;
+
 #endif
