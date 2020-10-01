@@ -13,6 +13,7 @@
  */
 
 #include <oblibs/sastr.h>
+#include <oblibs/string.h>
 
 #include <string.h>
 

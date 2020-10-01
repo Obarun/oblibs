@@ -50,7 +50,7 @@ src/sastr/sastr_len.o src/sastr/sastr_len.lo: src/sastr/sastr_len.c src/include/
 src/sastr/sastr_nelement.o src/sastr/sastr_nelement.lo: src/sastr/sastr_nelement.c src/include/oblibs/sastr.h
 src/sastr/sastr_rebuild_in_nline.o src/sastr/sastr_rebuild_in_nline.lo: src/sastr/sastr_rebuild_in_nline.c src/include/oblibs/sastr.h
 src/sastr/sastr_rebuild_in_oneline.o src/sastr/sastr_rebuild_in_oneline.lo: src/sastr/sastr_rebuild_in_oneline.c src/include/oblibs/sastr.h
-src/sastr/sastr_replace.o src/sastr/sastr_replace.lo: src/sastr/sastr_replace.c src/include/oblibs/sastr.h
+src/sastr/sastr_replace.o src/sastr/sastr_replace.lo: src/sastr/sastr_replace.c src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/sastr/sastr_replace_all.o src/sastr/sastr_replace_all.lo: src/sastr/sastr_replace_all.c src/include/oblibs/sastr.h
 src/sastr/sastr_reverse.o src/sastr/sastr_reverse.lo: src/sastr/sastr_reverse.c src/include/oblibs/sastr.h
 src/sastr/sastr_split_element_in_nline.o src/sastr/sastr_split_element_in_nline.lo: src/sastr/sastr_split_element_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
