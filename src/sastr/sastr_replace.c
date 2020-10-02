@@ -40,9 +40,12 @@ int sastr_replace (stralloc *sa,char const *regex,char const *by)
 			if (!auto_stra(&tmp,by,sa->s + i + slen)) goto err ;
 			shrink.len = 0 ;
 			if (!auto_stra(&shrink,tmp.s + i + blen)) goto err ;
-			if (!sastr_replace(&shrink,regex,by)) goto err ;
-			tmp.len = i + blen ;
-			if (!auto_stra(&tmp,shrink.s)) goto err ;
+			if (shrink.len) // 0 mean end of line
+			{
+				if (!sastr_replace(&shrink,regex,by)) goto err ;
+				tmp.len = i + blen ;
+				if (!auto_stra(&tmp,shrink.s)) goto err ;
+			}
 			break ;			
 		}
 		if (!stralloc_catb(&tmp,sa->s+i,1)) goto err ;	
