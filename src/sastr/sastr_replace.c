@@ -53,8 +53,8 @@ int sastr_replace (stralloc *sa,char const *regex,char const *by)
 	/* if by len < regex len, the stralloc_copy do not shrink
 	 * the stralloc. So, freeds it before its use. */
 	stralloc_free(sa) ;
-
-	if (!stralloc_copy(sa,&tmp)) goto err;
+	
+	if (!auto_stra(sa,tmp.s)) goto err ;
 
 	stralloc_free(&tmp) ;
 	stralloc_free(&shrink) ;
