@@ -22,10 +22,13 @@
 int sastr_replace (stralloc *sa,char const *regex,char const *by)
 {
 	if (!sa->len || !*regex || !strcmp(regex,by)) return 0 ;
-	size_t i = 0, j = 0, slen = strlen(regex), blen = strlen(by) ;
+	size_t i = 0, j = 0, slen = strlen(regex) ;
 	unsigned int found = 0 ;
 	stralloc tmp = STRALLOC_ZERO ;
 	stralloc shrink = STRALLOC_ZERO ;
+
+	char ori[sa->len + 1] ;
+	auto_strings(ori,sa->s) ;
 
 	for (; i < sa->len; i++)
 	{
@@ -37,30 +40,28 @@ int sastr_replace (stralloc *sa,char const *regex,char const *by)
 			found++ ;
 		}
 		if (found){
-			if (!auto_stra(&tmp,by,sa->s + i + slen)) goto err ;
+			if (!auto_stra(&tmp,by)) goto err ;
 			shrink.len = 0 ;
-			if (!auto_stra(&shrink,tmp.s + i + blen)) goto err ;
+			if (!auto_stra(&shrink,ori + i + slen)) goto err ;
 			if (shrink.len) // 0 mean end of line
 			{
 				if (!sastr_replace(&shrink,regex,by)) goto err ;
-				tmp.len = i + blen ;
 				if (!auto_stra(&tmp,shrink.s)) goto err ;
+				break ;
 			}
+			if (!auto_stra(&tmp,ori + i + slen)) goto err ;
 			break ;			
 		}
-		if (!stralloc_catb(&tmp,sa->s+i,1)) goto err ;	
+		if (!stralloc_catb(&tmp,ori+i,1)) goto err ;
+		stralloc_0(&tmp) ;
+		tmp.len-- ;
 	}
-	/* if by len < regex len, the stralloc_copy do not shrink
-	 * the stralloc. So, freeds it before its use. */
-	stralloc_free(sa) ;
-	
-	if (!auto_stra(sa,tmp.s)) goto err ;
+	if (!stralloc_0(&tmp) ||
+	!stralloc_copy(sa,&tmp)) goto err ;
 
 	stralloc_free(&tmp) ;
 	stralloc_free(&shrink) ;
-
 	return 1 ;
-
 	err:
 		stralloc_free(&tmp) ;
 		stralloc_free(&shrink) ;
