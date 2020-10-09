@@ -12,17 +12,16 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <stdint.h>
 #include <string.h>
 
 #include <oblibs/string.h>
 
-uint8_t str_contain(char const *str, char const *search)
+int str_contain(char const *str, char const *search)
 {
 	if (!*str || !*search) return 0 ;
 	
 	size_t i = 0, j = 0, len = strlen(str), slen = strlen(search) ;
-	uint8_t found = 0 ;
+	int found = 0 ;
 	
 	for (; i < len ; i++){
 		
