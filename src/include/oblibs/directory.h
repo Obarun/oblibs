@@ -39,8 +39,13 @@ extern char *dir_create_tmp(stralloc *sa,char const *dst, char const *tname) ;
  * @Return 1 on success */
 extern int dir_create_parent(char const *dst, mode_t mode) ;
 
-/** retrieve the absolute path of @dir and write the result in @dst
+/** Retrieve the absolute path of @dir and write the result in @dst
  * @Return 1 on success
  * @Return 0 on fail and set errno */
 extern int dir_beabsolute(char *dst,char const *dir) ;
+
+/** Look if @child is a subtree of @parent
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int dir_is_child(char const *parent, char const *child) ;
 #endif

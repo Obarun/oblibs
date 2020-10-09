@@ -142,11 +142,16 @@ extern int version_scan(stralloc *sa, char const *str,uint8_t ndot) ;
  * @Return 0 if one == two
  * @Return -1 if one < two
  * @Return -2 on system error */
-int version_cmp(char const  *a, char const *b, uint8_t ndot) ;
+extern int version_cmp(char const  *a, char const *b, uint8_t ndot) ;
 
 /** Search string @search in string @str
  * @Return 1 on success
  * @Return 0 on fail */
-uint8_t str_contain(char const *str, char const *search) ;
+extern int str_contain(char const *str, char const *search) ;
+
+/** Look if @str start with the regex @regex
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int str_start_with(char const *str, char const *search) ;
 
 #endif

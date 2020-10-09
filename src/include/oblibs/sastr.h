@@ -19,6 +19,9 @@
 #include <skalibs/types.h>
 #include <skalibs/stralloc.h>
 
+#define FOREACH_SASTR(pos,sa) \
+	for (pos = 0 ; pos < *(sa.len) ; pos += strlen(*(sa.s) + pos) + 1)
+	
 /** get all compoments on @srcdir with mode @mode execpt string @exclude
  * and append @sa with the result in a chained stralloc 
  * Note: srcdir must contain the last '/' e.g /etc/ 
@@ -130,9 +133,43 @@ extern int sastr_reverse(stralloc *sa) ;
  * @Return -1 in other case */
 extern ssize_t sastr_find_element_byid(stralloc *sa,unsigned int el) ;
 
-/** find a specific element by name @name
+/** Find a specific element by name @name
  * @Return the number of the start of the string of the element if found
  * and set @el to the number of the element
  * @Return -1 in other case */
 extern ssize_t sastr_find_element_byname(stralloc *sa,char const *name,unsigned int *el) ;
+
+/** Sort the chained @sa string by string comparaison
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int sastr_sort(stralloc *sa) ;
+
+/** Remove a finding same elament on chained @sa.
+ * WARNING: this function assume that @sa is already ordered (see sastr_sort)
+ * Prefers to use the sastr_sortndrop_element() which is a convenient
+ * function of sastr_sort() and sastr_drop_same_element().
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int sastr_drop_same_element(stralloc *sa) ;
+
+/** Convenient function of sastr_sort() and sastr_drop_same_element()
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int sastr_sortndrop_element(stralloc *sa) ;
+
+/** Remove any element from a chained @sa where element is a subtree.
+ * e.g @sa contain /foo /foo/bar -> /foo/bar will be removed.
+ * WARNING: This function assume that @sa is already ordered. Use sastr_sort()
+ * function before.
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int sastr_dir_drop_child(stralloc *sa) ;
+
+/** Copy a chained @sa to @str as chained too */
+extern void sastr_to_char(char *str,stralloc *sa) ;
+
+/** Remove @element from a chained @sa
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int sastr_remove_element(stralloc *sa,char const *element) ;
 #endif
