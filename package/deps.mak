@@ -6,6 +6,7 @@ src/directory/dir_beabsolute.o src/directory/dir_beabsolute.lo: src/directory/di
 src/directory/dir_create.o src/directory/dir_create.lo: src/directory/dir_create.c src/include/oblibs/directory.h
 src/directory/dir_create_parent.o src/directory/dir_create_parent.lo: src/directory/dir_create_parent.c src/include/oblibs/directory.h
 src/directory/dir_create_tmp.o src/directory/dir_create_tmp.lo: src/directory/dir_create_tmp.c src/include/oblibs/string.h
+src/directory/dir_is_child.o src/directory/dir_is_child.lo: src/directory/dir_is_child.c src/include/oblibs/directory.h src/include/oblibs/string.h
 src/environ/environ_add_key_val.o src/environ/environ_add_key_val.lo: src/environ/environ_add_key_val.c src/include/oblibs/environ.h
 src/environ/environ_clean_envfile.o src/environ/environ_clean_envfile.lo: src/environ/environ_clean_envfile.c src/include/oblibs/environ.h
 src/environ/environ_clean_line.o src/environ/environ_clean_line.lo: src/environ/environ_clean_line.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h
@@ -39,9 +40,11 @@ src/sastr/sastr_clean_element.o src/sastr/sastr_clean_element.lo: src/sastr/sast
 src/sastr/sastr_clean_string.o src/sastr/sastr_clean_string.lo: src/sastr/sastr_clean_string.c src/include/oblibs/sastr.h
 src/sastr/sastr_clean_string_wdelim.o src/sastr/sastr_clean_string_wdelim.lo: src/sastr/sastr_clean_string_wdelim.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/sastr/sastr_cmp.o src/sastr/sastr_cmp.lo: src/sastr/sastr_cmp.c src/include/oblibs/sastr.h
+src/sastr/sastr_dir_drop_child.o src/sastr/sastr_dir_drop_child.lo: src/sastr/sastr_dir_drop_child.c src/include/oblibs/directory.h src/include/oblibs/sastr.h
 src/sastr/sastr_dir_get.o src/sastr/sastr_dir_get.lo: src/sastr/sastr_dir_get.c src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/sastr/sastr_dir_get_element.o src/sastr/sastr_dir_get_element.lo: src/sastr/sastr_dir_get_element.c src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/sastr/sastr_dir_get_recursive.o src/sastr/sastr_dir_get_recursive.lo: src/sastr/sastr_dir_get_recursive.c src/include/oblibs/sastr.h src/include/oblibs/string.h src/include/oblibs/types.h
+src/sastr/sastr_drop_same_element.o src/sastr/sastr_drop_same_element.lo: src/sastr/sastr_drop_same_element.c src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/sastr/sastr_find.o src/sastr/sastr_find.lo: src/sastr/sastr_find.c src/include/oblibs/sastr.h
 src/sastr/sastr_find_element_byid.o src/sastr/sastr_find_element_byid.lo: src/sastr/sastr_find_element_byid.c src/include/oblibs/sastr.h
 src/sastr/sastr_find_element_byname.o src/sastr/sastr_find_element_byname.lo: src/sastr/sastr_find_element_byname.c src/include/oblibs/sastr.h
@@ -50,11 +53,15 @@ src/sastr/sastr_len.o src/sastr/sastr_len.lo: src/sastr/sastr_len.c src/include/
 src/sastr/sastr_nelement.o src/sastr/sastr_nelement.lo: src/sastr/sastr_nelement.c src/include/oblibs/sastr.h
 src/sastr/sastr_rebuild_in_nline.o src/sastr/sastr_rebuild_in_nline.lo: src/sastr/sastr_rebuild_in_nline.c src/include/oblibs/sastr.h
 src/sastr/sastr_rebuild_in_oneline.o src/sastr/sastr_rebuild_in_oneline.lo: src/sastr/sastr_rebuild_in_oneline.c src/include/oblibs/sastr.h
+src/sastr/sastr_remove_element.o src/sastr/sastr_remove_element.lo: src/sastr/sastr_remove_element.c src/include/oblibs/sastr.h
 src/sastr/sastr_replace.o src/sastr/sastr_replace.lo: src/sastr/sastr_replace.c src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/sastr/sastr_replace_all.o src/sastr/sastr_replace_all.lo: src/sastr/sastr_replace_all.c src/include/oblibs/sastr.h
 src/sastr/sastr_reverse.o src/sastr/sastr_reverse.lo: src/sastr/sastr_reverse.c src/include/oblibs/sastr.h
+src/sastr/sastr_sort.o src/sastr/sastr_sort.lo: src/sastr/sastr_sort.c src/include/oblibs/sastr.h src/include/oblibs/string.h
+src/sastr/sastr_sortndrop_element.o src/sastr/sastr_sortndrop_element.lo: src/sastr/sastr_sortndrop_element.c src/include/oblibs/sastr.h
 src/sastr/sastr_split_element_in_nline.o src/sastr/sastr_split_element_in_nline.lo: src/sastr/sastr_split_element_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/sastr/sastr_split_string_in_nline.o src/sastr/sastr_split_string_in_nline.lo: src/sastr/sastr_split_string_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
+src/sastr/sastr_to_char.o src/sastr/sastr_to_char.lo: src/sastr/sastr_to_char.c src/include/oblibs/sastr.h
 src/str/auto.o src/str/auto.lo: src/str/auto.c
 src/str/basename.o src/str/basename.lo: src/str/basename.c src/include/oblibs/string.h
 src/str/dirname.o src/str/dirname.lo: src/str/dirname.c src/include/oblibs/string.h
@@ -86,6 +93,7 @@ src/str/scan_uidlist.o src/str/scan_uidlist.lo: src/str/scan_uidlist.c src/inclu
 src/str/scan_uidlist_wdelim.o src/str/scan_uidlist_wdelim.lo: src/str/scan_uidlist_wdelim.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/str/scan_uint32.o src/str/scan_uint32.lo: src/str/scan_uint32.c src/include/oblibs/string.h src/include/oblibs/types.h
 src/str/str_contain.o src/str/str_contain.lo: src/str/str_contain.c src/include/oblibs/string.h
+src/str/str_start_with.o src/str/str_start_with.lo: src/str/str_start_with.c src/include/oblibs/string.h
 src/str/version_cmp.o src/str/version_cmp.lo: src/str/version_cmp.c src/include/oblibs/string.h
 src/str/version_scan.o src/str/version_scan.lo: src/str/version_scan.c src/include/oblibs/string.h
 ifeq ($(strip $(STATIC_LIBS_ARE_PIC)),)
