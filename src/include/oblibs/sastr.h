@@ -19,8 +19,9 @@
 #include <skalibs/types.h>
 #include <skalibs/stralloc.h>
 
-#define FOREACH_SASTR(pos,sa) \
-	for (pos = 0 ; pos < *(sa.len) ; pos += strlen(*(sa.s) + pos) + 1)
+#define FOREACH_SASTR(sa,pos) \
+	stralloc_ref t = sa ; \
+	for (; pos < t->len ; pos += strlen(t->s + pos) + 1)
 	
 /** get all compoments on @srcdir with mode @mode execpt string @exclude
  * and append @sa with the result in a chained stralloc 
