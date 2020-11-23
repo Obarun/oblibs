@@ -20,8 +20,8 @@
 #include <skalibs/stralloc.h>
 
 #define FOREACH_SASTR(sa,pos) \
-	stralloc_ref t = sa ; \
-	for (; pos < t->len ; pos += strlen(t->s + pos) + 1)
+	stralloc_ref _saref_ = sa ; \
+	for (; pos < _saref_->len ; pos += strlen(_saref_->s + pos) + 1)
 	
 /** get all compoments on @srcdir with mode @mode execpt string @exclude
  * and append @sa with the result in a chained stralloc 
