@@ -1,17 +1,17 @@
-/* 
+/*
  * string.h
- * 
+ *
  * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
  * except according to the terms contained in the LICENSE file./
  */
- 
+
 #ifndef OB_STRING_H
 #define OB_STRING_H
 
@@ -27,7 +27,12 @@
     #define nb_el(x) (sizeof((x)) / sizeof((x)[0]))
 #endif
 
-/** remove all occurence of @occ into @str 
+/** keep compatibility */
+#if !defined(N_ELEMENTS)
+    #define N_ELEMENTS(x) nb_el(x)
+#endif
+
+/** remove all occurence of @occ into @str
  * @Return 1 on success else 0 */
 extern int obstr_trim(char *str, int occ) ;
 
@@ -44,7 +49,7 @@ extern void obstr_replace(char *str,int a,int b) ;
 extern char *obstr_dup(const char *str) ;
 
 /** count the length of the string until the @end
- * character was found. 
+ * character was found.
  * @Return -1 if @end was not found else @Return length*/
 extern ssize_t get_len_until(const char *str, char const end) ;
 
@@ -58,7 +63,7 @@ extern ssize_t get_rlen_until(const char *str, char const end,size_t from) ;
 extern ssize_t get_rstrlen_until(char const *str,char const *search) ;
 
 /** count the length of the string until the @sepstart
- * character was found. 
+ * character was found.
  * @Return -1 if @septart was not found before @sepend
  * @Return 0 if @sepend is not found
  * @Return length on success*/
@@ -85,23 +90,23 @@ extern char *obstr_sub(char const *str, unsigned int index, size_t len) ;
 
 /** Check if the line is : empty,only contain \n,begin by # even
  * if the line contain space before it,line only containing space
- * @Return 0 on all this case else @Return 1 */ 
+ * @Return 0 on all this case else @Return 1 */
 extern int get_wasted_line(char const *line) ;
 
 /** Scan for space at the begin of @line
  * @Return n bytes space*/
 extern unsigned int scan_isspace(char const *line) ;
 
-/** Deprecated function use ob_basename instead */ 
-extern int basename(char *dst,char const *path) gccattr_deprecated ;
+/** Deprecated function use ob_basename instead */
+//extern int basename(char *dst,char const *path) gccattr_deprecated ;
 
 /** Appends the basename of filename @path to @dst
  * @Return 1 on success
- * @Return 0 on fail and set errno */ 
+ * @Return 0 on fail and set errno */
 extern int ob_basename(char *dst,char const *path) ;
 
-/** Deprecated function use ob_dirname instead */ 
-extern int dirname(char *dst,char const *path) gccattr_deprecated ;
+/** Deprecated function use ob_dirname instead */
+//extern int dirname(char *dst,char const *path) gccattr_deprecated ;
 
 /** Appends the dirname of filename @path to @dst
  * @Return 1 on success
@@ -109,7 +114,7 @@ extern int dirname(char *dst,char const *path) gccattr_deprecated ;
 extern int ob_dirname(char *dst,char const *path) ;
 
 /** Append @dest with a list of string @str
- * starting at @baselen size. Only accept char const * as string 
+ * starting at @baselen size. Only accept char const * as string
  * @dest is appended with 0 at end of the string*/
 extern void auto_string_builder(char *dest,size_t baselen, char const *str[],...) ;
 
@@ -128,10 +133,10 @@ extern int auto_stra_builder(stralloc *sa,char const *str[],...) ;
 
 /** Scan @str for digit between dot where @ndot is the number
  * of dot expected e.g ndot = 2 -> 0.1.0, ndot = 3 > 1.0.1.0,...
- * append @sa with the result. 
+ * append @sa with the result.
  * @Return 1 on success
- * @Return 0 on fail 
- * @Return -1 system failure */ 
+ * @Return 0 on fail
+ * @Return -1 system failure */
 extern int version_scan(stralloc *sa, char const *str,uint8_t ndot) ;
 
 /** This function assume that @one and @two only contain numeric
