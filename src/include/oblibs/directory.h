@@ -1,10 +1,10 @@
-/* 
+/*
  * directory.h
- * 
+ *
  * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -48,4 +48,7 @@ extern int dir_beabsolute(char *dst,char const *dir) ;
  * @Return 1 on success
  * @Return 0 on fail */
 extern int dir_is_child(char const *parent, char const *child) ;
+
+/** Remove the last '/' from @path if exist */
+extern void dir_unslash(char *path) ;
 #endif

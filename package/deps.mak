@@ -7,6 +7,7 @@ src/directory/dir_create.o src/directory/dir_create.lo: src/directory/dir_create
 src/directory/dir_create_parent.o src/directory/dir_create_parent.lo: src/directory/dir_create_parent.c src/include/oblibs/directory.h
 src/directory/dir_create_tmp.o src/directory/dir_create_tmp.lo: src/directory/dir_create_tmp.c src/include/oblibs/string.h
 src/directory/dir_is_child.o src/directory/dir_is_child.lo: src/directory/dir_is_child.c src/include/oblibs/directory.h src/include/oblibs/string.h
+src/directory/dir_unslash.o src/directory/dir_unslash.lo: src/directory/dir_unslash.c src/include/oblibs/directory.h src/include/oblibs/string.h
 src/environ/environ_add_key_val.o src/environ/environ_add_key_val.lo: src/environ/environ_add_key_val.c src/include/oblibs/environ.h
 src/environ/environ_clean_envfile.o src/environ/environ_clean_envfile.lo: src/environ/environ_clean_envfile.c src/include/oblibs/environ.h
 src/environ/environ_clean_line.o src/environ/environ_clean_line.lo: src/environ/environ_clean_line.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h
@@ -94,6 +95,7 @@ src/str/scan_uidlist_wdelim.o src/str/scan_uidlist_wdelim.lo: src/str/scan_uidli
 src/str/scan_uint32.o src/str/scan_uint32.lo: src/str/scan_uint32.c src/include/oblibs/string.h src/include/oblibs/types.h
 src/str/str_contain.o src/str/str_contain.lo: src/str/str_contain.c src/include/oblibs/string.h
 src/str/str_start_with.o src/str/str_start_with.lo: src/str/str_start_with.c src/include/oblibs/string.h
+src/str/str_unslash.o src/str/str_unslash.lo: src/str/str_unslash.c src/include/oblibs/string.h
 src/str/version_cmp.o src/str/version_cmp.lo: src/str/version_cmp.c src/include/oblibs/string.h
 src/str/version_scan.o src/str/version_scan.lo: src/str/version_scan.c src/include/oblibs/string.h
 ifeq ($(strip $(STATIC_LIBS_ARE_PIC)),)
