@@ -26,5 +26,5 @@ void dir_unslash (char *path)
     --len ;
 
     if (path[len] == '/')
-        path[--len] = '\0' ;
+        path[len] = '\0' ;
 }
