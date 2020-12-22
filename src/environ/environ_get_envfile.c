@@ -50,6 +50,7 @@ int environ_get_envfile(stralloc *modifs,char const *src)
     {
         r = sastr_dir_get(&toparse,src,"",S_IFREG) ;
         if (!r){ e = -5 ; goto err ; }
+        if (!sastr_sort(&toparse)) { e = -9 ; goto err ; }
         for (;pos < toparse.len; pos += strlen(toparse.s + pos) + 1)
         {
             sa.len = 0 ;

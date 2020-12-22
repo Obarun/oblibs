@@ -19,6 +19,7 @@ void environ_get_envfile_error(int error,char const *envdir)
 {
     switch(error)
     {
+        case -9: log_warn("sort environment: ",envdir) ; break ;
         case -8: log_warn("empty environment: ",envdir) ; break ;
         case -7: log_warn("invalid environment: ",envdir) ; break ;
         case -6: log_warn("environment too long: ",envdir) ; break ;
