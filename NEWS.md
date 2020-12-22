@@ -2,6 +2,13 @@
 
 ---
 
+In 0.1.1.1
+
+- Bug fix:
+    - respect order of the file at environment parse process
+
+---
+
 In 0.1.1.0
 
 - Bugs fix:
