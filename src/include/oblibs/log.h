@@ -1,10 +1,10 @@
-/* 
+/*
  * log.h
- * 
+ *
  * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -103,14 +103,14 @@
 typedef struct set_color_s set_color_t ;
 struct set_color_s
 {
-	char const *info ; //bblack
-	char const *valid ; // bgreen
-	char const *warning ; //byellow
-	char const *blink ; //blink_blue
-	char const *error ; //bred
-	char const *ablink ; //blink
-	char const *blue ; //blink
-	char const *off ; //nocolor
+    char const *info ; //bblack
+    char const *valid ; // bgreen
+    char const *warning ; //byellow
+    char const *blink ; //blink_blue
+    char const *error ; //bred
+    char const *ablink ; //blink
+    char const *blue ; //blink
+    char const *off ; //nocolor
 } ;
 
 extern set_color_t log_color_enable ;
@@ -122,25 +122,25 @@ extern set_color_t *log_color ;
  * 0 -> error -> log_die and log_die_nclean familly
  * 1 -> error + info -> log_info familly
  * 2 -> error + info + warning -> log_warn familly
- * 3 -> error + info + warning + trace -> log_trace familly 
+ * 3 -> error + info + warning + trace -> log_trace familly
  * 4 -> error + info + warning + trace + (__FILE__,__func__,__LINE__) */
 
 enum log_level {
-	LOG_LEVEL_ERROR = 0,
-	LOG_LEVEL_INFO,
-	LOG_LEVEL_WARN,
-	LOG_LEVEL_TRACE,
-	LOG_LEVEL_DEBUG
+    LOG_LEVEL_ERROR = 0,
+    LOG_LEVEL_INFO,
+    LOG_LEVEL_WARN,
+    LOG_LEVEL_TRACE,
+    LOG_LEVEL_DEBUG
 } ;
 
 // Exit code convention
 enum log_exit_status {
-	
-	LOG_EXIT_SYS = 111 ,
-	LOG_EXIT_USER = 100 ,
-	LOG_EXIT_ZERO = 0 ,
-	LOG_EXIT_ONE = 1 ,
-	LOG_EXIT_LESSONE = -1
+
+    LOG_EXIT_SYS = 111 ,
+    LOG_EXIT_USER = 100 ,
+    LOG_EXIT_ZERO = 0 ,
+    LOG_EXIT_ONE = 1 ,
+    LOG_EXIT_LESSONE = -1
 } ;
 
 
@@ -148,9 +148,9 @@ enum log_exit_status {
 // at DEBUG level
 typedef struct log_dbg_info_s log_dbg_info_t ;
 struct log_dbg_info_s {
-	const char *file ;
-	const char *func ;
-	int line ;
+    const char *file ;
+    const char *func ;
+    int line ;
 } ;
 
 #define log_dbg_init { .file = __FILE__, .func = __func__, .line = __LINE__ }
@@ -165,15 +165,15 @@ extern ss_log_cleanup_func_t log_cleanup ;
 #define LOG_SYS_YES 2 // 2 instead of 1 to append the ':' charactere before strerror(errno)
 extern size_t *LOG_SYS ;
 
-// basic string 
+// basic string
 extern char const *LOG_ERROR_MSG[6] ;
 extern char const *LOG_ERROR_UNABLE_MSG[7] ;
 extern char const *LOG_INFO_MSG[6] ;
 extern char const *LOG_WARN_MSG[6] ;
 extern char const *LOG_WARN_UNABLE_MSG[7] ;
-extern char const *LOG_TRACE_MSG[6] ; 
-extern char const *LOG_USAGE_MSG[6] ; 
-extern char const *LOG_NOMEM_MSG[6] ; 
+extern char const *LOG_TRACE_MSG[6] ;
+extern char const *LOG_USAGE_MSG[6] ;
+extern char const *LOG_NOMEM_MSG[6] ;
 
 extern unsigned int VERBOSITY ;
 extern unsigned int DOUBLE_OUTPUT ;
@@ -227,96 +227,96 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 
 // prog: info: msg
 #define log_info(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_INFO_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_INFO_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 // prog: info: msg: strerror msg
 #define log_infosys(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_INFO_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_INFO_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 #define log_info_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_INFO_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_INFO_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 #define log_infosys_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_INFO_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_INFO_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 #define log_info_nclean_return(ret,cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_INFO,LOG_INFO_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_INFO,LOG_INFO_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 /** TRACING **/
 
 // prog: tracing: msg
 #define log_trace(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_TRACE,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_TRACE,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 // prog: tracing: msg: strerror msg
 #define log_tracesys(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_TRACE,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_TRACE,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 #define log_trace_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_TRACE,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_TRACE,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 #define log_tracesys_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_TRACE,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_TRACE,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 /** tracing with LOG_LEVEL_INFO */
 
 #define log_1_trace(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 // prog: tracing: msg: strerror msg
 #define log_1_tracesys(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 #define log_1_trace_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 #define log_1_tracesys_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_TRACE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 
@@ -324,258 +324,258 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 
 // prog: warning: msg
 #define log_warn(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 // prog: warning: msg: strerror msg
 #define log_warnsys(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 // prog: warning: unable to msg
 #define log_warnu(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 // prog: warning: unable to msg: strerror msg
 #define log_warnusys(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 #define log_warn_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 // prog: warning: msg: strerror msg
 #define log_warnsys_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 // prog: warning: unable to msg
 #define log_warnu_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 // prog: warning: unable to msg: strerror msg
 #define log_warnusys_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_WARN,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 
 #define log_warn_nclean_return(ret,cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_WARN,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_WARN,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 // prog: warning: msg: strerror msg
 #define log_warnsys_nclean_return(ret,cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_WARN,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_WARN,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 // prog: warning: unable to msg
 #define log_warnu_nclean_return(ret,cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_WARN,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_WARN,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 // prog: warning: unable to msg: strerror msg
 #define log_warnusys_nclean_return(ret,cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_WARN,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_WARN,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 /** warning with LOG_LEVEL_INFO */
 
 // prog: warning: msg
 #define log_1_warn(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 // prog: warning: msg: strerror msg
 #define log_1_warnsys(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 // prog: warning: unable to msg
 #define log_1_warnu(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 // prog: warning: unable to msg: strerror msg
 #define log_1_warnusys(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 #define log_1_warn_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 // prog: warning: msg: strerror msg
 #define log_1_warnsys_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 // prog: warning: unable to msg
 #define log_1_warnu_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 // prog: warning: unable to msg: strerror msg
 #define log_1_warnusys_return(ret,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_INFO,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 
 #define log_1_warn_nclean_return(ret,cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_INFO,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_INFO,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 // prog: warning: msg: strerror msg
 #define log_1_warnsys_nclean_return(ret,cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_INFO,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_INFO,LOG_WARN_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 // prog: warning: unable to msg
 #define log_1_warnu_nclean_return(ret,cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_INFO,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_INFO,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 // prog: warning: unable to msg: strerror msg
 #define log_1_warnusys_nclean_return(ret,cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_INFO,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
-	return ret ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_warn_nclean_builder(cleaner,&dbg_info,LOG_LEVEL_INFO,LOG_WARN_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    return ret ; \
 } while (0)
 
 /** FATAL(die) **/
 
 // prog: fatal: msg
 #define log_die(err,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_die_builder(err,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_die_builder(err,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 // prog: fatal: msg: strerror msg
 #define log_diesys(err,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_die_builder(err,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_die_builder(err,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 // prog: fatal: unable to msg
 #define log_dieu(err,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_die_builder(err,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_die_builder(err,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 // prog: fatal: unable to msg: strerror msg
 #define log_dieusys(err,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_die_builder(err,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_die_builder(err,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 // these following do the same as log_die? familly but
 // call a cleanup function before dying
 #define log_die_nclean(err,cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_die_nclean_builder(err,cleaner,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_die_nclean_builder(err,cleaner,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 #define log_diesys_nclean(err,cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_die_nclean_builder(err,cleaner,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_die_nclean_builder(err,cleaner,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 #define log_dieu_nclean(err,cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_die_nclean_builder(err,cleaner,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_die_nclean_builder(err,cleaner,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 #define log_dieusys_nclean(err,cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	log_die_nclean_builder(err,cleaner,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    log_die_nclean_builder(err,cleaner,&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_UNABLE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
-// output fatal msg 
+// output fatal msg
 #define log_fatal(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_out_builder(&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 /** USAGE **/
 
 // prog: usage: msg
 #define log_usage(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_NO ; \
-	log_die_builder(LOG_EXIT_USER,&dbg_info,LOG_LEVEL_ERROR,LOG_USAGE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_die_builder(LOG_EXIT_USER,&dbg_info,LOG_LEVEL_ERROR,LOG_USAGE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 /** OUT OF MEMORY **/
@@ -583,17 +583,17 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 // prog: out of memory: msg
 // force verbosity to have the full debug mode
 #define log_die_nomem(...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	VERBOSITY = LOG_LEVEL_DEBUG ; \
-	log_die_builder(LOG_EXIT_SYS,&dbg_info,LOG_LEVEL_DEBUG,LOG_NOMEM_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    VERBOSITY = LOG_LEVEL_DEBUG ; \
+    log_die_builder(LOG_EXIT_SYS,&dbg_info,LOG_LEVEL_DEBUG,LOG_NOMEM_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 #define log_die_nomem_nclean(cleaner,...) do { \
-	log_dbg_info_t dbg_info = log_dbg_init ; \
-	LOG_SYS = (size_t *)LOG_SYS_YES ; \
-	VERBOSITY = LOG_LEVEL_DEBUG ; \
-	log_die_nclean_builder(LOG_EXIT_SYS,cleaner,&dbg_info,LOG_LEVEL_DEBUG,LOG_NOMEM_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_YES ; \
+    VERBOSITY = LOG_LEVEL_DEBUG ; \
+    log_die_nclean_builder(LOG_EXIT_SYS,cleaner,&dbg_info,LOG_LEVEL_DEBUG,LOG_NOMEM_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
 #endif
