@@ -150,8 +150,9 @@ extern int version_scan(stralloc *sa, char const *str,uint8_t ndot) ;
 extern int version_cmp(char const  *a, char const *b, uint8_t ndot) ;
 
 /** Search string @search in string @str
- * @Return 1 on success
- * @Return 0 on fail */
+ * @Return the count of the lenght corresponding
+ * to the end of the @search string in @str on success
+ * @Return -1 on fail */
 extern int str_contain(char const *str, char const *search) ;
 
 /** Look if @str start with the regex @regex
