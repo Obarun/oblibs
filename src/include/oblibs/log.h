@@ -123,14 +123,16 @@ extern set_color_t *log_color ;
  * 1 -> error + info -> log_info familly
  * 2 -> error + info + warning -> log_warn familly
  * 3 -> error + info + warning + trace -> log_trace familly
- * 4 -> error + info + warning + trace + (__FILE__,__func__,__LINE__) */
+ * 4 -> error + info + warning + trace + (__FILE__,__func__,__LINE__)
+ * 5 -> error + info + warning + flow + (__FILE__,__func__,__LINE__) */
 
 enum log_level {
     LOG_LEVEL_ERROR = 0,
     LOG_LEVEL_INFO,
     LOG_LEVEL_WARN,
     LOG_LEVEL_TRACE,
-    LOG_LEVEL_DEBUG
+    LOG_LEVEL_DEBUG,
+    LOG_LEVEL_FLOW
 } ;
 
 // Exit code convention
@@ -145,7 +147,7 @@ enum log_exit_status {
 
 
 // Allow to see the file,function and the line
-// at DEBUG level
+// at DEBUG/FLOW level
 typedef struct log_dbg_info_s log_dbg_info_t ;
 struct log_dbg_info_s {
     const char *file ;
@@ -155,7 +157,7 @@ struct log_dbg_info_s {
 
 #define log_dbg_init { .file = __FILE__, .func = __func__, .line = __LINE__ }
 
-// basic function to pass a cleaner at die state
+// basic function to pass to the cleaner at die state
 typedef void ss_log_cleanup_func_t(void) ;
 typedef ss_log_cleanup_func_t *ss_log_cleanup_func_t_ref ;
 extern ss_log_cleanup_func_t log_cleanup ;
@@ -172,6 +174,7 @@ extern char const *LOG_INFO_MSG[6] ;
 extern char const *LOG_WARN_MSG[6] ;
 extern char const *LOG_WARN_UNABLE_MSG[7] ;
 extern char const *LOG_TRACE_MSG[6] ;
+extern char const *LOG_FLOW_MSG[6] ;
 extern char const *LOG_USAGE_MSG[6] ;
 extern char const *LOG_NOMEM_MSG[6] ;
 
@@ -223,7 +226,11 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 // these function only accept string as arguments
 // compiler will warn if it's not the case
 
-/** INFO **/
+/**
+ *
+ * INFO
+ *
+ * **/
 
 // prog: info: msg
 #define log_info(...) do { \
@@ -260,7 +267,11 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
     return ret ; \
 } while (0)
 
-/** TRACING **/
+/**
+ *
+ * TRACING
+ *
+ * **/
 
 // prog: tracing: msg
 #define log_trace(...) do { \
@@ -320,7 +331,11 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 } while (0)
 
 
-/** WARNING **/
+/**
+ *
+ * WARNING
+ *
+ * **/
 
 // prog: warning: msg
 #define log_warn(...) do { \
@@ -413,7 +428,11 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
     return ret ; \
 } while (0)
 
-/** warning with LOG_LEVEL_INFO */
+/**
+ *
+ * warning with LOG_LEVEL_INFO
+ *
+ * */
 
 // prog: warning: msg
 #define log_1_warn(...) do { \
@@ -506,7 +525,11 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
     return ret ; \
 } while (0)
 
-/** FATAL(die) **/
+/**
+ *
+ * FATAL(die)
+ *
+ * **/
 
 // prog: fatal: msg
 #define log_die(err,...) do { \
@@ -569,7 +592,11 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
     log_out_builder(&dbg_info,LOG_LEVEL_ERROR,LOG_ERROR_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
-/** USAGE **/
+/**
+ *
+ * USAGE
+ *
+ * **/
 
 // prog: usage: msg
 #define log_usage(...) do { \
@@ -578,7 +605,11 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
     log_die_builder(LOG_EXIT_USER,&dbg_info,LOG_LEVEL_ERROR,LOG_USAGE_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
 
-/** OUT OF MEMORY **/
+/**
+ *
+ * OUT OF MEMORY
+ *
+ * **/
 
 // prog: out of memory: msg
 // force verbosity to have the full debug mode
@@ -595,5 +626,18 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
     VERBOSITY = LOG_LEVEL_DEBUG ; \
     log_die_nclean_builder(LOG_EXIT_SYS,cleaner,&dbg_info,LOG_LEVEL_DEBUG,LOG_NOMEM_MSG,(char const *[]){__VA_ARGS__, NULL}) ; \
 } while (0)
+
+/**
+ *
+ * FLOW
+ *
+ * **/
+
+#define log_flow() do { \
+    log_dbg_info_t dbg_info = log_dbg_init ; \
+    LOG_SYS = (size_t *)LOG_SYS_NO ; \
+    log_out_builder(&dbg_info,LOG_LEVEL_FLOW,LOG_FLOW_MSG,(char const *[]){"entering: ", dbg_info.file," -> ",dbg_info.func, "()", NULL}) ; \
+} while (0)
+
 
 #endif
