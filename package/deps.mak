@@ -29,6 +29,7 @@ src/files/file_openclose_readonly.o src/files/file_openclose_readonly.lo: src/fi
 src/files/file_readputsa.o src/files/file_readputsa.lo: src/files/file_readputsa.c src/include/oblibs/directory.h src/include/oblibs/files.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/files/file_readputsa_g.o src/files/file_readputsa_g.lo: src/files/file_readputsa_g.c src/include/oblibs/files.h src/include/oblibs/string.h
 src/files/file_write_unsafe.o src/files/file_write_unsafe.lo: src/files/file_write_unsafe.c src/include/oblibs/string.h
+src/files/file_write_unsafe_g.o src/files/file_write_unsafe_g.lo: src/files/file_write_unsafe_g.c src/include/oblibs/string.h
 src/io/log.o src/io/log.lo: src/io/log.c src/include/oblibs/log.h
 src/memory/free_mem.o src/memory/free_mem.lo: src/memory/free_mem.c src/include/oblibs/memory.h
 src/memory/obstr_alloc.o src/memory/obstr_alloc.lo: src/memory/obstr_alloc.c src/include/oblibs/memory.h
