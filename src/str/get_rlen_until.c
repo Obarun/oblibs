@@ -1,10 +1,10 @@
-/* 
+/*
  * get_rlen_until.c
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -18,16 +18,16 @@
 
 ssize_t get_rlen_until(const char *str, char const end,size_t from)
 {
-	int i ;
-	size_t len,f ;
-	len = strlen(str) ;
-	f = len-from ;
-	len = len-f ;
-	char tmp[len + 1] ;
-	memcpy(tmp,str,len) ;
-	tmp[len] = 0 ;
-	for (i = len; i >=0 ;i--)
-		if (tmp[i] == end) return i ;
-	
-	return -1 ;
+    int i ;
+    size_t len,f ;
+    len = strlen(str) ;
+    f = len-from ;
+    len = len-f ;
+    char tmp[len + 1] ;
+    memcpy(tmp,str,len) ;
+    tmp[len] = 0 ;
+    for (i = len; i >=0 ;i--)
+        if (tmp[i] == end) return i ;
+
+    return -1 ;
 }

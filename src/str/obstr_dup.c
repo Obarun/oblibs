@@ -1,10 +1,10 @@
-/* 
+/*
  * obstr_dup.c
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -19,17 +19,17 @@
 
 char *obstr_dup(const char *str)
 {
-	int i ;
-	char *ptr = 0 ;
-	if (!(ptr=malloc(sizeof(char) * strlen(str)+1)))
-		return 0 ;
-	i = 0 ;
-	while(str[i])
-	{
-		ptr[i]=str[i] ;
-		i++ ;
-	}
-	ptr[i] = 0 ;
-	
-	return ptr ;
+    int i ;
+    char *ptr = 0 ;
+    if (!(ptr=malloc(sizeof(char) * strlen(str)+1)))
+        return 0 ;
+    i = 0 ;
+    while(str[i])
+    {
+        ptr[i]=str[i] ;
+        i++ ;
+    }
+    ptr[i] = 0 ;
+
+    return ptr ;
 }

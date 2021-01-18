@@ -1,10 +1,10 @@
-/* 
+/*
  * sastr_split_string_in_nline.c
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -21,16 +21,16 @@
 
 int sastr_split_string_in_nline(stralloc *sa)
 {
-	if (!sa->len) return 0 ;
-	int r ;
-	wild_zero_all(&MILL_SPLIT_LINE) ;
-	stralloc tmp = STRALLOC_ZERO ;
-	r = mill_string(&tmp,sa,&MILL_SPLIT_LINE) ;
-	if (r == -1 || !r) goto err ;
-	if (!stralloc_copy(sa,&tmp)) goto err ;
-	stralloc_free(&tmp) ;
-	return 1 ;
-	err:
-		stralloc_free(&tmp) ;
-		return 0 ;
+    if (!sa->len) return 0 ;
+    int r ;
+    wild_zero_all(&MILL_SPLIT_LINE) ;
+    stralloc tmp = STRALLOC_ZERO ;
+    r = mill_string(&tmp,sa,&MILL_SPLIT_LINE) ;
+    if (r == -1 || !r) goto err ;
+    if (!stralloc_copy(sa,&tmp)) goto err ;
+    stralloc_free(&tmp) ;
+    return 1 ;
+    err:
+        stralloc_free(&tmp) ;
+        return 0 ;
 }

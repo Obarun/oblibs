@@ -1,10 +1,10 @@
-/* 
+/*
  * environ_add_key_val.c
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -30,16 +30,16 @@ int environ_add_key_val (const char *key, const char *val, exlsn_t *info)
     if (el_vardupl (key, info->vars.s, info->vars.len)) goto err ;
     if (!stralloc_catb (&info->vars, key, strlen(key) + 1)) goto err ;
     if (!stralloc_catb (&info->values, val, strlen(val))) goto err ;
-   
-	r = el_transform (&info->values, blah.value, &si) ;
-	if (r < 0) goto err;
-	blah.n = r ;
-   
-	if (!genalloc_append (elsubst_t, &info->data, &blah)) goto err ;
 
-	return 1 ;
-	err:
-		info->vars.len = blah.var ;
-		info->values.len = blah.value ;
-		return 0 ;
+    r = el_transform (&info->values, blah.value, &si) ;
+    if (r < 0) goto err;
+    blah.n = r ;
+
+    if (!genalloc_append (elsubst_t, &info->data, &blah)) goto err ;
+
+    return 1 ;
+    err:
+        info->vars.len = blah.var ;
+        info->values.len = blah.value ;
+        return 0 ;
 }

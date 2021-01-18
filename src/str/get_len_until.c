@@ -1,10 +1,10 @@
-/* 
+/*
  * get_len_until.c
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -19,10 +19,10 @@
 
 ssize_t get_len_until(const char *str, char const end)
 {
-	unsigned int i ;
+    unsigned int i ;
     size_t len ;
     len = strlen(str) ;
     for (i = 0; i<=len; i++)
-    	if (str[i] == end) return i ;
+        if (str[i] == end) return i ;
     return -1 ;
 }

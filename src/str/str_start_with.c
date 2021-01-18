@@ -1,10 +1,10 @@
-/* 
+/*
  * str_start_with.c
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -18,20 +18,20 @@
 
 int str_start_with(char const *str, char const *regex)
 {
-	if (!*str || !*regex) return 0 ;
+    if (!*str || !*regex) return 0 ;
 
-	size_t i = 0, j = 0, len = strlen(str), slen = strlen(regex) ;
+    size_t i = 0, j = 0, len = strlen(str), slen = strlen(regex) ;
 
-	for (; i < len && i < slen ; i++){
+    for (; i < len && i < slen ; i++){
 
-		for (;j < slen ; j++) {
+        for (;j < slen ; j++) {
 
-			char c = regex[j] ;
+            char c = regex[j] ;
 
-			if (c != str[i+j]) 
-				return 0 ;
-		}
-	}
+            if (c != str[i+j])
+                return 0 ;
+        }
+    }
 
-	return 1 ;
+    return 1 ;
 }

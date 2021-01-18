@@ -1,10 +1,10 @@
-/* 
+/*
  * environ_clean_envfile.c
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -18,14 +18,14 @@
 
 int environ_clean_envfile(stralloc *modifs,stralloc *sa)
 {
-	if (!environ_get_clean_env(sa)) return 0 ;
-	if (sa->len) {
-		if (!stralloc_0(sa)) return 0 ;
-		sa->len-- ;
-		if (!environ_clean_nline(sa)) return 0 ;
-		if (!stralloc_0(sa)) return 0 ;
-		sa->len-- ;
-		if (!environ_remove_unexport(modifs,sa)) return 0 ;
-	}else return -1 ;
-	return 1 ;	
+    if (!environ_get_clean_env(sa)) return 0 ;
+    if (sa->len) {
+        if (!stralloc_0(sa)) return 0 ;
+        sa->len-- ;
+        if (!environ_clean_nline(sa)) return 0 ;
+        if (!stralloc_0(sa)) return 0 ;
+        sa->len-- ;
+        if (!environ_remove_unexport(modifs,sa)) return 0 ;
+    }else return -1 ;
+    return 1 ;
 }

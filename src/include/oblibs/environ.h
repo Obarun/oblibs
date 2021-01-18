@@ -1,17 +1,17 @@
-/* 
+/*
  * environ.h
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
  * except according to the terms contained in the LICENSE file./
  */
- 
+
 #ifndef OB_ENVIRON_H
 #define OB_ENVIRON_H
 
@@ -21,8 +21,8 @@
 
 #include <execline/execline.h>
 
-#define MAXVAR  50 
-#define MAXFILE 100 
+#define MAXVAR  50
+#define MAXFILE 100
 #define MAXENV 8191
 #define VAR_UNEXPORT '!'
 
@@ -36,8 +36,8 @@ struct exlsn_s
 } ;
 
 #define EXLSN_ZERO { \
-	.vars = STRALLOC_ZERO, .values = STRALLOC_ZERO, \
-	.data = GENALLOC_ZERO, .modifs = STRALLOC_ZERO }
+    .vars = STRALLOC_ZERO, .values = STRALLOC_ZERO, \
+    .data = GENALLOC_ZERO, .modifs = STRALLOC_ZERO }
 
 /** Substitute value of @key with @val into @envp
  * @Return 1 on success
@@ -60,7 +60,7 @@ extern int environ_get_clean_env(stralloc *sa) ;
  * remove any " \t\r" character from it.
  * Replace the content of @sa with the
  * result of the process. Add up @pos with the position
- * of the '=' found + 1. 
+ * of the '=' found + 1.
  * @Return 1 on success
  * @Return 0 on fail */
 extern int environ_get_key_nclean(stralloc *sa,size_t *pos) ;
@@ -68,7 +68,7 @@ extern int environ_get_key_nclean(stralloc *sa,size_t *pos) ;
 /** Get the value (meaning everything between '=' and '\n').
  * Replace the content of @sa with the
  * result of the process. Add up @pos with the position
- * of the '\n' found + 1. 
+ * of the '\n' found + 1.
  * @Return 1 on success
  * @Return 0 on fail*/
 extern int environ_get_val(stralloc *sa,size_t *pos) ;
@@ -113,7 +113,7 @@ extern int environ_remove_unexport(stralloc *modifs,stralloc *sa) ;
  * of environ_get_clean_env, environ_clean_nline and
  * environ_remove_unexport function.
  * @Return 1 on success
- * @Return 0 on fail 
+ * @Return 0 on fail
  * @Return -1 if @modifs is empty meaning no environment variables*/
 extern int environ_clean_envfile(stralloc *modifs,stralloc *sa) ;
 
@@ -128,7 +128,7 @@ extern unsigned int environ_get_num_of_line(stralloc *sa) ;
  * -it call environ_clean_envfile function
  * -It do the same for each file from @src in case of directory
  * @Return 1 on success
- * See environ_get_envfile_error function for failure */ 
+ * See environ_get_envfile_error function for failure */
 extern int environ_get_envfile(stralloc *modifs,char const *src) ;
 
 /**General function:

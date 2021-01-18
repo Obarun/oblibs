@@ -1,10 +1,10 @@
-/* 
+/*
  * get_gidbyname.c
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -20,16 +20,16 @@
 
 int get_gidbyname(char const *name,gid_t *gid)
 {
-	int e = errno ;
-	errno = 0 ;
-	struct passwd *pw = getpwnam(name) ;
-	if (!pw)
-	{
-		if (!errno) errno = ESRCH ;
-		return -1 ;
-	} 
-	*gid = pw->pw_gid ;
-	errno = e ;
+    int e = errno ;
+    errno = 0 ;
+    struct passwd *pw = getpwnam(name) ;
+    if (!pw)
+    {
+        if (!errno) errno = ESRCH ;
+        return -1 ;
+    }
+    *gid = pw->pw_gid ;
+    errno = e ;
     return 1 ;
 }
 

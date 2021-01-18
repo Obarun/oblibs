@@ -1,10 +1,10 @@
-/* 
+/*
  * environ_get_val_of_key.c
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -23,18 +23,18 @@
 
 int environ_get_val_of_key(stralloc *sa,char const *key)
 {
-	if (!sa->len) return 0 ;
-	ssize_t pos = -1 ;
-	stralloc tmp = STRALLOC_ZERO ;
-	if (!stralloc_copy(&tmp,sa)) goto err ;
-	pos = sastr_find(sa,key) ;
-	if (pos == -1) goto err ;
-	if (!environ_get_key_nclean(&tmp,(size_t *)&pos)) goto err ;
-	pos-- ;
-	if (!environ_get_val(sa,(size_t *)&pos)) goto err ;
-	stralloc_free(&tmp) ;
-	return 1 ;
-	err:
-		stralloc_free(&tmp) ;
-		return 0 ;
+    if (!sa->len) return 0 ;
+    ssize_t pos = -1 ;
+    stralloc tmp = STRALLOC_ZERO ;
+    if (!stralloc_copy(&tmp,sa)) goto err ;
+    pos = sastr_find(sa,key) ;
+    if (pos == -1) goto err ;
+    if (!environ_get_key_nclean(&tmp,(size_t *)&pos)) goto err ;
+    pos-- ;
+    if (!environ_get_val(sa,(size_t *)&pos)) goto err ;
+    stralloc_free(&tmp) ;
+    return 1 ;
+    err:
+        stralloc_free(&tmp) ;
+        return 0 ;
 }

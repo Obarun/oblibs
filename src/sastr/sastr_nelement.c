@@ -1,10 +1,10 @@
-/* 
+/*
  * sastr_nelement.c
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -20,9 +20,9 @@
 
 size_t sastr_nelement(stralloc *sa)
 {
-	size_t n = 0, pos = 0 ;
-	for (; pos < sa->len; pos += strlen(sa->s + pos) + 1)
-		n++ ;
-	
-	return n ;
+    size_t n = 0, pos = 0 ;
+    for (; pos < sa->len; pos += strlen(sa->s + pos) + 1)
+        n++ ;
+
+    return n ;
 }

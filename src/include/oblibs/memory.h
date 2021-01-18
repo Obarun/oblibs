@@ -1,10 +1,10 @@
-/* 
+/*
  * memory.h
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -17,11 +17,11 @@
 
 #include <stddef.h>
 
-/** alloc memory with size of @size 
+/** alloc memory with size of @size
  * and initialize string with 0
- * @Return a pointer to the string 
+ * @Return a pointer to the string
  * @Return NULL in case of failure*/
-extern void *obstr_alloc(size_t size) ; 
+extern void *obstr_alloc(size_t size) ;
 
 /** freed the address of @ptr
  * and set it to NULL*/

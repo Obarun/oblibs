@@ -1,10 +1,10 @@
-/* 
+/*
  * scan_mode.c
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -18,9 +18,9 @@
 
 ssize_t scan_mode (char const *str,mode_t mode)
 {
-	struct stat st ;	
-	if (stat(str,&st) == -1) return 0 ;
-	mode_t r = get_flags(mode,st.st_mode) ;
-	if (!r) return -1 ;
-	else return  1 ;
+    struct stat st ;
+    if (stat(str,&st) == -1) return 0 ;
+    mode_t r = get_flags(mode,st.st_mode) ;
+    if (!r) return -1 ;
+    else return  1 ;
 }

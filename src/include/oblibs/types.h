@@ -1,17 +1,17 @@
-/* 
+/*
  * types.h
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
  * except according to the terms contained in the LICENSE file./
  */
- 
+
 #ifndef OB_TYPES_H
 #define OB_TYPES_H
 
@@ -67,7 +67,7 @@ extern int get_gidbygroup(char const *name,gid_t *gid) ;
  * @Return 1 on success
  * @Return -1 if @str is not an uint32 type
  * @Return 0 if array[row] is already set
- * This function assume that @str is different than 0 */ 
+ * This function assume that @str is different than 0 */
 extern int scan_timeout(char const *str, uint32_t *array, int row) ;
 
 /** Check if @str is valid user
@@ -81,7 +81,7 @@ extern int scan_uid(char const *str,uid_t *uid) ;
  * and store the uid of the user in @array
  * the first elements of the array is reserved
  * to set the number of elements scanned
- * e.g if @str contain root obarun the array[0] will 
+ * e.g if @str contain root obarun the array[0] will
  * contain 2.
  * @Display warning if the user is not on the system
  * then @Return 0

@@ -1,10 +1,10 @@
-/* 
+/*
  * sastr_cmp.c
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
@@ -20,8 +20,8 @@
 
 ssize_t sastr_cmp(stralloc *sa,char const *s)
 {
-	size_t i = 0, len = sa->len ;
-	for (;i < len; i += strlen(sa->s + i) + 1)
-		if (!strcmp(sa->s+i,s)) return i ;
-	return -1 ;
+    size_t i = 0, len = sa->len ;
+    for (;i < len; i += strlen(sa->s + i) + 1)
+        if (!strcmp(sa->s+i,s)) return i ;
+    return -1 ;
 }

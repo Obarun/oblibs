@@ -1,17 +1,17 @@
-/* 
+/*
  * sastr.h
- * 
- * Copyright (c) 2018-2020 Eric Vidal <eric@obarun.org>
- * 
+ *
+ * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ *
  * All rights reserved.
- * 
+ *
  * This file is part of Obarun. It is subject to the license terms in
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
  * except according to the terms contained in the LICENSE file./
  */
- 
+
 #ifndef OB_SASTR_H
 #define OB_SASTR_H
 
@@ -20,17 +20,17 @@
 #include <skalibs/stralloc.h>
 
 #define FOREACH_SASTR(sa,pos) \
-	stralloc_ref _saref_ = sa ; \
-	for (; pos < _saref_->len ; pos += strlen(_saref_->s + pos) + 1)
-	
+    stralloc_ref _saref_ = sa ; \
+    for (; pos < _saref_->len ; pos += strlen(_saref_->s + pos) + 1)
+
 /** get all compoments on @srcdir with mode @mode execpt string @exclude
- * and append @sa with the result in a chained stralloc 
- * Note: srcdir must contain the last '/' e.g /etc/ 
+ * and append @sa with the result in a chained stralloc
+ * Note: srcdir must contain the last '/' e.g /etc/
  * @Return 0 on fail
  * @Return 1 on success */
 extern int sastr_dir_get(stralloc *sa, char const *srcdir,char const *exclude,mode_t mode) ;
 
-/** Same as sastr_dir_get but do it recursively 
+/** Same as sastr_dir_get but do it recursively
  * it use lstat() and returns information about the link itself in case of symlink*/
 extern int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const *exclude,mode_t mode) ;
 
@@ -62,7 +62,7 @@ extern int sastr_replace(stralloc *sa,char const *regex,char const *by) ;
 
 /** Same as sastr_replace but for all @regex found into @sa
  * @Return 1 on success
- * @Return 0 on fail */ 
+ * @Return 0 on fail */
 extern int sastr_replace_all(stralloc *sa,char const *regex,char const *by) ;
 
 /** Split each elements of @sa in a chained string
@@ -93,14 +93,14 @@ extern int sastr_clean_string_wdelim(stralloc *sa,char const *str,unsigned int d
 /** Get the content between double quote and
  * call sastr_clean_element to clean up
  * Replace the content of @sa with the
- * result of the process.  
+ * result of the process.
  * @Return 1 on success
  * @Return 0 on fail */
 extern int sastr_get_double_quote(stralloc *sa) ;
 
 /** Split each elements of @sa in a chained string
  * on multiple lines where element means everything
- * between '\n' character 
+ * between '\n' character
  * e.g:
  * 'var=value'
  * 'var1=value1'
@@ -109,7 +109,7 @@ extern int sastr_get_double_quote(stralloc *sa) ;
 extern int sastr_split_string_in_nline(stralloc *sa) ;
 
 /** Find @str in @sa
- * @Return position of @str in @sa 
+ * @Return position of @str in @sa
  * else @Return -1 */
 extern ssize_t sastr_find (stralloc *sa,char const *str) ;
 
