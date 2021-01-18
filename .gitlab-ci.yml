@@ -3,7 +3,7 @@ image: obarun/base:latest
 before_script:
   - pacman -Syu --noconfirm
   - pacman -S autoconf automake binutils bison file flex gcc gettext groff libtool m4 make patch pkgconf texinfo which git grep --noconfirm
-  - ./build_toolchain.sh
+  - ./build_toolchain.sh commit
 
 test:
   stage: test
@@ -21,7 +21,7 @@ build:
   - ./configure --enable-shared
   - make
   - make install
- 
+
   only:
     - tags
-    
+
