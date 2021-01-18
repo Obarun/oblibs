@@ -2,6 +2,20 @@
 
 ---
 
+In 0.1.2.0
+
+- Adapt to skalibs 2.10.0.0
+
+- Adapt to execline 2.7.0.0
+
+- Bug fix:
+    - sastr_replace: don't keep the last 0 at the lenght of the string.
+
+- New function:
+    - file_write_unsafe_g: same as file_write_unsafe but accept path containing the name of the file to write.
+
+---
+
 In 0.1.1.1
 
 - Bug fix:
