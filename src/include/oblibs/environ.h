@@ -16,8 +16,10 @@
 #define OB_ENVIRON_H
 
 #include <sys/types.h>
+
 #include <skalibs/stralloc.h>
 #include <skalibs/genalloc.h>
+#include <skalibs/gccattributes.h>
 
 #include <execline/execline.h>
 
@@ -130,35 +132,6 @@ extern int environ_clean_envfile(stralloc *modifs,char const *path) ;
  * @Return the number of line on success
  * @Return -1 on fail */
 extern unsigned int environ_get_num_of_line(stralloc *sa) ;
-
-/** General function:
- * -it search if @src is a file or a directory
- * -it opens and reads the file
- * -it call environ_clean_envfile function
- * -It do the same for each file from @src in case of directory
- * @Return 1 on success
- * See environ_get_envfile_error function for failure */
-extern int environ_get_envfile(stralloc *modifs,char const *src) ;
-
-/**General function:
- * -it call environ_get_envfile function
- * -it merge @envp with @newenv and use @tmpenv as temporary array
- * @Return 1 on success
- * See environ_get_envfile_error function for failure */
-extern int environ_get_envfile_n_merge(char const *src,char const *const *envp,char const **newenv, char *tmpenv) ;
-
-/** handle environ_get_envfile and environ_get_envfile_n_merge error.
- * This function do not die, it use log_warnu? function
- * @Return -8 empty environment
- * @Return -7 invalid environment
- * @Return -6 environment too long
- * @Return -5 unable to open envdir
- * @Return -4 unable to parse and clean
- * @Return -3 unable get number of line
- * @Return -2 too many variable
- * @Return -1 too many files
- * @Return 0 merge environment */
-extern void environ_get_envfile_error(int error, char const *envdir) ;
 
 /** check @keyvalue contain a '=' character
  * @Return 1 on success
