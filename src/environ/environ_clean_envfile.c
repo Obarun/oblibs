@@ -134,8 +134,9 @@ int environ_clean_envfile(stralloc *modifs,char const *path)
 
             cequal = get_len_until(commented.s + cpos,'=') ;
 
+            /** Real comment should not contain '=' */
             if (cequal == -1)
-                goto err ;
+                continue ;
 
             cequal-- ;
             char ckey[cequal + 1] ;
