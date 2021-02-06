@@ -118,7 +118,6 @@ extern int environ_remove_unexport(stralloc *modifs,stralloc *sa) ;
  * - it remove any empty and commented line.
  * - it check if MAXFILE and MAXENV is respected.
  * - it drop every same key=value pair from the list found.
- * - it call the environ_remove_unexport function.
  * For a same key=value found on multiple file,
  * the last occurence is kept.
  * @Return 1 on success
@@ -127,6 +126,11 @@ extern int environ_remove_unexport(stralloc *modifs,stralloc *sa) ;
  * or files are empty. Simply check the len of @modifs after the call
  * of this function.*/
 extern int environ_clean_envfile(stralloc *modifs,char const *path) ;
+
+/** Call environ_clean_envfile and call the environ_remove_unexport function.
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int environ_clean_envfile_unexport(stralloc *modifs,char const *path) ;
 
 /** Get of line from @sa
  * @Return the number of line on success

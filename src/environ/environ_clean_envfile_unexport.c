@@ -29,24 +29,12 @@ int environ_clean_envfile_unexport(stralloc *modifs,char const *path)
     if (!environ_clean_envfile(modifs,path))
         return 0 ;
 
-    stralloc tmp = STRALLOC_ZERO ;
-
-    if (!stralloc_copy(&tmp,modifs))
-        goto err ;
-
-    modifs->len = 0 ;
-
-    if (!environ_remove_unexport(modifs,&tmp) ||
+    if (!environ_remove_unexport(modifs,modifs) ||
         !sastr_split_string_in_nline(modifs) ||
         !stralloc_0(modifs))
-            goto err ;
+            return 0 ;
 
     modifs->len-- ;
 
-    stralloc_free(&tmp) ;
     return 1 ;
-
-    err:
-        stralloc_free(&tmp) ;
-        return 0 ;
 }
