@@ -46,6 +46,12 @@ int environ_clean_envfile(stralloc *modifs,char const *path)
     if (!sastr_sort(&toparse))
         goto err ;
 
+    if (sastr_nelement(&toparse) > MAXFILE) {
+
+        log_warn("too many file to parse at: ",path) ;
+        goto err ;
+    }
+
     FOREACH_SASTR(&toparse,pos) {
 
         again.len = 0 ;
@@ -167,17 +173,8 @@ int environ_clean_envfile(stralloc *modifs,char const *path)
 
     }
 
-    again.len = 0 ;
-
-    if (!stralloc_copy(&again,modifs))
+    if (!stralloc_0(modifs))
         goto err ;
-
-    modifs->len = 0 ;
-
-    if (!environ_remove_unexport(modifs,&again) ||
-        !sastr_split_string_in_nline(modifs) ||
-        !stralloc_0(modifs))
-            goto err ;
 
     modifs->len-- ;
 
