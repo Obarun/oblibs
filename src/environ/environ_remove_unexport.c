@@ -33,6 +33,8 @@ int environ_remove_unexport(stralloc *modifs,stralloc *sa)
     cp.len-- ;
     if (!sastr_split_string_in_nline(&cp)) goto err ;
 
+    modifs->len = 0 ;
+
     for (;pos < cp.len; pos += strlen(cp.s + pos)+1)
     {
         tmp.len = 0 ;
@@ -43,7 +45,12 @@ int environ_remove_unexport(stralloc *modifs,stralloc *sa)
         tmp.len-- ;
         if (!stralloc_catb(modifs,tmp.s,strlen(tmp.s) + 1)) goto err ;
     }
-    if (!sastr_rebuild_in_nline(modifs)) goto err ;
+    if (!sastr_rebuild_in_nline(modifs) ||
+        !stralloc_0(modifs))
+            goto err ;
+
+    modifs->len-- ;
+
     stralloc_free(&cp) ;
     stralloc_free(&tmp) ;
     return 1 ;
