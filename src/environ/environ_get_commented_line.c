@@ -36,7 +36,7 @@ int environ_get_commented_line(stralloc *tokeep,stralloc *src)
 
     FOREACH_SASTR(tokeep,pos) {
 
-        if ((tokeep->s[pos] != '#') || (tokeep->s[pos] != ';'))
+        if ((tokeep->s[pos] != '#') && (tokeep->s[pos] != ';'))
             continue ;
 
         current = strlen(tmp) ;
