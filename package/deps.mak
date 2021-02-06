@@ -9,10 +9,13 @@ src/directory/dir_create_tmp.o src/directory/dir_create_tmp.lo: src/directory/di
 src/directory/dir_is_child.o src/directory/dir_is_child.lo: src/directory/dir_is_child.c src/include/oblibs/directory.h src/include/oblibs/string.h
 src/directory/dir_unslash.o src/directory/dir_unslash.lo: src/directory/dir_unslash.c src/include/oblibs/directory.h
 src/environ/environ_add_key_val.o src/environ/environ_add_key_val.lo: src/environ/environ_add_key_val.c src/include/oblibs/environ.h
-src/environ/environ_clean_envfile.o src/environ/environ_clean_envfile.lo: src/environ/environ_clean_envfile.c src/include/oblibs/environ.h
+src/environ/environ_clean_envfile.o src/environ/environ_clean_envfile.lo: src/environ/environ_clean_envfile.c src/include/oblibs/environ.h src/include/oblibs/files.h src/include/oblibs/log.h src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/environ/environ_clean_line.o src/environ/environ_clean_line.lo: src/environ/environ_clean_line.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/environ/environ_clean_nline.o src/environ/environ_clean_nline.lo: src/environ/environ_clean_nline.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h
+src/environ/environ_drop_commented_line.o src/environ/environ_drop_commented_line.lo: src/environ/environ_drop_commented_line.c src/include/oblibs/environ.h src/include/oblibs/sastr.h src/include/oblibs/string.h
+src/environ/environ_drop_previous_same_key.o src/environ/environ_drop_previous_same_key.lo: src/environ/environ_drop_previous_same_key.c src/include/oblibs/environ.h src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/environ/environ_get_clean_env.o src/environ/environ_get_clean_env.lo: src/environ/environ_get_clean_env.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h
+src/environ/environ_get_commented_line.o src/environ/environ_get_commented_line.lo: src/environ/environ_get_commented_line.c src/include/oblibs/environ.h src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/environ/environ_get_envfile.o src/environ/environ_get_envfile.lo: src/environ/environ_get_envfile.c src/include/oblibs/environ.h src/include/oblibs/files.h src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/environ/environ_get_envfile_error.o src/environ/environ_get_envfile_error.lo: src/environ/environ_get_envfile_error.c src/include/oblibs/environ.h src/include/oblibs/log.h
 src/environ/environ_get_envfile_n_merge.o src/environ/environ_get_envfile_n_merge.lo: src/environ/environ_get_envfile_n_merge.c src/include/oblibs/environ.h src/include/oblibs/sastr.h
@@ -20,6 +23,7 @@ src/environ/environ_get_key_nclean.o src/environ/environ_get_key_nclean.lo: src/
 src/environ/environ_get_num_of_line.o src/environ/environ_get_num_of_line.lo: src/environ/environ_get_num_of_line.c src/include/oblibs/environ.h src/include/oblibs/mill.h
 src/environ/environ_get_val.o src/environ/environ_get_val.lo: src/environ/environ_get_val.c src/include/oblibs/environ.h src/include/oblibs/mill.h
 src/environ/environ_get_val_of_key.o src/environ/environ_get_val_of_key.lo: src/environ/environ_get_val_of_key.c src/include/oblibs/environ.h src/include/oblibs/sastr.h
+src/environ/environ_keyvalue_isvalid.o src/environ/environ_keyvalue_isvalid.lo: src/environ/environ_keyvalue_isvalid.c src/include/oblibs/environ.h src/include/oblibs/string.h
 src/environ/environ_rebuild_line.o src/environ/environ_rebuild_line.lo: src/environ/environ_rebuild_line.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/string.h
 src/environ/environ_remove_unexport.o src/environ/environ_remove_unexport.lo: src/environ/environ_remove_unexport.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/environ/environ_substitute.o src/environ/environ_substitute.lo: src/environ/environ_substitute.c src/include/oblibs/environ.h
