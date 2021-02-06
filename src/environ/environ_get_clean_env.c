@@ -23,38 +23,26 @@
 
 int environ_get_clean_env(stralloc *sa)
 {
-    if (!sa->len) return 0 ;
-    int r ;
-    size_t pos = 0, newpos = 0 ;
-    uint32_t nbline ;
-    stralloc src = STRALLOC_ZERO ;
-    stralloc tmp = STRALLOC_ZERO ;
-    wild_zero_all(&MILL_GET_LINE) ;
-    nbline = mill_string(&src,sa,&MILL_GET_LINE) ;
-    if (nbline == -1) goto err ;
-    if (!sastr_rebuild_in_nline(&src)) goto err ;
-    wild_zero_all(&MILL_GET_LINE) ;
-    wild_zero_all(&MILL_GET_COMMENT) ;
-    while (pos < src.len)
-    {
-        newpos = pos ;
-        r = mill_element(&tmp,src.s,&MILL_GET_COMMENT,&pos) ;
-        if (r == -1) goto err ;
-        if (!r) {
-            r = mill_element(&tmp,src.s,&MILL_GET_LINE,&newpos) ;
-            if (r == -1 || !r) goto err ;
-            pos = MILL_GET_LINE.inner.pos ;
-        }else pos = MILL_GET_COMMENT.inner.pos ;
-        nbline-- ;
-    }
-    if (tmp.len)
-        if (!sastr_rebuild_in_nline(&tmp)) goto err ;
-    if (!stralloc_copy(sa,&tmp)) goto err ;
-    stralloc_free(&src) ;
-    stralloc_free(&tmp) ;
-    return 1 ;
-    err:
-        stralloc_free(&src) ;
-        stralloc_free(&tmp) ;
+    size_t pos = 0 ;
+
+    if (!sastr_split_string_in_nline(sa))
         return 0 ;
+
+    /** empty file? */
+    if (!sa->len)
+        return 1 ;
+
+    if (!environ_clean_nline(sa) ||
+        !stralloc_0(sa))
+            return 0 ;
+
+    if (!environ_drop_commented_line(sa))
+         return 0 ;
+
+    /** may be badly formated */
+    FOREACH_SASTR(sa,pos)
+        if (!environ_keyvalue_isvalid(sa->s + pos))
+            return 0 ;
+
+    return 1 ;
 }

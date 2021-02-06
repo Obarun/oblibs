@@ -109,13 +109,22 @@ extern int environ_clean_nline(stralloc *sa) ;
  * @Return 0 on fail */
 extern int environ_remove_unexport(stralloc *modifs,stralloc *sa) ;
 
-/** This function is a simple combinaison
- * of environ_get_clean_env, environ_clean_nline and
- * environ_remove_unexport function.
+/** @PATH MUST POINT TO A DIRECTORY NOT A FILE.
+ * For each file found at @path:
+ * - it sort the list of the file found at @path.
+ * - it clean each key=value pair like environ_get_clean_env do.
+ * - it remove any empty and commented line.
+ * - it check if MAXFILE and MAXENV is respected.
+ * - it drop every same key=value pair from the list found.
+ * - it call the environ_remove_unexport function.
+ * For a same key=value found on multiple file,
+ * the last occurence is kept.
  * @Return 1 on success
  * @Return 0 on fail
- * @Return -1 if @modifs is empty meaning no environment variables*/
-extern int environ_clean_envfile(stralloc *modifs,stralloc *sa) ;
+ * WARNING: this function do not return 0 if @path is empty
+ * or files are empty. Simply check the len of @modifs after the call
+ * of this function.*/
+extern int environ_clean_envfile(stralloc *modifs,char const *path) ;
 
 /** Get of line from @sa
  * @Return the number of line on success
@@ -151,4 +160,25 @@ extern int environ_get_envfile_n_merge(char const *src,char const *const *envp,c
  * @Return 0 merge environment */
 extern void environ_get_envfile_error(int error, char const *envdir) ;
 
+/** check @keyvalue contain a '=' character
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int environ_keyvalue_isvalid(char const *key_value) ;
+
+/** Remove commented line from @sa where comment can be '#' or ';'
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int environ_drop_commented_line(stralloc *sa) ;
+
+/** Get commented line from @src and store it to @tokeep
+ * where comment can be '#' or ';'.
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int environ_get_commented_line(stralloc *tokeep,stralloc *src) ;
+
+/** Compare @newlist to @list and remove from @list
+ * a same key=value found at @newlist
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int environ_drop_previous_same_key(stralloc *list,stralloc *newlist) ;
 #endif
