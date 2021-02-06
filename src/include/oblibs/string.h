@@ -97,16 +97,10 @@ extern int get_wasted_line(char const *line) ;
  * @Return n bytes space*/
 extern unsigned int scan_isspace(char const *line) ;
 
-/** Deprecated function use ob_basename instead */
-//extern int basename(char *dst,char const *path) gccattr_deprecated ;
-
 /** Appends the basename of filename @path to @dst
  * @Return 1 on success
  * @Return 0 on fail and set errno */
 extern int ob_basename(char *dst,char const *path) ;
-
-/** Deprecated function use ob_dirname instead */
-//extern int dirname(char *dst,char const *path) gccattr_deprecated ;
 
 /** Appends the dirname of filename @path to @dst
  * @Return 1 on success
