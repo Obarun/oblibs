@@ -2,6 +2,18 @@
 
 ---
 
+In 0.1.3.0
+
+- New functions:
+    - environ_{drop_commented_line,drop_previous_same_key,get_commented_line,keyvalue_isvalid,clean_envfile_unexport}: see *environ.h* headers file.
+
+- Deprecate functions:
+    - environ_get_{envfile,envfile_error,envfile_n_merge}
+
+- Complete revamp of the environ_clean_envfile function: this function now deal with multiple file and handle correctly a same `key=value` found on different file. That means that for a same `key=value` at file A1 et A2, the `key=value` pair keep is the one from A2. The `execl-envfile` reflect this behavior too.
+
+---
+
 In 0.1.2.0
 
 - Adapt to skalibs 2.10.0.0
