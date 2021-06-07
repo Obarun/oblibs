@@ -18,6 +18,7 @@
 #include <sys/types.h>
 
 #include <oblibs/sastr.h>
+#include <oblibs/string.h>
 
 #include <skalibs/stralloc.h>
 
@@ -25,13 +26,42 @@ int environ_get_val_of_key(stralloc *sa,char const *key)
 {
     if (!sa->len) return 0 ;
     ssize_t pos = -1 ;
+    size_t ppos = 0, keylen = strlen(key) ;
     stralloc tmp = STRALLOC_ZERO ;
     if (!stralloc_copy(&tmp,sa)) goto err ;
-    pos = sastr_find(sa,key) ;
+    int r ;
+
+    while (ppos < sa->len) {
+
+        pos = sastr_find(&tmp,key) ;
+
+        r = get_sep_before(tmp.s + pos, '=', '\n') ;
+
+        if (r <= 0) {
+
+            tmp.len = 0 ;
+
+            if (!stralloc_cats(&tmp, sa->s + pos + keylen) ||
+                !stralloc_0(&tmp))
+                    goto err ;
+
+            ppos += pos ;
+            pos = -1 ;
+
+        } else {
+
+            ppos += pos ;
+            break ;
+        }
+    }
     if (pos == -1) goto err ;
-    if (!environ_get_key_nclean(&tmp,(size_t *)&pos)) goto err ;
-    pos-- ;
-    if (!environ_get_val(sa,(size_t *)&pos)) goto err ;
+
+    if (!stralloc_copy(&tmp, sa))
+            goto err ;
+
+    if (!environ_get_key_nclean(&tmp,(size_t *)&ppos)) goto err ;
+    ppos-- ;
+    if (!environ_get_val(sa,(size_t *)&ppos)) goto err ;
     stralloc_free(&tmp) ;
     return 1 ;
     err:
