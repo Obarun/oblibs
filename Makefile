@@ -64,10 +64,10 @@ txz: distclean
 
 strip: $(ALL_LIBS)
 ifneq ($(strip $(STATIC_LIBS)),)
-	exec $(STRIP) -x -R .note -R .comment -R .note.GNU-stack $(STATIC_LIBS)
+	exec $(STRIP) -x -R .note -R .comment -R $(STATIC_LIBS)
 endif
 ifneq ($(strip $(SHARED_LIBS)),)
-	exec $(STRIP) -R .note -R .comment -R .note.GNU-stack $(SHARED_LIBS)
+	exec $(STRIP) -R .note -R .comment -R $(SHARED_LIBS)
 endif
 
 install: install-data install-dynlib install-lib install-include

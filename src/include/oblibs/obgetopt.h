@@ -25,6 +25,6 @@
  * line after the definition of the options, this version does.
  * Also this version return -2 if the first arguments do not begin by
  * a '-' character.*/
-extern int getopt_args (int argc, char const *const *argv, char const *opts, subgetopt_t *o) ;
+extern int getopt_args (int argc, char const *const *argv, char const *opts, subgetopt *o) ;
 
 #endif

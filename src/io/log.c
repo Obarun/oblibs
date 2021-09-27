@@ -227,7 +227,7 @@ void log_clock(buffer *stream)
     size_t secless = 22 ;
     char hstamp[32 + 2] ;
     char tstamp[TIMESTAMP + 2] ;
-    tain_t now ;
+    tain now ;
     tain_wallclock_read(&now) ;
     char *pstr = 0 ;
 
@@ -240,7 +240,7 @@ void log_clock(buffer *stream)
     }
     else
     {
-        localtmn_t l ;
+        localtmn l ;
         localtmn_from_tain(&l, &now, 1) ;
         localtmn_fmt(hstamp, &l) ;
         hstamp[secless] = ' ' ;
@@ -255,8 +255,8 @@ void log_out(char const *str[],...)
     int e = errno ;
     va_list alist ;
     va_start(alist,str) ;
-    buffer_t_ref stream_1 = SWITCH_STREAM ? buffer_2 : buffer_1 ;
-    buffer_t_ref stream_2 = SWITCH_STREAM ? buffer_1 : buffer_2 ;
+    buffer_ref stream_1 = SWITCH_STREAM ? buffer_2 : buffer_1 ;
+    buffer_ref stream_2 = SWITCH_STREAM ? buffer_1 : buffer_2 ;
 
     if (REDIRFD_1)
         redir_fd(1,REDIRFD_1) ;

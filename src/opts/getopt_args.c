@@ -16,7 +16,7 @@
 
 #include <skalibs/sgetopt.h>
 
-int getopt_args (int argc, char const *const *argv, char const *opts, subgetopt_t *o)
+int getopt_args (int argc, char const *const *argv, char const *opts, subgetopt *o)
 {
     o->arg = 0 ;
 
