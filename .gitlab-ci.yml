@@ -10,7 +10,6 @@ test:
   script:
   - ./configure --enable-shared
   - make
-  - make
 
   only:
   - merge_requests
