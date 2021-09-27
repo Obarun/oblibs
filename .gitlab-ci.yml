@@ -10,6 +10,7 @@ test:
   script:
   - ./configure --enable-shared
   - make
+  - make DESTDIR=gitlab-ci install
 
   only:
   - merge_requests
@@ -19,8 +20,8 @@ build:
   script:
   - ./configure --enable-shared
   - make
-  - make install
+  - make DESTDIR=gitlab-ci install
 
   only:
-    - tags
-
+    refs:
+      - master
