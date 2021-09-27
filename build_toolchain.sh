@@ -1,9 +1,9 @@
 #!/bin/sh
 
-tag=0
+tag=1
 
 if [ "$1" == "commit" ]; then
-    tag=1
+    tag=0
 fi
 
 skalibs_tag="v2.10.0.0"

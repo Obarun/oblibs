@@ -20,7 +20,7 @@ src/environ/environ_get_commented_line.o src/environ/environ_get_commented_line.
 src/environ/environ_get_key_nclean.o src/environ/environ_get_key_nclean.lo: src/environ/environ_get_key_nclean.c src/include/oblibs/environ.h src/include/oblibs/mill.h
 src/environ/environ_get_num_of_line.o src/environ/environ_get_num_of_line.lo: src/environ/environ_get_num_of_line.c src/include/oblibs/environ.h src/include/oblibs/mill.h
 src/environ/environ_get_val.o src/environ/environ_get_val.lo: src/environ/environ_get_val.c src/include/oblibs/environ.h src/include/oblibs/mill.h
-src/environ/environ_get_val_of_key.o src/environ/environ_get_val_of_key.lo: src/environ/environ_get_val_of_key.c src/include/oblibs/environ.h src/include/oblibs/sastr.h
+src/environ/environ_get_val_of_key.o src/environ/environ_get_val_of_key.lo: src/environ/environ_get_val_of_key.c src/include/oblibs/environ.h src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/environ/environ_keyvalue_isvalid.o src/environ/environ_keyvalue_isvalid.lo: src/environ/environ_keyvalue_isvalid.c src/include/oblibs/environ.h src/include/oblibs/string.h
 src/environ/environ_rebuild_line.o src/environ/environ_rebuild_line.lo: src/environ/environ_rebuild_line.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/string.h
 src/environ/environ_remove_unexport.o src/environ/environ_remove_unexport.lo: src/environ/environ_remove_unexport.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h
@@ -67,8 +67,6 @@ src/sastr/sastr_split_element_in_nline.o src/sastr/sastr_split_element_in_nline.
 src/sastr/sastr_split_string_in_nline.o src/sastr/sastr_split_string_in_nline.lo: src/sastr/sastr_split_string_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/sastr/sastr_to_char.o src/sastr/sastr_to_char.lo: src/sastr/sastr_to_char.c src/include/oblibs/sastr.h
 src/str/auto.o src/str/auto.lo: src/str/auto.c
-src/str/basename.o src/str/basename.lo: src/str/basename.c src/include/oblibs/string.h
-src/str/dirname.o src/str/dirname.lo: src/str/dirname.c src/include/oblibs/string.h
 src/str/get_flags.o src/str/get_flags.lo: src/str/get_flags.c src/include/oblibs/types.h
 src/str/get_gidbygroup.o src/str/get_gidbygroup.lo: src/str/get_gidbygroup.c src/include/oblibs/types.h
 src/str/get_gidbyname.o src/str/get_gidbyname.lo: src/str/get_gidbyname.c src/include/oblibs/types.h
