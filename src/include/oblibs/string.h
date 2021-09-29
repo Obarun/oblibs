@@ -113,7 +113,7 @@ extern int ob_dirname(char *dst,char const *path) ;
 extern void auto_string_builder(char *dest,size_t baselen, char const *str[],...) ;
 
 /** Append @sa with a list of string @str
- * starting at @baselen size. Only accept char const * as string
+ * Only accept char const * as string
  * @sa is appended with 0 at the end of the string.
  * @Return 1 on success
  * @Return 0 on fail */

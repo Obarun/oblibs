@@ -29,7 +29,10 @@ void auto_string_builder(char *dest,size_t baselen, char const *str[],...)
     while (*str)
     {
         slen = strlen(*str) ;
-        memcpy(dest + totlen,*str,slen) ;
+        char t[slen + 1] ;
+        memcpy(t,*str,slen) ;
+        t[slen] = 0 ;
+        memcpy(dest + totlen,t,slen) ;
         str++ ;
         totlen += slen ;
     }
