@@ -70,30 +70,10 @@ ifneq ($(strip $(SHARED_LIBS)),)
 	exec $(STRIP) -R .note -R .comment -R $(SHARED_LIBS)
 endif
 
-install: install-data install-dynlib install-lib install-include
-install-data: $(ALL_DATA:src/etc/%=$(DESTDIR)$(datadir)/%)
+install: install-dynlib install-lib install-include
 install-dynlib: $(SHARED_LIBS:lib%.so.xyzzy=$(DESTDIR)$(dynlibdir)/lib%.so)
 install-lib: $(STATIC_LIBS:lib%.a.xyzzy=$(DESTDIR)$(libdir)/lib%.a)
 install-include: $(ALL_INCLUDES:src/include/$(package)/%.h=$(DESTDIR)$(includedir)/$(package)/%.h)
-
-ifneq ($(exthome),)
-
-$(DESTDIR)$(exthome): $(DESTDIR)$(home)
-	exec $(INSTALL) -l $(notdir $(home)) $(DESTDIR)$(exthome)
-
-update: $(DESTDIR)$(exthome)
-
-global-links: $(DESTDIR)$(exthome) $(SHARED_LIBS:lib%.so.xyzzy=$(DESTDIR)$(sproot)/library.so/lib%.so.$(version_M))
-
-$(DESTDIR)$(sproot)/library.so/lib%.so.$(version_M): $(DESTDIR)$(dynlibdir)/lib%.so.$(version_M)
-	exec $(INSTALL) -D -l ..$(subst $(sproot),,$(exthome))/library.so/$(<F) $@
-
-.PHONY: update global-links
-
-endif
-
-$(DESTDIR)$(datadir)/%: src/etc/%
-	exec $(INSTALL) -D -m 644 $< $@
 
 $(DESTDIR)$(dynlibdir)/lib%.so $(DESTDIR)$(dynlibdir)/lib%.so.$(version_M): lib%.so.xyzzy
 	$(INSTALL) -D -m 755 $< $@.$(version) && \
@@ -119,4 +99,4 @@ liboblibs.a.xyzzy: $(ALL_SOBJS)
 liboblibs.so.xyzzy: $(ALL_DOBJS)
 	exec $(REALCC) -o $@ $(CFLAGS_ALL) $(CFLAGS_SHARED) $(LDFLAGS_ALL) $(LDFLAGS_SHARED) -Wl,-soname,liboblibs.so.$(version_M) $^ $(EXTRA_LIBS) $(LDLIBS)
 
-.PHONY: it all clean distclean txz strip install install-data install-dynlib install-lib install-include
+.PHONY: it all clean distclean txz strip install install-dynlib install-lib install-include

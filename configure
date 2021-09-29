@@ -38,7 +38,6 @@ Optional features:
   --disable-static              do not build static libraries [enabled]
   --disable-allstatic           do not prefer linking against static libraries [enabled]
   --disable-all-pic             do not build static libraries as PIC [enabled]
-  --enable-slashpackage[=ROOT]  assume /package installation at ROOT [disabled]
 
 EOF
   exit 0
@@ -135,10 +134,7 @@ manualsysdeps=false
 shared=true
 static=true
 allpic=true
-slashpackage=false
-sproot=
 home=
-exthome=
 allstatic=true
 evenmorestatic=false
 addincpath=''
@@ -168,9 +164,6 @@ for arg ; do
     --disable-allstatic|--enable-allstatic=no) allstatic=false ; evenmorestatic=false ;;
     --enable-all-pic|--enable-all-pic=yes) allpic=true ;;
     --disable-all-pic|--enable-all-pic=no) allpic=false ;;
-    --enable-slashpackage=*) sproot=${arg#*=} ; slashpackage=true ; ;;
-    --enable-slashpackage) sproot= ; slashpackage=true ;;
-    --disable-slashpackage) sproot= ; slashpackage=false ;;
     --enable-*|--disable-*|--with-*|--without-*|--*dir=*) ;;
     --host=*|--target=*) target=${arg#*=} ;;
     --build=*) build=${arg#*=} ;;
@@ -195,7 +188,7 @@ fi
 
 # Expand installation directories
 stripdir prefix
-for i in exec_prefix dynlibdir libdir includedir sysdeps sproot ; do
+for i in exec_prefix dynlibdir libdir includedir sysdeps ; do
   eval tmp=\${$i}
   eval $i=$tmp
   stripdir $i
@@ -213,38 +206,9 @@ while : ; do
   2>|/dev/null > "$tmpe" && break
   test "$i" -gt 50 && fail "$0: cannot create temporary files"
 done
+
 set +C
 trap 'rm -f "$tmpc" "$tmpe"' EXIT ABRT INT QUIT TERM HUP
-
-# Set slashpackage values
-if $slashpackage ; then
-  home=${sproot}/package/${category}/${package}-${version}
-  exthome=${sproot}/package/${category}/${package}
-  if $manualsysdeps ; then
-    :
-  else
-    sysdeps=${sproot}/package/prog/skalibs/sysdeps
-  fi
-  binprefix=${home}/command
-  extbinprefix=${exthome}/command
-  dynlibdir=${home}/library.so
-  libdir=${home}/library
-  includedir=${home}/include
-  while read dep condvar ; do
-    if test -n "$condvar" ; then
-      eval "cond=$condvar"
-    else
-      cond=true
-    fi
-    if $cond ; then
-      addincpath="$addincpath -I${sproot}${dep}/include"
-      vpaths="$vpaths ${sproot}${dep}/library"
-      addlibspath="$addlibspath -L${sproot}${dep}/library"
-      vpathd="$vpathd ${sproot}${dep}/library.so"
-      addlibdpath="$addlibdpath -L${sproot}${dep}/library.so"
-    fi
-done < package/deps-build
-fi
 
 # Find a C compiler to use
 if test -n "$target" && test x${build} != x${target} ; then
@@ -366,11 +330,8 @@ dynlibdir := $dynlibdir
 libdir := $libdir
 includedir := $includedir
 sysdeps := $sysdeps
-slashpackage := $slashpackage
-sproot := $sproot
 version := $version
 home := $home
-exthome := ${exthome}
 
 SPAWN_LIB := ${spawn_lib}
 SOCKET_LIB := ${socket_lib}
@@ -425,7 +386,6 @@ cat <<EOF
 #ifndef ${package_macro_name}_CONFIG_H
 #define ${package_macro_name}_CONFIG_H
 #define ${package_macro_name}_VERSION "$version"
-#define ${package_macro_name}_SPROOT "$sproot"
 #define ${package_macro_name}_HOME "$home"
 EOF
 
