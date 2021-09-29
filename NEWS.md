@@ -2,6 +2,20 @@
 
 ---
 
+In 0.1.4.0
+
+- Adapt to skalibs 2.11.0.0
+
+- Adapt to execline 2.8.1.0
+
+- Remove deprecated functions basename() and dirname().
+
+- Bug fix:
+    - environ_get_val_of_key: be sure to deal with environment variable.
+
+- Remove slashpackage convention.
+---
+
 In 0.1.3.0
 
 - New functions:
