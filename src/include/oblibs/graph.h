@@ -151,6 +151,10 @@ extern int graph_matrix_sort(graph_t *g) ;
 extern void graph_matrix_transpose(graph_t *g) ;
 /* Reverse the graph.sort array */
 extern void graph_matrix_sort_reverse(graph_t *g) ;
+/* append @sa as a sastr string with the sorted graph
+ * @Return 0 on fail
+ * @Return 1 on success.*/
+extern int graph_matrix_sort_tosa(stralloc *sa, graph_t *g) ;
 /* @list should be iniatilized with graph_array_single function
  * before the call of these functions.
  * graph_array_rebuild function should be called after
@@ -159,11 +163,14 @@ extern void graph_matrix_sort_reverse(graph_t *g) ;
 extern int graph_matrix_get_edge(unsigned int *list, graph_t *g, char const *vertex, uint8_t recursive) ;
 extern int graph_matrix_get_requiredby(unsigned int *list, graph_t *g, char const *vertex, uint8_t recursive) ;
 
-/** Search dependencies (or requiredby if @reverse > 0) of @name
+/** Search dependencies (or requiredby if @requiredby > 0) of @name
  * and build a sastr string stored on @sa
  * @Return -1 on fail
  * @Return the number of deps on success */
 extern int graph_matrix_get_edge_g(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby) ;
 
-extern int graph_matrix_get_edge_sorted(stralloc *sa, graph_t *g, char const *name, uint8_t reverse) ;
+/** Same as graph_matrix_get_edge_g but sort the result.
+ * Return the number of edge on success
+ * Return -1 on fail */
+extern int graph_matrix_get_edge_g_sorted(stralloc *sa, graph_t *g, char const *name, uint8_t reverse) ;
 #endif

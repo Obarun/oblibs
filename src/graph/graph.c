@@ -607,7 +607,7 @@ int graph_vertex_get_edge_salist(stralloc *store, graph_t *g, char const *vertex
 int graph_matrix_build(graph_t *g)
 {
     if (!graph_init(g))
-        log_warnu_return(LOG_EXIT_ZERO,"init graph") ;
+        log_warnu_return(LOG_EXIT_ONE,"init graph") ;
 
     unsigned int i = 0 ;
 
@@ -756,6 +756,23 @@ void graph_matrix_sort_reverse(graph_t *g)
     graph_array_reverse(g->sort, g->mlen) ;
 }
 
+int graph_matrix_sort_tosa(stralloc *sa, graph_t *g)
+{
+    size_t pos = 0 ;
+
+    for(; pos < g->sort_count ; pos++) {
+
+        char *name = g->data.s + genalloc_s(graph_hash_t,&g->hash)[g->sort[pos]].vertex ;
+
+        if (!sastr_add_string(sa, name)) {
+            log_warnu("add string") ;
+            return 0 ;
+        }
+
+    }
+    return 1 ;
+}
+
 int graph_matrix_get_edge(unsigned int *list, graph_t *g, char const *vertex, uint8_t recursive)
 {
 
@@ -834,3 +851,94 @@ int graph_matrix_get_edge_g(stralloc *sa, graph_t *g, char const *name, uint8_t 
     return count ;
 }
 
+int graph_matrix_get_edge_g_sorted(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby)
+{
+
+    size_t pos = 0 ;
+    int count = -1 ;
+
+    graph_t gc = GRAPH_ZERO ;
+
+    sa->len = 0 ;
+    count = graph_matrix_get_edge_g(sa, g, name, requiredby) ;
+
+    size_t len = sa->len ;
+    char vertex[len + 1] ;
+
+    if (count <= 0) {
+        count = 0 ;
+        goto freed ;
+    }
+
+    sastr_to_char(vertex,sa) ;
+    count = -1 ;
+
+    for (; pos < len ; pos += strlen(vertex + pos) + 1) {
+
+        sa->len = 0 ;
+
+        char *ename = vertex + pos ;
+
+        if (!graph_vertex_add(&gc, ename)) {
+
+            log_warnu("add vertex: ",ename) ;
+            goto freed ;
+        }
+
+        unsigned int c = graph_matrix_get_edge_g(sa, g, ename, requiredby) ;
+
+        if (c == -1)
+            goto freed ;
+
+        {
+            size_t bpos = 0 ;
+
+            FOREACH_SASTR(sa, bpos) {
+
+                char *edge = sa->s + bpos ;
+
+                if (!graph_vertex_add_with_edge(&gc, ename, edge)) {
+
+                    log_warnu("add edge: ",ename," to vertex: ", edge) ;
+                    goto freed ;
+                }
+
+                if (!graph_vertex_add(&gc, edge)) {
+
+                    log_warnu("add vertex: ",edge) ;
+                    goto freed ;
+                }
+            }
+        }
+    }
+
+    if (!graph_matrix_build(&gc)) {
+
+        log_warnu("build the matrix") ;
+        goto freed ;
+    }
+
+    if (!graph_matrix_analyze_cycle(&gc)) {
+
+        log_warnu("found cycle") ;
+        goto freed ;
+    }
+
+    if (!graph_matrix_sort(&gc)) {
+
+        log_warnu("sort the matrix") ;
+        goto freed ;
+    }
+
+
+    sa->len = pos = 0 ;
+
+    if (!graph_matrix_sort_tosa(sa, &gc))
+        goto freed ;
+
+    count = gc.sort_count ;
+
+    freed:
+        graph_free_all(&gc) ;
+        return count ;
+}
