@@ -41,6 +41,9 @@ struct exlsn_s
     .vars = STRALLOC_ZERO, .values = STRALLOC_ZERO, \
     .data = GENALLOC_ZERO, .modifs = STRALLOC_ZERO }
 
+/** Please POSIX */
+extern char **environ ;
+
 /** Substitute value of @key with @val into @envp
  * @Return 1 on success
  * @Return 0 on fail*/
