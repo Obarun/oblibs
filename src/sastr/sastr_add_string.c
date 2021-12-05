@@ -21,7 +21,11 @@
 int sastr_add_string(stralloc *sa,char const *str)
 {
     if (!*str) return 0 ;
-    size_t len = strlen(str) + 1 ;
-    if (!stralloc_catb(sa,str,len)) return 0 ;
+    size_t len = strlen(str) ;
+    /** close the string to copy*/
+    char tmp[len + 1] ;
+    memcpy(tmp, str, len) ;
+    tmp[len] = 0 ;
+    if (!stralloc_catb(sa, tmp, len + 1)) return 0 ;
     return 1 ;
 }
