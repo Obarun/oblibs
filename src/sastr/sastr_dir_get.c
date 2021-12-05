@@ -24,7 +24,7 @@
 #include <skalibs/direntry.h>
 #include <skalibs/unix-transactional.h>
 
-int sastr_dir_get(stralloc *sa, char const *srcdir,char const *exclude,mode_t mode)
+int sastr_dir_get(stralloc *sa, char const *srcdir,char const **exclude,mode_t mode)
 {
     size_t base = sa->len ;
     int wasnull = !sa->s ;
@@ -41,18 +41,26 @@ int sastr_dir_get(stralloc *sa, char const *srcdir,char const *exclude,mode_t mo
         struct stat st ;
         direntry *d ;
         d = readdir(dir) ;
+
         if (!d) break ;
+
         if (d->d_name[0] == '.')
-        if (((d->d_name[1] == '.') && !d->d_name[2]) || !d->d_name[1])
-            continue ;
+            if (((d->d_name[1] == '.') && !d->d_name[2]) || !d->d_name[1])
+                continue ;
+
         if (stat_at(fdsrc, d->d_name, &st) < 0)
             goto err ;
+
         mode_t r = get_flags(mode,st.st_mode) ;
-        if (r > 0)
-        {
-            if (!strcmp(d->d_name,exclude)) continue ;
+        if (r > 0) {
+
+            char const *const *s = exclude ;
+            while(*s)
+                if (!strcmp(d->d_name, *s++))
+                    goto next ;
             if (!stralloc_catb(sa,d->d_name,strlen(d->d_name) + 1)) goto err ;
         }
+        next:
     }
     dir_close(dir) ;
 

@@ -25,7 +25,7 @@
 #include <skalibs/direntry.h>
 #include <skalibs/unix-transactional.h>
 
-int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const *exclude,mode_t mode)
+int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const **exclude,mode_t mode, uint8_t include_path)
 {
     size_t base = sa->len ;
     int wasnull = !sa->s ;
@@ -43,27 +43,39 @@ int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const *exclude
         struct stat st ;
         direntry *d ;
         d = readdir(dir) ;
+
         if (!d) break ;
+
         if (d->d_name[0] == '.')
-        if (((d->d_name[1] == '.') && !d->d_name[2]) || !d->d_name[1])
-            continue ;
+            if (((d->d_name[1] == '.') && !d->d_name[2]) || !d->d_name[1])
+                continue ;
+
         if (lstat_at(fdsrc, d->d_name, &st) < 0)
             goto err ;
 
-        if (!strcmp(d->d_name,exclude)) continue ;
-        if (S_ISDIR(st.st_mode))
-        {
+        char const *const *s = exclude ;
+        while(*s)
+            if (!strcmp(d->d_name, *s++))
+                goto next ;
+
+        if (S_ISDIR(st.st_mode)) {
+
             if (!auto_stra(&subdir,srcdir,"/",d->d_name)) goto err ;
-            if (!sastr_dir_get_recursive(sa,subdir.s,exclude,mode)) goto err ;
+            if (!sastr_dir_get_recursive(sa,subdir.s,exclude,mode,include_path)) goto err ;
             subdir.len = 0 ;
         }
+
         mode_t r = get_flags(mode,st.st_mode) ;
-        if (r > 0)
-        {
-            if (!stralloc_cats(sa,srcdir)) goto err ;
-            if (!stralloc_cats(sa,"/")) goto err ;
+        if (r > 0) {
+
+            if (include_path) {
+                if (!stralloc_cats(sa,srcdir)) goto err ;
+                if (!stralloc_cats(sa,"/")) goto err ;
+            }
+
             if (!stralloc_catb(sa,d->d_name,strlen(d->d_name) + 1)) goto err ;
         }
+        next:
     }
     dir_close(dir) ;
     stralloc_free(&subdir) ;

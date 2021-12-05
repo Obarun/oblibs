@@ -33,7 +33,9 @@ int environ_clean_envfile(stralloc *modifs,char const *path)
     stralloc again = STRALLOC_ZERO ;
     stralloc commented = STRALLOC_ZERO ;
 
-    r = sastr_dir_get(&toparse,path,"",S_IFREG) ;
+    char const *exclude[1] = { 0 } ;
+
+    r = sastr_dir_get(&toparse,path,exclude,S_IFREG) ;
 
     if (!r)
         goto err ;

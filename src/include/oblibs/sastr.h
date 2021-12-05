@@ -28,11 +28,11 @@
  * Note: srcdir must contain the last '/' e.g /etc/
  * @Return 0 on fail
  * @Return 1 on success */
-extern int sastr_dir_get(stralloc *sa, char const *srcdir,char const *exclude,mode_t mode) ;
+extern int sastr_dir_get(stralloc *sa, char const *srcdir,char const **exclude,mode_t mode) ;
 
 /** Same as sastr_dir_get but do it recursively
  * it use lstat() and returns information about the link itself in case of symlink*/
-extern int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const *exclude,mode_t mode) ;
+extern int sastr_dir_get_recursive(stralloc *sa, char const *srcdir,char const **exclude,mode_t mode, uint8_t include_path) ;
 
 /** Seach @element on @scrcdir with mode @mode and append @sa
  * with the result in a chained stralloc if it found, with @scrcdir as
