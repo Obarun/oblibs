@@ -598,6 +598,34 @@ int graph_vertex_get_edge_salist(stralloc *store, graph_t *g, char const *vertex
     return 1 ;
 }
 
+int graph_vertex_add_requiredby(graph_t *g, char const *vertex, char const *requiredby)
+{
+
+    /** insert vertex if it doesn't exist yet */
+    if (!graph_vertex_add(g, vertex))
+        return 0 ;
+
+    if (!graph_vertex_add_with_edge(g, requiredby, vertex))
+        return 0 ;
+
+    return 1 ;
+}
+
+int graph_vertex_add_nrequiredby(graph_t *g, char const *vertex, stralloc *requiredby)
+{
+    size_t pos = 0 ;
+
+    /** insert vertex if it doesn't exist yet */
+    if (!graph_vertex_add(g, vertex))
+        return 0 ;
+
+    FOREACH_SASTR(requiredby, pos)
+        if (!graph_vertex_add_with_edge(g, requiredby->s + pos, vertex))
+            return 0 ;
+
+    return 1 ;
+}
+
 /**
  *
  * MATRIX API

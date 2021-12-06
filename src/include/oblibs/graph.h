@@ -137,7 +137,8 @@ extern int graph_vertex_add(graph_t *g, char const *vertex) ;
 extern int graph_vertex_add_with_edge(graph_t *g, char const *vertex, char const *edge) ;
 extern int graph_vertex_add_with_nedge(graph_t *g, char const *vertex, stralloc *edge) ;
 extern int graph_vertex_get_edge_salist(stralloc *store, graph_t *g, char const *vertex) ;
-
+extern int graph_vertex_add_requiredby(graph_t *g, char const *vertex, char const *requiredby) ;
+extern int graph_vertex_add_nrequiredby(graph_t *g, char const *vertex, stralloc *requiredby) ;
 /**
  *
  * MATRIX API
