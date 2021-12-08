@@ -276,7 +276,7 @@ static int graph_matrix_search_rootvertex(graph_t *g, int vertex)
     unsigned int count = 0, res = 0 ;
 
     for(; count < g->mlen; count++)
-        if(g->matrix[count * g->mlen + vertex] == 1)
+        if(g->matrix[vertex * g->mlen + count] == 1)
             res++ ;
 
     return res ;
@@ -746,9 +746,9 @@ int graph_matrix_sort(graph_t *g)
 
         for (i = 0 ; i < g->mlen ; i++) {
 
-            if (m[vertex * g->mlen + i] == 1) {
+            if (m[i * g->mlen + vertex] == 1) {
 
-                m[vertex * g->mlen + i] = 0 ;
+                m[i * g->mlen + vertex] = 0 ;
                 root[i] = root[i] - 1 ;
                 if (root[i] == 0)
                     if (!graph_queue_addvertex(g, queue, i))
