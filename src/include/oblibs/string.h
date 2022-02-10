@@ -21,6 +21,7 @@
 
 #include <skalibs/genalloc.h>
 #include <skalibs/stralloc.h>
+#include <skalibs/buffer.h>
 #include <skalibs/gccattributes.h>
 
 #if !defined(nb_el)
@@ -31,6 +32,14 @@
 #if !defined(N_ELEMENTS)
     #define N_ELEMENTS(x) nb_el(x)
 #endif
+
+#define auto_string_from(dest,baselen,...) auto_string_builder(dest,baselen,(char const *[]){__VA_ARGS__, NULL})
+
+#define auto_strings(dest,...) auto_string_builder(dest,0,(char const *[]){__VA_ARGS__, NULL})
+
+#define auto_stra(sa,...) auto_stra_builder(sa,(char const *[]){__VA_ARGS__, NULL})
+
+#define auto_buf(b,...) auto_buf_builder(b,(char const *[]){__VA_ARGS__, NULL})
 
 /** remove all occurence of @occ into @str
  * @Return 1 on success else 0 */
@@ -119,11 +128,11 @@ extern void auto_string_builder(char *dest,size_t baselen, char const *str[],...
  * @Return 0 on fail */
 extern int auto_stra_builder(stralloc *sa,char const *str[],...) ;
 
-#define auto_string_from(dest,baselen,...) auto_string_builder(dest,baselen,(char const *[]){__VA_ARGS__, NULL})
-
-#define auto_strings(dest,...) auto_string_builder(dest,0,(char const *[]){__VA_ARGS__, NULL})
-
-#define auto_stra(sa,...) auto_stra_builder(sa,(char const *[]){__VA_ARGS__, NULL})
+/** Append @b with a list of string @str.
+ * The buffer is NOT flushed.
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int auto_buf_builder(buffer *b, char const *str[], ...) ;
 
 /** Scan @str for digit between dot where @ndot is the number
  * of dot expected e.g ndot = 2 -> 0.1.0, ndot = 3 > 1.0.1.0,...
