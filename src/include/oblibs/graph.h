@@ -30,7 +30,7 @@ typedef struct graph_hash_s graph_hash_t, *graph_hash_t_ref ;
 struct graph_hash_s
 {
     ssize_t vertex ; // index length in data stralloc
-    ssize_t id ; // index of the genalloc edge into graph_vertex_s struct for the associated edges
+    ssize_t id ; // index of the genalloc edge into graph_vertex_t struct for the associated edges
 } ;
 #define GRAPH_HASH_ZERO { -1, -1 }
 
@@ -89,12 +89,12 @@ extern void graph_show_cycle(graph_t *g, unsigned int *involved, unsigned int co
  *
  * */
 
-/** initialise an array @array of length @len to zero
- * where @array is array[len] */
+/** initiate an array @array of length @len to zero
+ * where @array is on the form array[len] */
 extern void graph_array_init_single(unsigned int *array, unsigned int len) ;
 
 /** initialise @array of length @len to zero
- * where array is array[len*len] */
+ * where @array is on the form array[len*len] */
 extern void graph_array_init_double(unsigned int *array, unsigned int len) ;
 
 /** Reverse an array @array of length @len */
@@ -121,24 +121,27 @@ ssize_t graph_hash_vertex_get_genid(graph_t *g, char const *vertex) ;
 
 /**
  *
- * EDGE API
- *
- * */
-
-extern int graph_edge_add_g(graph_t *g, char const *vertex, char const *edge) ;
-
-/**
- *
  * VERTEX API
  *
  * */
 
 extern int graph_vertex_add(graph_t *g, char const *vertex) ;
+extern int graph_vertex_remove(graph_t *g, char const *vertex) ;
 extern int graph_vertex_add_with_edge(graph_t *g, char const *vertex, char const *edge) ;
 extern int graph_vertex_add_with_nedge(graph_t *g, char const *vertex, stralloc *edge) ;
 extern int graph_vertex_get_edge_salist(stralloc *store, graph_t *g, char const *vertex) ;
-extern int graph_vertex_add_requiredby(graph_t *g, char const *vertex, char const *requiredby) ;
-extern int graph_vertex_add_nrequiredby(graph_t *g, char const *vertex, stralloc *requiredby) ;
+extern int graph_vertex_add_with_requiredby(graph_t *g, char const *vertex, char const *requiredby) ;
+extern int graph_vertex_add_with_nrequiredby(graph_t *g, char const *vertex, stralloc *requiredby) ;
+
+/**
+ *
+ * EDGE API
+ *
+ * */
+
+extern int graph_edge_add_g(graph_t *g, char const *vertex, char const *edge) ;
+extern int graph_edge_remove_g(graph_t *g, char const *vertex, char const *edge) ;
+
 /**
  *
  * MATRIX API
@@ -156,6 +159,10 @@ extern void graph_matrix_sort_reverse(graph_t *g) ;
  * @Return 0 on fail
  * @Return 1 on success.*/
 extern int graph_matrix_sort_tosa(stralloc *sa, graph_t *g) ;
+
+/* append @list with the sorted graph */
+extern void graph_matrix_sort_tolist(unsigned int *list, graph_t *gc, graph_t *g) ;
+
 /* @list should be iniatilized with graph_array_single function
  * before the call of these functions.
  * graph_array_rebuild function should be called after
@@ -165,13 +172,37 @@ extern int graph_matrix_get_edge(unsigned int *list, graph_t *g, char const *ver
 extern int graph_matrix_get_requiredby(unsigned int *list, graph_t *g, char const *vertex, uint8_t recursive) ;
 
 /** Search dependencies (or requiredby if @requiredby > 0) of @name
- * and build a sastr string stored on @sa
+ * and build a list stored on @list
+ * @Return 0 on fail
+ * @Return 1 on success */
+extern int graph_matrix_get_edge_g(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby) ;
+
+/** Call graph_matrix_get_edge_g
+ * and append the result to @sa
  * @Return -1 on fail
  * @Return the number of deps on success */
-extern int graph_matrix_get_edge_g(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby) ;
+extern int graph_matrix_get_edge_g_sa(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby) ;
 
-/** Same as graph_matrix_get_edge_g but sort the result.
- * Return the number of edge on success
- * Return -1 on fail */
-extern int graph_matrix_get_edge_g_sorted(stralloc *sa, graph_t *g, char const *name, uint8_t reverse) ;
+/** Call graph_matrix_get_edge_g
+ * and append the result to @list
+ * @Return -1 on fail
+ * @Return the number of deps on success */
+extern int graph_matrix_get_edge_g_list(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby) ;
+
+/** Build a graph @gc with deps of @name from graph @g.
+ * @Return 0 for no deps
+ * @Return -1 on fail
+ * @Return 1 on success*/
+extern int graph_matrix_get_edge_g_sorted(graph_t *g, graph_t *gc, char const *name, uint8_t requiredby) ;
+
+/** append @sa with the name of deps of @name from graph @g
+ * @Return 0 for no deps
+ * @Return -1 on fail
+ * @Return the number of the deps on success */
+extern int graph_matrix_get_edge_g_sorted_sa(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby) ;
+
+/** same as graph_matrix_get_edge_g_sorted_sa but instead store
+ * the result at @list */
+extern int graph_matrix_get_edge_g_sorted_list(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby) ;
+
 #endif

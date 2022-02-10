@@ -78,9 +78,7 @@ static void graph_init_length(graph_t *g, unsigned int len)
 
 static unsigned int *graph_alloc(unsigned int len)
 {
-
     return (unsigned int *)malloc(len*sizeof(unsigned int)) ;
-
 }
 
 static int graph_alloc_sort(graph_t *g)
@@ -153,6 +151,27 @@ static int graph_init(graph_t *g)
 
 /**
  *
+ * COMMON HELPER
+ *
+ *  */
+
+static ssize_t graph_add_string(graph_t *g, char const *str)
+{
+    ssize_t len = sastr_cmp(&g->data, str) ;
+
+    if (len < 0) {
+
+        len = (ssize_t)g->data.len ;
+
+        if (!sastr_add_string(&g->data, str))
+            return -1 ;
+    }
+
+    return len ;
+}
+
+/**
+ *
  * QUEUE HELPER
  *
  *  */
@@ -163,7 +182,6 @@ static int graph_queue_isempty(graph_t *g)
         return 1 ;
 
     return 0 ;
-
 }
 
 static int graph_queue_addvertex(graph_t *g, unsigned int *queue, int vertex)
@@ -223,25 +241,26 @@ static int graph_hash_insert_vertex(graph_t *g, size_t vertex, size_t genid)
     }
 
     return 1 ;
-
 }
-/**
- *
- * EDGE HELPER
- *
- * */
 
-static int graph_edge_add(graph_t *g, graph_vertex_t *v, char const *edge)
+static int graph_hash_remove_vertex(graph_t *g, size_t vertex)
 {
-    unsigned int len = g->data.len ;
+    ssize_t i ;
 
-    if (!genalloc_append(unsigned int, &v->edge, &len))
-        return 0 ;
+    size_t genlen = 0 ;
 
-    if (!sastr_add_string(&g->data, edge))
-        return 0 ;
+    i = graph_hash_vertex_get_id(g, g->data.s + vertex) ;
 
-    v->nedge = genalloc_len(unsigned int, &v->edge) ;
+    if (i == -1)
+        return 1 ;
+
+    genlen = genalloc_len(graph_hash_t, &g->hash) ;
+
+    genalloc_s(graph_hash_t, &g->hash)[i] = genalloc_s(graph_hash_t, &g->hash)[genlen - 1] ;
+
+    genalloc_setlen(graph_hash_t, &g->hash, genlen - 1) ;
+
+    genalloc_shrink(graph_hash_t, &g->hash) ;
 
     return 1 ;
 }
@@ -254,13 +273,78 @@ static int graph_edge_add(graph_t *g, graph_vertex_t *v, char const *edge)
 
 static int graph_vertex_insert_tohash(graph_t *g, graph_vertex_t *v, char const *vertex, size_t genid)
 {
+    v->vertex = graph_add_string(g, vertex) ;
+    if (v->vertex < 0)
+        return 0 ;
+    /*
     v->vertex = g->data.len ;
 
     if (!sastr_add_string(&g->data, vertex))
         return 0 ;
-
+    */
     if (!graph_hash_insert_vertex(g, v->vertex, genid))
         return 0 ;
+
+    return 1 ;
+}
+
+static int graph_vertex_remove_fromhash(graph_t *g, graph_vertex_t *v)
+{
+    if (!graph_hash_remove_vertex(g, v->vertex))
+        return 0 ;
+
+    return 1 ;
+}
+
+/**
+ *
+ * EDGE HELPER
+ *
+ * */
+
+static int graph_edge_add(graph_t *g, graph_vertex_t *v, char const *edge)
+{
+    ssize_t len = graph_add_string(g, edge) ;
+
+    if (len < 0)
+        return 0 ;
+
+    unsigned int l = (unsigned int)len ;
+
+    if (!genalloc_append(unsigned int, &v->edge, &l))
+        return 0 ;
+
+    //if (!sastr_add_string(&g->data, edge))
+      //  return 0 ;
+
+    v->nedge = genalloc_len(unsigned int, &v->edge) ;
+
+    return 1 ;
+}
+
+static int graph_edge_remove(graph_t *g, graph_vertex_t *v, char const *edge)
+{
+    unsigned int pos = 0 ;
+
+    for (; pos < v->nedge; pos++) {
+
+        char *n = g->data.s + genalloc_s(unsigned int, &v->edge)[pos] ;
+
+        if (!strcmp(n, edge)) {
+
+            size_t genlen = genalloc_len(unsigned int, &v->edge) ;
+
+            genalloc_s(unsigned int, &v->edge)[pos] = genalloc_s(unsigned int, &v->edge)[genlen - 1] ;
+
+            genalloc_setlen(unsigned int, &v->edge, genlen - 1) ;
+
+            genalloc_shrink(unsigned int, &v->edge) ;
+
+            v->nedge-- ;
+
+            break ;
+        }
+    }
 
     return 1 ;
 }
@@ -293,7 +377,6 @@ static void graph_matrix_copy(graph_t *g, unsigned int *copy)
 
 static int graph_matrix_edge_cycle(graph_t *g, unsigned int *involved, unsigned int *incount, unsigned int main, unsigned int edge)
 {
-
     unsigned int list[g->mlen + 2], pos = 0 ;
 
     int count ;
@@ -306,6 +389,9 @@ static int graph_matrix_edge_cycle(graph_t *g, unsigned int *involved, unsigned 
 
     if (count == -1)
         return 0 ;
+
+    count = graph_array_rebuild_list(list, g->mlen) ;
+
     for (; pos < count ; pos++) {
 
         if (g->matrix[edge * g->mlen + list[pos]] == 1) {
@@ -469,7 +555,6 @@ ssize_t graph_hash_vertex_get_id(graph_t *g, char const *vertex)
 
         if (!strcmp(vertex,n))
             return (ssize_t)i ;
-
     }
 
     return -1 ;
@@ -486,26 +571,6 @@ ssize_t graph_hash_vertex_get_genid(graph_t *g, char const *vertex)
         return -1 ;
 
     return genalloc_s(graph_hash_t, &g->hash)[id].id ;
-}
-
-/**
- *
- * EDGE API
- *
- * */
-
-int graph_edge_add_g(graph_t *g, char const *vertex, char const *edge)
-{
-
-    ssize_t id = graph_hash_vertex_get_genid(g, vertex) ;
-
-    if (id == -1)
-        return 0 ;
-
-    if(!graph_edge_add(g, &(genalloc_s(graph_vertex_t,&g->vertex)[id]), edge))
-        return 0 ;
-
-    return 1 ;
 }
 
 /**
@@ -537,9 +602,34 @@ int graph_vertex_add(graph_t *g, char const *vertex)
     return 1 ;
 }
 
+int graph_vertex_remove(graph_t *g, char const *vertex)
+{
+    ssize_t found = -1 ;
+    size_t genid = 0, genlen = 0 ;
+
+    found = graph_hash_vertex_get_id(g, vertex) ;
+
+    if (found == -1)
+        return 1 ;
+
+    genid = graph_hash_vertex_get_genid(g, vertex) ;
+
+    if (!graph_vertex_remove_fromhash(g, &genalloc_s(graph_vertex_t, &g->vertex)[genid]))
+        return 0 ;
+
+    genlen = genalloc_len(graph_vertex_t, &g->vertex) ;
+
+    genalloc_s(graph_vertex_t, &g->vertex)[genid] = genalloc_s(graph_vertex_t, &g->vertex)[genlen - 1] ;
+
+    genalloc_setlen(graph_vertex_t, &g->vertex, genlen - 1) ;
+
+    genalloc_shrink(graph_vertex_t, &g->vertex) ;
+
+    return 1 ;
+}
+
 int graph_vertex_add_with_edge(graph_t *g, char const *vertex, char const *edge)
 {
-
     if (!graph_vertex_add(g, vertex))
         return 0 ;
 
@@ -552,7 +642,6 @@ int graph_vertex_add_with_edge(graph_t *g, char const *vertex, char const *edge)
 /** optimizer function for mutliple edge entry in one row*/
 int graph_vertex_add_with_nedge(graph_t *g, char const *vertex, stralloc *edge)
 {
-
     if (!graph_vertex_add(g, vertex))
         return 0 ;
 
@@ -598,9 +687,8 @@ int graph_vertex_get_edge_salist(stralloc *store, graph_t *g, char const *vertex
     return 1 ;
 }
 
-int graph_vertex_add_requiredby(graph_t *g, char const *vertex, char const *requiredby)
+int graph_vertex_add_with_requiredby(graph_t *g, char const *vertex, char const *requiredby)
 {
-
     /** insert vertex if it doesn't exist yet */
     if (!graph_vertex_add(g, vertex))
         return 0 ;
@@ -611,7 +699,7 @@ int graph_vertex_add_requiredby(graph_t *g, char const *vertex, char const *requ
     return 1 ;
 }
 
-int graph_vertex_add_nrequiredby(graph_t *g, char const *vertex, stralloc *requiredby)
+int graph_vertex_add_with_nrequiredby(graph_t *g, char const *vertex, stralloc *requiredby)
 {
     size_t pos = 0 ;
 
@@ -622,6 +710,38 @@ int graph_vertex_add_nrequiredby(graph_t *g, char const *vertex, stralloc *requi
     FOREACH_SASTR(requiredby, pos)
         if (!graph_vertex_add_with_edge(g, requiredby->s + pos, vertex))
             return 0 ;
+
+    return 1 ;
+}
+
+/**
+ *
+ * EDGE API
+ *
+ * */
+
+int graph_edge_add_g(graph_t *g, char const *vertex, char const *edge)
+{
+    ssize_t id = graph_hash_vertex_get_genid(g, vertex) ;
+
+    if (id == -1)
+        return 0 ;
+
+    if(!graph_edge_add(g, &(genalloc_s(graph_vertex_t,&g->vertex)[id]), edge))
+        return 0 ;
+
+    return 1 ;
+}
+
+int graph_edge_remove_g(graph_t *g, char const *vertex, char const *edge)
+{
+    ssize_t id = graph_hash_vertex_get_genid(g, vertex) ;
+
+    if (id == -1)
+        return 0 ;
+
+    if (!graph_edge_remove(g, &(genalloc_s(graph_vertex_t,&g->vertex)[id]), edge))
+        return 0 ;
 
     return 1 ;
 }
@@ -639,7 +759,7 @@ int graph_matrix_build(graph_t *g)
 
     unsigned int i = 0 ;
 
-    for (; i < g->mlen ; i++) {
+    for (i = 0 ; i < g->mlen ; i++) {
 
         ssize_t genid = genalloc_s(graph_hash_t,&g->hash)[i].id ;
 
@@ -672,7 +792,6 @@ int graph_matrix_build(graph_t *g)
 
 int graph_matrix_analyze_cycle(graph_t *g)
 {
-
     unsigned int list[g->mlen], involved[g->mlen * g->mlen], main = 0, idx = 0, pos = 0 ;
     int count ;
     graph_array_init_single(list, g->mlen) ;
@@ -694,6 +813,8 @@ int graph_matrix_analyze_cycle(graph_t *g)
             continue ;
 
         involved[idx++] = main ;
+
+        count = graph_array_rebuild_list(list, g->mlen) ;
 
         for (; pos < count ; pos++) {
 
@@ -723,6 +844,11 @@ int graph_matrix_sort(graph_t *g)
     int vertex = -1 ;
 
     graph_array_init_single(queue, g->mlen) ;
+
+    /** initiate front and rear to correct value
+     * if graph_matrix_sort is used on the same
+     * whereas the graph was not fully freed */
+    g->front = g->rear = -1 ;
 
     graph_matrix_copy(g, m) ;
 
@@ -796,14 +922,25 @@ int graph_matrix_sort_tosa(stralloc *sa, graph_t *g)
             log_warnu("add string") ;
             return 0 ;
         }
-
     }
+
     return 1 ;
+}
+
+void graph_matrix_sort_tolist(unsigned int *list, graph_t *gc, graph_t *g)
+{
+    size_t pos = 0 ;
+
+    graph_array_init_single(list, gc->sort_count) ;
+
+    for(; pos < gc->sort_count ; pos++) {
+        char *vertex = gc->data.s + genalloc_s(graph_hash_t, &gc->hash)[gc->sort[pos]].vertex ;
+        list[pos] = graph_hash_vertex_get_id(g, vertex) ;
+    }
 }
 
 int graph_matrix_get_edge(unsigned int *list, graph_t *g, char const *vertex, uint8_t recursive)
 {
-
     if (!vertex)
         return -1 ;
 
@@ -848,25 +985,38 @@ int graph_matrix_get_requiredby(unsigned int *list, graph_t *g, char const *vert
     return count ;
 }
 
-int graph_matrix_get_edge_g(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby)
+int graph_matrix_get_edge_g(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby)
 {
-    size_t pos = 0 ;
-    unsigned int list[g->mlen], count = 0 ;
-
     graph_array_init_single(list, g->mlen) ;
 
     if (!requiredby) {
 
         if (graph_matrix_get_edge(list, g, name, 0) < 0)
-            return -1 ;
+            return 0 ;
 
     } else {
 
         if (graph_matrix_get_requiredby(list, g, name, 0) < 0)
-            return -1 ;
+            return 0 ;
     }
 
+    return 1 ;
+}
+
+int graph_matrix_get_edge_g_sa(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby)
+{
+    size_t pos = 0 ;
+
+    unsigned int list[g->mlen] ;
+    int count = -1 ;
+
+    if (!graph_matrix_get_edge_g(list, g, name, requiredby))
+        return count ;
+
     count = graph_array_rebuild_list(list, g->mlen) ;
+
+    if (count < 0)
+        return count ;
 
     for(; pos < count ; pos++) {
 
@@ -879,66 +1029,95 @@ int graph_matrix_get_edge_g(stralloc *sa, graph_t *g, char const *name, uint8_t 
     return count ;
 }
 
-int graph_matrix_get_edge_g_sorted(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby)
+int graph_matrix_get_edge_g_list(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby)
 {
+    int count = -1 ;
 
+    if (!graph_matrix_get_edge_g(list, g, name, requiredby))
+        return count ;
+
+    count = graph_array_rebuild_list(list, g->mlen) ;
+
+    return count ;
+}
+
+int graph_matrix_get_edge_g_sorted(graph_t *g, graph_t *gc, char const *name, uint8_t requiredby)
+{
     size_t pos = 0 ;
     int count = -1 ;
 
-    graph_t gc = GRAPH_ZERO ;
+    stralloc sa = STRALLOC_ZERO ;
 
-    sa->len = 0 ;
-    count = graph_matrix_get_edge_g(sa, g, name, requiredby) ;
+    count = graph_matrix_get_edge_g_sa(&sa, g, name, requiredby) ;
 
-    size_t len = sa->len ;
+    size_t len = sa.len ;
     char vertex[len + 1] ;
 
-    if (count <= 0) {
-        count = 0 ;
+    if (count <= 0)
         goto freed ;
-    }
 
-    sastr_to_char(vertex,sa) ;
-    count = -1 ;
+    sastr_to_char(vertex, &sa) ;
 
     for (; pos < len ; pos += strlen(vertex + pos) + 1) {
 
-        sa->len = 0 ;
+        sa.len = 0 ;
 
         char *ename = vertex + pos ;
 
-        if (!graph_vertex_add(&gc, ename)) {
+        if (!graph_vertex_add(gc, ename)) {
 
             log_warnu("add vertex: ",ename) ;
+            count = -1 ;
             goto freed ;
         }
 
-        unsigned int c = graph_matrix_get_edge_g(sa, g, ename, requiredby) ;
+        unsigned int c = graph_matrix_get_edge_g_sa(&sa, g, ename, requiredby) ;
 
-        if (c == -1)
+        if (c < 0) {
+            count = -1 ;
             goto freed ;
+        }
 
         {
             size_t bpos = 0 ;
 
-            FOREACH_SASTR(sa, bpos) {
+            FOREACH_SASTR(&sa, bpos) {
 
-                char *edge = sa->s + bpos ;
+                char *edge = sa.s + bpos ;
 
-                if (!graph_vertex_add_with_edge(&gc, ename, edge)) {
+                if (!graph_vertex_add_with_edge(gc, ename, edge)) {
 
                     log_warnu("add edge: ",ename," to vertex: ", edge) ;
+                    count = -1 ;
                     goto freed ;
                 }
 
-                if (!graph_vertex_add(&gc, edge)) {
+                if (!graph_vertex_add(gc, edge)) {
 
                     log_warnu("add vertex: ",edge) ;
+                    count = -1 ;
                     goto freed ;
                 }
             }
         }
     }
+
+    freed:
+        stralloc_free(&sa) ;
+        return count ;
+}
+
+int graph_matrix_get_edge_g_sorted_sa(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby)
+{
+    graph_t gc = GRAPH_ZERO ;
+
+    int count = -1 ;
+
+    count = graph_matrix_get_edge_g_sorted(g, &gc, name, requiredby) ;
+    if (count <= 0)
+        goto freed ;
+
+    count = -1 ;
 
     if (!graph_matrix_build(&gc)) {
 
@@ -958,11 +1137,49 @@ int graph_matrix_get_edge_g_sorted(stralloc *sa, graph_t *g, char const *name, u
         goto freed ;
     }
 
-
-    sa->len = pos = 0 ;
+    sa->len = 0 ;
 
     if (!graph_matrix_sort_tosa(sa, &gc))
         goto freed ;
+
+    count = gc.sort_count ;
+
+    freed:
+        graph_free_all(&gc) ;
+        return count ;
+}
+
+int graph_matrix_get_edge_g_sorted_list(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby)
+{
+    graph_t gc = GRAPH_ZERO ;
+
+    int count = -1 ;
+
+    count = graph_matrix_get_edge_g_sorted(g, &gc, name, requiredby) ;
+    if (count <= 0)
+        goto freed ;
+
+    count = -1 ;
+
+    if (!graph_matrix_build(&gc)) {
+
+        log_warnu("build the matrix") ;
+        goto freed ;
+    }
+
+    if (!graph_matrix_analyze_cycle(&gc)) {
+
+        log_warnu("found cycle") ;
+        goto freed ;
+    }
+
+    if (!graph_matrix_sort(&gc)) {
+
+        log_warnu("sort the matrix") ;
+        goto freed ;
+    }
+
+    graph_matrix_sort_tolist(list, &gc, g) ;
 
     count = gc.sort_count ;
 
