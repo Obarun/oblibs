@@ -18,10 +18,10 @@
 #include <stdarg.h>
 
 #include <skalibs/stralloc.h>
+#include <skalibs/buffer.h>
 
 void auto_string_builder(char *dest,size_t baselen, char const *str[],...)
 {
-    int e = errno ;
     va_list alist ;
     va_start(alist,str) ;
     size_t slen = 0, totlen = baselen ;
@@ -37,24 +37,48 @@ void auto_string_builder(char *dest,size_t baselen, char const *str[],...)
         totlen += slen ;
     }
     va_end(alist) ;
-    errno = e ;
     dest[totlen] = 0 ;
 }
 
 int auto_stra_builder(stralloc *sa,char const *str[],...)
 {
-    int e = errno ;
+    size_t slen = 0 ;
     va_list alist ;
     va_start(alist,str) ;
 
-    while (*str)
-    {
+    while (*str) {
+
+        slen =  strlen(*str) ;
+        char t[slen + 1] ;
+        memcpy(t, *str, slen) ;
+        t[slen] = 0 ;
+
         if (!stralloc_catb(sa,*str,strlen(*str))) return 0 ;
         str++ ;
     }
     va_end(alist) ;
     if(!stralloc_0(sa)) return 0 ;
     sa->len-- ;
-    errno = e ;
+    return 1 ;
+}
+
+int auto_buf_builder(buffer *b, char const *str[], ...)
+{
+    size_t slen = 0 ;
+    va_list alist ;
+    va_start(alist,str) ;
+
+    while (*str) {
+
+        slen =  strlen(*str) ;
+        char t[slen + 1] ;
+        memcpy(t, *str, slen) ;
+        t[slen] = 0 ;
+        if (buffer_puts(b, *str) < 0)
+            return 0 ;
+
+        str++ ;
+    }
+    va_end(alist) ;
     return 1 ;
 }
