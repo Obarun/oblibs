@@ -7,6 +7,7 @@ src/directory/dir_create.o src/directory/dir_create.lo: src/directory/dir_create
 src/directory/dir_create_parent.o src/directory/dir_create_parent.lo: src/directory/dir_create_parent.c src/include/oblibs/directory.h
 src/directory/dir_create_tmp.o src/directory/dir_create_tmp.lo: src/directory/dir_create_tmp.c src/include/oblibs/string.h
 src/directory/dir_is_child.o src/directory/dir_is_child.lo: src/directory/dir_is_child.c src/include/oblibs/directory.h src/include/oblibs/string.h
+src/directory/dir_rm_rf.o src/directory/dir_rm_rf.lo: src/directory/dir_rm_rf.c src/include/oblibs/directory.h
 src/directory/dir_unslash.o src/directory/dir_unslash.lo: src/directory/dir_unslash.c src/include/oblibs/directory.h
 src/environ/environ_add_key_val.o src/environ/environ_add_key_val.lo: src/environ/environ_add_key_val.c src/include/oblibs/environ.h
 src/environ/environ_clean_envfile.o src/environ/environ_clean_envfile.lo: src/environ/environ_clean_envfile.c src/include/oblibs/environ.h src/include/oblibs/files.h src/include/oblibs/log.h src/include/oblibs/sastr.h src/include/oblibs/string.h
