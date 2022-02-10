@@ -51,4 +51,10 @@ extern int dir_is_child(char const *parent, char const *child) ;
 
 /** Remove the last '/' from @path if exist */
 extern void dir_unslash(char *path) ;
+
+/** wrapper around the rm_rf() skalibs function
+ * This wrapper freed the stralloc satmp after the
+ * use of the rm_rf() function */
+extern int dir_rm_rf (char const *dir) ;
+
 #endif
