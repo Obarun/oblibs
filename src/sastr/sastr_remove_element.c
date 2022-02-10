@@ -22,19 +22,24 @@ int sastr_remove_element(stralloc *sa,char const *element)
 {
     stralloc tmp = STRALLOC_ZERO ;
 
-    ssize_t el = sastr_find(sa,element) ;
+    ssize_t el = sastr_cmp(sa,element) ;
 
-    if (el == -1) return 1 ;
+    if (el == -1)
+        return 0 ;
 
     size_t pos = 0 ;
 
-    for (;pos < sa->len; pos += strlen(sa->s + pos) + 1)
-    {
-        if (pos == (size_t)el) continue ;
-        if (!sastr_add_string(&tmp,sa->s + pos)) return 0 ;
+    for (;pos < sa->len; pos += strlen(sa->s + pos) + 1) {
+
+        if (pos == (size_t)el)
+            continue ;
+
+        if (!sastr_add_string(&tmp,sa->s + pos))
+            return 0 ;
     }
 
-    if (!stralloc_copy(sa,&tmp)) return 0 ;
+    if (!stralloc_copy(sa,&tmp))
+        return 0 ;
 
     stralloc_free(&tmp) ;
 
