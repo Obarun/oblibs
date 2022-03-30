@@ -20,14 +20,14 @@
 #include <skalibs/types.h>
 #include <skalibs/stralloc.h>
 
-#ifndef
+#ifndef SET_FLAGS
 // can be used like SET_FLAGS(has, want|want1|...)
 #define SET_FLAGS(has, want) ((has) |= (want))
 #endif
-#ifndef
+#ifndef CLEAR_FLAGS
 #define CLEAR_FLAGS(has, want) ((has) &= ~(want))
 #endif
-#ifndef
+#ifndef GET_FLAGS
 // return the interger of the flag if its set, 0 otherwise
 #define GET_FLAGS(has, want) (((has) & (want)))
 #endif
