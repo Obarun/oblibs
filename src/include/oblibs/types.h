@@ -20,6 +20,17 @@
 #include <skalibs/types.h>
 #include <skalibs/stralloc.h>
 
+#ifndef
+#define SET_FLAGS(flag, want) ((flag) |= (want))
+#endif
+#ifndef
+#define CLEAR_FLAGS(has, want) ((has) &= ~(want))
+#endif
+#ifndef
+// return the interger of the flag if its set, 0 otherwise
+#define GET_FLAGS(has, want) (((has) & (want)))
+#endif
+
 /** Scan if @str has the corresponding @mode
  * @Return 1 on success
  * @Return 0 if @str doesn't exist or stat fail
