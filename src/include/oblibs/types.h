@@ -21,7 +21,8 @@
 #include <skalibs/stralloc.h>
 
 #ifndef
-#define SET_FLAGS(flag, want) ((flag) |= (want))
+// can be used like SET_FLAGS(has, want|want1|...)
+#define SET_FLAGS(has, want) ((has) |= (want))
 #endif
 #ifndef
 #define CLEAR_FLAGS(has, want) ((has) &= ~(want))
