@@ -44,7 +44,7 @@ extern int sastr_dir_get_element(stralloc *sa, char const *srcdir,char const *el
  * @Return the position of @s into the chained stralloc @sa */
 extern ssize_t sastr_cmp(stralloc *sa,char const *s) ;
 
-/** Rebuild a stralloc into a chained stralloc
+/** Rebuild a chained stralloc into a classic string
  * @Return 1 on success
  * @Return 0 on fail */
 extern int sastr_rebuild_in_oneline(stralloc *sa) ;
