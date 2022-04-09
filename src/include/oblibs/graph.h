@@ -175,34 +175,34 @@ extern int graph_matrix_get_requiredby(unsigned int *list, graph_t *g, char cons
  * and build a list stored on @list
  * @Return 0 on fail
  * @Return 1 on success */
-extern int graph_matrix_get_edge_g(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby) ;
+extern int graph_matrix_get_edge_g(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby, uint8_t recursive) ;
 
 /** Call graph_matrix_get_edge_g
  * and append the result to @sa
  * @Return -1 on fail
  * @Return the number of deps on success */
-extern int graph_matrix_get_edge_g_sa(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby) ;
+extern int graph_matrix_get_edge_g_sa(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby, uint8_t recursive) ;
 
 /** Call graph_matrix_get_edge_g
  * and append the result to @list
  * @Return -1 on fail
  * @Return the number of deps on success */
-extern int graph_matrix_get_edge_g_list(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby) ;
+extern int graph_matrix_get_edge_g_list(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby, uint8_t recursive) ;
 
 /** Build a graph @gc with deps of @name from graph @g.
  * @Return 0 for no deps
  * @Return -1 on fail
  * @Return 1 on success*/
-extern int graph_matrix_get_edge_g_sorted(graph_t *g, graph_t *gc, char const *name, uint8_t requiredby) ;
+extern int graph_matrix_get_edge_g_sorted(graph_t *g, graph_t *gc, char const *name, uint8_t requiredby, uint8_t recursive) ;
 
 /** append @sa with the name of deps of @name from graph @g
  * @Return 0 for no deps
  * @Return -1 on fail
  * @Return the number of the deps on success */
-extern int graph_matrix_get_edge_g_sorted_sa(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby) ;
+extern int graph_matrix_get_edge_g_sorted_sa(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby, uint8_t recursive) ;
 
 /** same as graph_matrix_get_edge_g_sorted_sa but instead store
  * the result at @list */
-extern int graph_matrix_get_edge_g_sorted_list(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby) ;
+extern int graph_matrix_get_edge_g_sorted_list(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby, uint8_t recursive) ;
 
 #endif

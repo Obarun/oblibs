@@ -962,7 +962,7 @@ int graph_matrix_get_edge(unsigned int *list, graph_t *g, char const *vertex, ui
 
             if (recursive) {
 
-                c = graph_matrix_get_edge(list, g, g->data.s + genalloc_s(graph_hash_t, &g->hash)[pos].vertex,recursive) ;
+                c = graph_matrix_get_edge(list, g, g->data.s + genalloc_s(graph_hash_t, &g->hash)[pos].vertex, recursive) ;
                 if (c == -1)
                     return -1 ;
 
@@ -985,32 +985,32 @@ int graph_matrix_get_requiredby(unsigned int *list, graph_t *g, char const *vert
     return count ;
 }
 
-int graph_matrix_get_edge_g(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby)
+int graph_matrix_get_edge_g(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby, uint8_t recursive)
 {
     graph_array_init_single(list, g->mlen) ;
 
     if (!requiredby) {
 
-        if (graph_matrix_get_edge(list, g, name, 0) < 0)
+        if (graph_matrix_get_edge(list, g, name, recursive) < 0)
             return 0 ;
 
     } else {
 
-        if (graph_matrix_get_requiredby(list, g, name, 0) < 0)
+        if (graph_matrix_get_requiredby(list, g, name, recursive) < 0)
             return 0 ;
     }
 
     return 1 ;
 }
 
-int graph_matrix_get_edge_g_sa(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby)
+int graph_matrix_get_edge_g_sa(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby, uint8_t recursive)
 {
     size_t pos = 0 ;
 
     unsigned int list[g->mlen] ;
     int count = -1 ;
 
-    if (!graph_matrix_get_edge_g(list, g, name, requiredby))
+    if (!graph_matrix_get_edge_g(list, g, name, requiredby, recursive))
         return count ;
 
     count = graph_array_rebuild_list(list, g->mlen) ;
@@ -1029,11 +1029,11 @@ int graph_matrix_get_edge_g_sa(stralloc *sa, graph_t *g, char const *name, uint8
     return count ;
 }
 
-int graph_matrix_get_edge_g_list(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby)
+int graph_matrix_get_edge_g_list(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby, uint8_t recursive)
 {
     int count = -1 ;
 
-    if (!graph_matrix_get_edge_g(list, g, name, requiredby))
+    if (!graph_matrix_get_edge_g(list, g, name, requiredby, recursive))
         return count ;
 
     count = graph_array_rebuild_list(list, g->mlen) ;
@@ -1041,14 +1041,14 @@ int graph_matrix_get_edge_g_list(unsigned int *list, graph_t *g, char const *nam
     return count ;
 }
 
-int graph_matrix_get_edge_g_sorted(graph_t *g, graph_t *gc, char const *name, uint8_t requiredby)
+int graph_matrix_get_edge_g_sorted(graph_t *g, graph_t *gc, char const *name, uint8_t requiredby, uint8_t recursive)
 {
     size_t pos = 0 ;
     int count = -1 ;
 
     stralloc sa = STRALLOC_ZERO ;
 
-    count = graph_matrix_get_edge_g_sa(&sa, g, name, requiredby) ;
+    count = graph_matrix_get_edge_g_sa(&sa, g, name, requiredby, recursive) ;
 
     size_t len = sa.len ;
     char vertex[len + 1] ;
@@ -1071,7 +1071,7 @@ int graph_matrix_get_edge_g_sorted(graph_t *g, graph_t *gc, char const *name, ui
             goto freed ;
         }
 
-        unsigned int c = graph_matrix_get_edge_g_sa(&sa, g, ename, requiredby) ;
+        unsigned int c = graph_matrix_get_edge_g_sa(&sa, g, ename, requiredby, recursive) ;
 
         if (c < 0) {
             count = -1 ;
@@ -1107,13 +1107,13 @@ int graph_matrix_get_edge_g_sorted(graph_t *g, graph_t *gc, char const *name, ui
         return count ;
 }
 
-int graph_matrix_get_edge_g_sorted_sa(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby)
+int graph_matrix_get_edge_g_sorted_sa(stralloc *sa, graph_t *g, char const *name, uint8_t requiredby, uint8_t recursive)
 {
     graph_t gc = GRAPH_ZERO ;
 
     int count = -1 ;
 
-    count = graph_matrix_get_edge_g_sorted(g, &gc, name, requiredby) ;
+    count = graph_matrix_get_edge_g_sorted(g, &gc, name, requiredby, recursive) ;
     if (count <= 0)
         goto freed ;
 
@@ -1149,13 +1149,13 @@ int graph_matrix_get_edge_g_sorted_sa(stralloc *sa, graph_t *g, char const *name
         return count ;
 }
 
-int graph_matrix_get_edge_g_sorted_list(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby)
+int graph_matrix_get_edge_g_sorted_list(unsigned int *list, graph_t *g, char const *name, uint8_t requiredby, uint8_t recursive)
 {
     graph_t gc = GRAPH_ZERO ;
 
     int count = -1 ;
 
-    count = graph_matrix_get_edge_g_sorted(g, &gc, name, requiredby) ;
+    count = graph_matrix_get_edge_g_sorted(g, &gc, name, requiredby, recursive) ;
     if (count <= 0)
         goto freed ;
 
