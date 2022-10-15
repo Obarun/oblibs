@@ -12,6 +12,7 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <oblibs/string.h>
 #include <oblibs/sastr.h>
 #include <oblibs/mill.h>
 
@@ -26,7 +27,7 @@ int sastr_clean_element(stralloc *sa)
     stralloc split = STRALLOC_ZERO ;
     stralloc clean = STRALLOC_ZERO ;
     wild_zero_all(&MILL_CLEAN_SPLITTED_VALUE) ;
-    if (!stralloc_copy(&split,sa)) goto err ;
+    if (!auto_stra(&split,sa->s)) goto err ;
     if (!sastr_split_element_in_nline(&split)) goto err ;
     r = mill_nstring(&clean,&split,&MILL_CLEAN_SPLITTED_VALUE) ;
     if (r == -1 || !r) goto err ;

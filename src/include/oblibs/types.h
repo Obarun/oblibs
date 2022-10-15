@@ -20,17 +20,11 @@
 #include <skalibs/types.h>
 #include <skalibs/stralloc.h>
 
-#ifndef FLAGS_SET
-// can be used like SET_FLAGS(has, want|want1|...)
+// can be used like FLAGS_SET(has, want|want1|...)
 #define FLAGS_SET(has, want) ((has) |= (want))
-#endif
-#ifndef FLAGS_CLEAR
 #define FLAGS_CLEAR(has, want) ((has) &= ~(want))
-#endif
-#ifndef FLAGS_ISSET
 // return the interger of the flag if its set, 0 otherwise
 #define FLAGS_ISSET(has, want) (((has) & (want)))
-#endif
 
 /** Scan if @str has the corresponding @mode
  * @Return 1 on success
