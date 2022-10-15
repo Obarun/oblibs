@@ -42,8 +42,8 @@ src/mill/mill.o src/mill/mill.lo: src/mill/mill.c src/include/oblibs/log.h src/i
 src/mill/mill_config.o src/mill/mill_config.lo: src/mill/mill_config.c src/include/oblibs/mill.h
 src/opts/getopt_args.o src/opts/getopt_args.lo: src/opts/getopt_args.c src/include/oblibs/obgetopt.h
 src/sastr/sastr_add_string.o src/sastr/sastr_add_string.lo: src/sastr/sastr_add_string.c src/include/oblibs/sastr.h
-src/sastr/sastr_clean_element.o src/sastr/sastr_clean_element.lo: src/sastr/sastr_clean_element.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
-src/sastr/sastr_clean_string.o src/sastr/sastr_clean_string.lo: src/sastr/sastr_clean_string.c src/include/oblibs/sastr.h
+src/sastr/sastr_clean_element.o src/sastr/sastr_clean_element.lo: src/sastr/sastr_clean_element.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/string.h
+src/sastr/sastr_clean_string.o src/sastr/sastr_clean_string.lo: src/sastr/sastr_clean_string.c src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/sastr/sastr_clean_string_wdelim.o src/sastr/sastr_clean_string_wdelim.lo: src/sastr/sastr_clean_string_wdelim.c src/include/oblibs/mill.h src/include/oblibs/sastr.h
 src/sastr/sastr_cmp.o src/sastr/sastr_cmp.lo: src/sastr/sastr_cmp.c src/include/oblibs/sastr.h
 src/sastr/sastr_dir_drop_child.o src/sastr/sastr_dir_drop_child.lo: src/sastr/sastr_dir_drop_child.c src/include/oblibs/directory.h src/include/oblibs/sastr.h
