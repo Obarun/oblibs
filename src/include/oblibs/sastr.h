@@ -21,7 +21,7 @@
 
 #define FOREACH_SASTR(sa,pos) \
     stralloc_ref _saref_ = sa ; \
-    for (; pos < _saref_->len ; pos += strlen(_saref_->s + pos) + 1)
+    for (; (size_t)pos < _saref_->len ; pos += (size_t)strlen(_saref_->s + (size_t)pos) + 1)
 
 /** get all compoments on @srcdir with mode @mode execpt string @exclude
  * and append @sa with the result in a chained stralloc
@@ -79,9 +79,14 @@ extern int sastr_split_element_in_nline(stralloc *sa) ;
 extern int sastr_clean_element(stralloc *sa) ;
 
 /** Append @sa with @string and call sastr_clean_element
- * @Return 1 on sucess
+ * @Return 1 on success
  * @Return 0 on fail */
 extern int sastr_clean_string(stralloc *sa,char const *string) ;
+
+/** Flush the contain of @sa and call sastr_clean_string
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int sastr_clean_string_flush_sa(stralloc *sa, char const *string) ;
 
 /** Split sting @str with delimiter @delim and clean
  * each element calling sastr_clean_element. Append @sa
@@ -122,7 +127,7 @@ extern size_t sastr_nelement(stralloc *sa) ;
 /** Append @sa with @str
  * @Return 1 on success
  * @Return 0 on fail */
-extern int sastr_add_string(stralloc *sa,char const *str) ;
+extern int sastr_add_string(stralloc *sa, char const *str) ;
 
 /** Reverse the contain of @sa
  * @Return 1 on success

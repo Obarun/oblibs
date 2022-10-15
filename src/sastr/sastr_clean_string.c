@@ -13,13 +13,25 @@
  */
 
 #include <oblibs/sastr.h>
+#include <oblibs/string.h>
 
 #include <skalibs/stralloc.h>
 
 int sastr_clean_string(stralloc *sa,char const *string)
 {
-    if (!stralloc_cats(sa,string) ||
-    !stralloc_0(sa)) return 0 ;
-    if (!sastr_clean_element(sa)) return 0 ;
+    if (!auto_stra(sa,string) ||
+        !sastr_clean_element(sa))
+            return 0 ;
     return 1 ;
+}
+
+int sastr_clean_string_flush_sa(stralloc *sa, char const *string)
+{
+    char tmp[sa->len + 1] ;
+
+    auto_strings(tmp, sa->s) ;
+
+    sa->len = 0 ;
+
+    return sastr_clean_string(sa, tmp) ;
 }
