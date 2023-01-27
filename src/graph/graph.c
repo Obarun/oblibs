@@ -764,7 +764,7 @@ int graph_matrix_build(graph_t *g)
         ssize_t genid = genalloc_s(graph_hash_t,&g->hash)[i].id ;
 
         if (genid == -1)
-            log_warnu_return(LOG_EXIT_ZERO,"get genid -- please make a bug reports") ;
+            log_warnu_return(LOG_EXIT_ZERO,"get genid -- please make a bug report") ;
 
         size_t ndeps = genalloc_s(graph_vertex_t,&g->vertex)[genid].nedge ;
 
@@ -774,7 +774,10 @@ int graph_matrix_build(graph_t *g)
 
             for (; pos < ndeps ; pos++) {
 
-                unsigned int id = genalloc_s(unsigned int, &(genalloc_s(graph_vertex_t,&g->vertex)[genid].edge))[pos] ;
+                ssize_t id = genalloc_s(unsigned int, &(genalloc_s(graph_vertex_t,&g->vertex)[genid].edge))[pos] ;
+
+                if (id == -1)
+                    log_warnu_return(LOG_EXIT_ZERO,"get id -- please make a bug report") ;
 
                 char *dname = g->data.s + id ;
                 ssize_t d = graph_hash_vertex_get_id(g, dname) ;
