@@ -18,30 +18,29 @@
 
 #include <skalibs/stralloc.h>
 
-int sastr_remove_element(stralloc *sa,char const *element)
+int sastr_remove_element(stralloc *sa, char const *element)
 {
-    stralloc tmp = STRALLOC_ZERO ;
-
-    ssize_t el = sastr_cmp(sa,element) ;
+    ssize_t el = sastr_cmp(sa, element) ;
 
     if (el == -1)
         return 0 ;
 
-    size_t pos = 0 ;
+    size_t len = sa->len, pos = 0 ;
 
-    for (;pos < sa->len; pos += strlen(sa->s + pos) + 1) {
+    char t[len + 1] ;
+
+    sastr_to_char(t, sa) ;
+
+    sa->len = 0 ;
+
+    for (;pos < len; pos += strlen(t + pos) + 1) {
 
         if (pos == (size_t)el)
             continue ;
 
-        if (!sastr_add_string(&tmp,sa->s + pos))
+        if (!sastr_add_string(sa, t + pos))
             return 0 ;
     }
-
-    if (!stralloc_copy(sa,&tmp))
-        return 0 ;
-
-    stralloc_free(&tmp) ;
 
     return 1 ;
 }
