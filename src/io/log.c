@@ -78,10 +78,12 @@ set_color_t log_color_enable = {
     BRED, //error
     BLINK, //blink
     BBLUE, //blue
+    BMAGENTA, //magenta
     NOCOLOR //reset
 } ;
 
 set_color_t log_color_disable = {
+    "",
     "",
     "",
     "",

@@ -110,6 +110,7 @@ struct set_color_s
     char const *error ; //bred
     char const *ablink ; //blink
     char const *blue ; //blink
+    char const *magenta ; //bmagenta
     char const *off ; //nocolor
 } ;
 
