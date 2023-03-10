@@ -94,7 +94,7 @@ src/str/scan_mode.o src/str/scan_mode.lo: src/str/scan_mode.c src/include/oblibs
 src/str/scan_timeout.o src/str/scan_timeout.lo: src/str/scan_timeout.c src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/str/scan_uid.o src/str/scan_uid.lo: src/str/scan_uid.c src/include/oblibs/types.h
 src/str/scan_uidlist.o src/str/scan_uidlist.lo: src/str/scan_uidlist.c src/include/oblibs/sastr.h src/include/oblibs/types.h
-src/str/scan_uidlist_wdelim.o src/str/scan_uidlist_wdelim.lo: src/str/scan_uidlist_wdelim.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/types.h
+src/str/scan_uidlist_wdelim.o src/str/scan_uidlist_wdelim.lo: src/str/scan_uidlist_wdelim.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/str/scan_uint32.o src/str/scan_uint32.lo: src/str/scan_uint32.c src/include/oblibs/string.h src/include/oblibs/types.h
 src/str/str_contain.o src/str/str_contain.lo: src/str/str_contain.c src/include/oblibs/string.h
 src/str/str_start_with.o src/str/str_start_with.lo: src/str/str_start_with.c src/include/oblibs/string.h
