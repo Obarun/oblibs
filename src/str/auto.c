@@ -57,7 +57,7 @@ int auto_stra_builder(stralloc *sa,char const *str[],...)
         str++ ;
     }
     va_end(alist) ;
-    if(!stralloc_0(sa)) return 0 ;
+    if (!stralloc_0(sa)) return 0 ;
     sa->len-- ;
     return 1 ;
 }

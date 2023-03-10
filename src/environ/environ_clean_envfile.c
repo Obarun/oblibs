@@ -71,9 +71,8 @@ int environ_clean_envfile(stralloc *modifs,char const *path)
             /** file can be empty or just with " \n\t\r" */
             if (again.len) {
 
-                if (!environ_clean_nline(&again) ||
-                    !stralloc_0(&again))
-                        goto err ;
+                if (!environ_clean_nline(&again))
+                    goto err ;
 
                 if (pos)
                     if (!environ_get_commented_line(&commented,&again))

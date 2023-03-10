@@ -34,7 +34,9 @@ int environ_clean_line(stralloc *sa)
     r = mill_nstring(&clean,&split,&MILL_CLEAN_SPLITTED_VALUE) ;
     if (r == -1 || !r) goto err ;
     if (!environ_rebuild_line(&clean)) goto err ;
-    if (!stralloc_copy(sa,&clean)) goto err ;
+    if (!stralloc_copy(sa,&clean) ||
+        !stralloc_0(sa)) goto err ;
+    sa->len-- ;
     stralloc_free(&split) ;
     stralloc_free(&clean) ;
     return 1 ;

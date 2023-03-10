@@ -56,8 +56,9 @@ int environ_get_val_of_key(stralloc *sa,char const *key)
     }
     if (pos == -1) goto err ;
 
-    if (!stralloc_copy(&tmp, sa))
-            goto err ;
+    if (!stralloc_copy(&tmp, sa) ||
+        !stralloc_0(&tmp)) goto err ;
+    tmp.len-- ;
 
     if (!environ_get_key_nclean(&tmp,(size_t *)&ppos)) goto err ;
     ppos-- ;

@@ -29,7 +29,9 @@ int sastr_reverse(stralloc *sa)
         if (!stralloc_insertb (&tmp,0,s,strlen(s)+1))
             goto err ;
     }
-    if (!stralloc_copy(sa,&tmp)) goto err ;
+    if (!stralloc_copy(sa,&tmp) ||
+        !stralloc_0(sa)) goto err ;
+    sa->len-- ;
     stralloc_free(&tmp) ;
     return 1 ;
     err:

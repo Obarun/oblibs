@@ -32,8 +32,7 @@ int environ_get_clean_env(stralloc *sa)
     if (!sa->len)
         return 1 ;
 
-    if (!environ_clean_nline(sa) ||
-        !stralloc_0(sa))
+    if (!environ_clean_nline(sa))
             return 0 ;
 
     if (!environ_drop_commented_line(sa))

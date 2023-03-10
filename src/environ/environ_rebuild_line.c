@@ -50,7 +50,9 @@ int environ_rebuild_line(stralloc *sa)
     }
     // remove the last ' '
     if (space) tmp.len--;
-    if (!stralloc_copy(sa,&tmp)) goto err ;
+    if (!stralloc_copy(sa,&tmp) ||
+        !stralloc_0(sa)) goto err ;
+    sa->len-- ;
     stralloc_free(&tmp) ;
     return 1 ;
     err:

@@ -27,7 +27,9 @@ int sastr_split_string_in_nline(stralloc *sa)
     stralloc tmp = STRALLOC_ZERO ;
     r = mill_string(&tmp,sa,&MILL_SPLIT_LINE) ;
     if (r == -1 || !r) goto err ;
-    if (!stralloc_copy(sa,&tmp)) goto err ;
+    if (!stralloc_copy(sa,&tmp) ||
+        !stralloc_0(sa)) goto err ;
+    sa->len-- ;
     stralloc_free(&tmp) ;
     return 1 ;
     err:

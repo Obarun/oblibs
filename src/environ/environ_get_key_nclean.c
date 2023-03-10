@@ -28,7 +28,9 @@ int environ_get_key_nclean(stralloc *sa,size_t *pos)
     wild_zero_all(&MILL_GET_KEY_NCLEAN) ;
     r = mill_element(&kp,sa->s + *pos,&MILL_GET_KEY_NCLEAN,&newpos) ;
     if (r == -1 || !r) goto err ;
-    if (!stralloc_copy(sa,&kp)) goto err ;
+    if (!stralloc_copy(sa,&kp) ||
+        !stralloc_0(sa)) goto err ;
+    sa->len-- ;
     *pos += newpos ;
     stralloc_free(&kp) ;
     return 1 ;

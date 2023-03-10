@@ -36,10 +36,12 @@ int sastr_replace_all(stralloc *sa,char const *regex,char const *by)
         tmp.len-- ;
         if (!stralloc_catb(&result,tmp.s,strlen(tmp.s) + 1)) goto err ;
     }
-    if (!sastr_rebuild_in_nline(&result) ||
-    !stralloc_0(&result)) goto err ;
-    result.len-- ;
-    if (!stralloc_copy(sa,&result)) goto err ;
+    if (!sastr_rebuild_in_nline(&result))
+        goto err ;
+
+    if (!stralloc_copy(sa,&result) ||
+        !stralloc_0(sa)) goto err ;
+    sa->len-- ;
 
     stralloc_free(&result) ;
     stralloc_free(&tmp) ;

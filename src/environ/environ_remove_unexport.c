@@ -45,11 +45,8 @@ int environ_remove_unexport(stralloc *modifs,stralloc *sa)
         tmp.len-- ;
         if (!stralloc_catb(modifs,tmp.s,strlen(tmp.s) + 1)) goto err ;
     }
-    if (!sastr_rebuild_in_nline(modifs) ||
-        !stralloc_0(modifs))
-            goto err ;
-
-    modifs->len-- ;
+    if (!sastr_rebuild_in_nline(modifs))
+        goto err ;
 
     stralloc_free(&cp) ;
     stralloc_free(&tmp) ;

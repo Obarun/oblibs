@@ -31,7 +31,9 @@ int sastr_get_double_quote(stralloc *sa)
     if (r == -1 || !r) goto err ;
     if (!sastr_clean_element(&kp)) goto err ;
     if (kp.len) if (!sastr_rebuild_in_oneline(&kp)) goto err ;
-    if (!stralloc_copy(sa,&kp)) goto err ;
+    if (!stralloc_copy(sa,&kp) ||
+        !stralloc_0(sa)) goto err ;
+    sa->len-- ;
     stralloc_free(&kp) ;
     return 1 ;
     err:

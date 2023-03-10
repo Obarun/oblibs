@@ -30,11 +30,8 @@ int environ_clean_envfile_unexport(stralloc *modifs,char const *path)
         return 0 ;
 
     if (!environ_remove_unexport(modifs,modifs) ||
-        !sastr_split_string_in_nline(modifs) ||
-        !stralloc_0(modifs))
+        !sastr_split_string_in_nline(modifs))
             return 0 ;
-
-    modifs->len-- ;
 
     return 1 ;
 }

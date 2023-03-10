@@ -29,7 +29,9 @@ int sastr_rebuild_in_nline(stralloc *sa)
         !stralloc_cats(&tmp,"\n")) goto err ;
     }
     //tmp.len-- ; //remove last '\n'
-    if (!stralloc_copy(sa,&tmp)) goto err ;
+    if (!stralloc_copy(sa,&tmp) ||
+        !stralloc_0(sa)) goto err ;
+    sa->len-- ;
     stralloc_free(&tmp) ;
     return 1 ;
     err:

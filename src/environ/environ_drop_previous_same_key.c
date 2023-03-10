@@ -76,8 +76,9 @@ int environ_drop_previous_same_key(stralloc *list,stralloc *newlist)
                 goto err ;
     }
 
-    if (!stralloc_copy(list,&tmp))
-        goto err ;
+    if (!stralloc_copy(list,&tmp) ||
+        !stralloc_0(list)) goto err ;
+    list->len-- ;
 
     stralloc_free(&tmp) ;
     return 1 ;

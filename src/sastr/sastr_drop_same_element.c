@@ -36,7 +36,9 @@ int sastr_drop_same_element(stralloc *sa)
         if (!sastr_add_string(&tmp,p1)) return 0 ;
     }
 
-    if (!stralloc_copy(sa,&tmp)) return 0 ;
+    if (!stralloc_copy(sa,&tmp) ||
+        !stralloc_0(sa)) return 0 ;
+    sa->len-- ;
     stralloc_free(&tmp) ;
 
     return 1 ;

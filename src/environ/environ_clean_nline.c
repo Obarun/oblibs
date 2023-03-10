@@ -37,13 +37,13 @@ int environ_clean_nline(stralloc *sa)
         tmp.len = 0 ;
         if (!stralloc_catb(&tmp,cp.s+pos,strlen(cp.s + pos)+1) ||
         !environ_clean_line(&tmp)) goto err ;
-        if (!stralloc_0(&tmp)) goto err ;
-        tmp.len-- ;
         if (!stralloc_catb(&final,tmp.s,strlen(tmp.s)) ||
         !stralloc_catb(&final,"\n",1)) goto err ;
     }
     final.len-- ;
-    if (!stralloc_copy(sa,&final)) goto err ;
+    if (!stralloc_copy(sa,&final) ||
+        !stralloc_0(sa)) goto err ;
+    sa->len-- ;
     stralloc_free(&cp) ;
     stralloc_free(&tmp) ;
     stralloc_free(&final) ;

@@ -17,6 +17,7 @@
 #include <oblibs/types.h>
 #include <oblibs/mill.h>
 #include <oblibs/sastr.h>
+#include <oblibs/string.h>
 
 #include <skalibs/stralloc.h>
 
@@ -30,8 +31,8 @@ int scan_uidlist_wdelim(char const *str, uid_t *array,int delim)
         .forceclose = 1 , .skip = " \t\r", .skiplen = 3,
         .forceskip = 1, .inner.debug = "get_delim" } ;
 
-    if (!stralloc_cats(&sa,str) ||
-    !stralloc_0(&sa)) goto err ;
+    if (!auto_stra(&sa,str))
+        goto err ;
 
     wild_zero_all(&MILL_GET_DELIM) ;
 

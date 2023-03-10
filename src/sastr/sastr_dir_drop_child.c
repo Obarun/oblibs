@@ -53,8 +53,9 @@ int sastr_dir_drop_child(stralloc *sa)
             previous = current ;
     }
 
-    if (!stralloc_copy(sa,&tmp)) return 0 ;
-
+    if (!stralloc_copy(sa,&tmp) ||
+        !stralloc_0(sa)) return 0 ;
+    sa->len-- ;
     stralloc_free(&tmp) ;
 
     return 1 ;

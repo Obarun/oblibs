@@ -31,7 +31,9 @@ int sastr_clean_element(stralloc *sa)
     if (!sastr_split_element_in_nline(&split)) goto err ;
     r = mill_nstring(&clean,&split,&MILL_CLEAN_SPLITTED_VALUE) ;
     if (r == -1 || !r) goto err ;
-    if (!stralloc_copy(sa,&clean)) goto err ;
+    if (!stralloc_copy(sa,&clean) ||
+        !stralloc_0(sa)) goto err ;
+    sa->len-- ;
     stralloc_free(&split) ;
     stralloc_free(&clean) ;
     return 1 ;

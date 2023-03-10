@@ -58,8 +58,9 @@ int sastr_replace (stralloc *sa,char const *regex,char const *by)
     }
     if (!stralloc_0(&tmp)) goto err ;
     tmp.len-- ;
-    if (!stralloc_copy(sa,&tmp)) goto err ;
-
+    if (!stralloc_copy(sa,&tmp) ||
+        !stralloc_0(sa)) goto err ;
+    sa->len-- ;
     stralloc_free(&tmp) ;
     stralloc_free(&shrink) ;
     return 1 ;
