@@ -33,10 +33,10 @@ int environ_get_clean_env(stralloc *sa)
         return 1 ;
 
     if (!environ_clean_nline(sa))
-            return 0 ;
+        return 0 ;
 
     if (!environ_drop_commented_line(sa))
-         return 0 ;
+        return 0 ;
 
     /** may be badly formated */
     FOREACH_SASTR(sa,pos)

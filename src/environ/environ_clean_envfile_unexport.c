@@ -29,7 +29,7 @@ int environ_clean_envfile_unexport(stralloc *modifs,char const *path)
     if (!environ_clean_envfile(modifs,path))
         return 0 ;
 
-    if (!environ_remove_unexport(modifs,modifs) ||
+    if (!environ_remove_unexport(modifs,modifs->s, modifs->len) ||
         !sastr_split_string_in_nline(modifs))
             return 0 ;
 

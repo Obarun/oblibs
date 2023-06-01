@@ -112,7 +112,7 @@ extern int environ_clean_nline(stralloc *sa) ;
  * result of the proccess into @modifs
  * @Return 1 on success
  * @Return 0 on fail */
-extern int environ_remove_unexport(stralloc *modifs,stralloc *sa) ;
+extern int environ_remove_unexport(stralloc *modifs, char const *string, size_t len) ;
 
 /** @PATH MUST POINT TO A DIRECTORY NOT A FILE.
  * For each file found at @path:

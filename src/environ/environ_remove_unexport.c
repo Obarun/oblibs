@@ -18,24 +18,27 @@
 
 #include <oblibs/mill.h>
 #include <oblibs/sastr.h>
+#include <oblibs/string.h>
 
 #include <skalibs/stralloc.h>
 
-int environ_remove_unexport(stralloc *modifs,stralloc *sa)
+int environ_remove_unexport(stralloc *modifs, char const *string, size_t len)
 {
-    if (!sa->len) return 0 ;
+    if (!string) return 0 ;
     size_t pos = 0 ;
     char const search[3] = { '=', VAR_UNEXPORT, 0 } ;
     stralloc cp = STRALLOC_ZERO ;
     stralloc tmp = STRALLOC_ZERO ;
-    if (!stralloc_copy(&cp,sa)) goto err ;
-    if (!stralloc_0(&cp)) goto err ;
-    cp.len-- ;
+
+    for(; pos < len ; pos += strlen(string + pos) + 1)
+        if (!sastr_add_string(&cp, string + pos))
+            goto err ;
+
     if (!sastr_split_string_in_nline(&cp)) goto err ;
 
     modifs->len = 0 ;
 
-    for (;pos < cp.len; pos += strlen(cp.s + pos)+1)
+    for (pos = 0 ; pos < cp.len ; pos += strlen(cp.s + pos) + 1)
     {
         tmp.len = 0 ;
         stralloc_catb(&tmp,cp.s+pos,strlen(cp.s+pos)+1) ;
