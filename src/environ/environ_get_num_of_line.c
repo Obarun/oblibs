@@ -13,7 +13,7 @@
  */
 
 #include <oblibs/environ.h>
-
+#include <oblibs/stack.h>
 #include <oblibs/mill.h>
 
 #include <skalibs/stralloc.h>
@@ -22,14 +22,10 @@ unsigned int environ_get_num_of_line(stralloc *sa)
 {
     if (!sa->len) return -1 ;
     unsigned int nbline = 0 ;
-    stralloc tmp = STRALLOC_ZERO ;
+    _init_stack_(stk, sa->len + 1) ;
     wild_zero_all(&MILL_GET_LINE) ;
-    nbline = mill_string(&tmp,sa,&MILL_GET_LINE) ;
-    if (nbline == -1) goto err ;
+    nbline = mill_string(&stk, sa->s, sa->len, &MILL_GET_LINE) ;
+    if (nbline == -1) return -1 ;
     nbline = MILL_GET_LINE.inner.nline ;
-    stralloc_free(&tmp) ;
     return nbline ;
-    err:
-        stralloc_free(&tmp) ;
-        return -1 ;
 }

@@ -12,10 +12,12 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <string.h>
+
 #include <oblibs/sastr.h>
 #include <oblibs/mill.h>
-
-#include <string.h>
+#include <oblibs/stack.h>
+#include <oblibs/string.h>
 
 #include <skalibs/stralloc.h>
 
@@ -23,16 +25,12 @@ int sastr_split_element_in_nline(stralloc *sa)
 {
     if (!sa->len) return 0 ;
     int r ;
+    _init_stack_(stk, sa->len + 1) ;
     wild_zero_all(&MILL_SPLIT_ELEMENT) ;
-    stralloc tmp = STRALLOC_ZERO ;
-    r = mill_string(&tmp,sa,&MILL_SPLIT_ELEMENT) ;
-    if (r == -1 || !r) goto err ;
-    if (!stralloc_copy(sa,&tmp) ||
-        !stralloc_0(sa)) goto err ;
-    sa->len-- ;
-    stralloc_free(&tmp) ;
+    r = mill_string(&stk, sa->s, sa->len, &MILL_SPLIT_ELEMENT) ;
+    if (r == -1 || !r) return 0 ;
+    if (!stack_close(&stk))
+    sa->len = 0 ;
+    if (!stralloc_copyb(sa, stk.s, stk.len)) return 0 ;
     return 1 ;
-    err:
-        stralloc_free(&tmp) ;
-        return 0 ;
 }

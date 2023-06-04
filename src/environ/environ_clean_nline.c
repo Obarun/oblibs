@@ -18,6 +18,7 @@
 
 #include <oblibs/mill.h>
 #include <oblibs/sastr.h>
+#include <oblibs/stack.h>
 
 #include <skalibs/stralloc.h>
 
@@ -26,16 +27,16 @@ int environ_clean_nline(stralloc *sa)
     if (!sa->len) return 0 ;
     int r ;
     size_t pos = 0 ;
-    stralloc cp = STRALLOC_ZERO ;
     stralloc tmp = STRALLOC_ZERO ;
     stralloc final = STRALLOC_ZERO ;
     wild_zero_all(&MILL_GET_LINE) ;
-    r = mill_string(&cp,sa,&MILL_GET_LINE) ;
+    _init_stack_(stk, sa->len + 1) ;
+    r = mill_string(&stk, sa->s, sa->len, &MILL_GET_LINE) ;
     if (r == -1 || !r) goto err ;
-    for (;pos < cp.len; pos += strlen(cp.s + pos)+1)
-    {
+    if (!stack_close(&stk)) goto err ;
+    FOREACH_STK(&stk, pos) {
         tmp.len = 0 ;
-        if (!stralloc_catb(&tmp,cp.s+pos,strlen(cp.s + pos)+1) ||
+        if (!stralloc_catb(&tmp, stk.s + pos, strlen(stk.s + pos) + 1) ||
         !environ_clean_line(&tmp)) goto err ;
         if (!stralloc_catb(&final,tmp.s,strlen(tmp.s)) ||
         !stralloc_catb(&final,"\n",1)) goto err ;
@@ -44,12 +45,10 @@ int environ_clean_nline(stralloc *sa)
     if (!stralloc_copy(sa,&final) ||
         !stralloc_0(sa)) goto err ;
     sa->len-- ;
-    stralloc_free(&cp) ;
     stralloc_free(&tmp) ;
     stralloc_free(&final) ;
     return 1 ;
     err:
-        stralloc_free(&cp) ;
         stralloc_free(&tmp) ;
         stralloc_free(&final) ;
         return 0 ;

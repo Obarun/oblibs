@@ -12,11 +12,12 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/sastr.h>
-
 #include <sys/types.h>
 
 #include <oblibs/mill.h>
+#include <oblibs/stack.h>
+#include <oblibs/sastr.h>
+#include <oblibs/string.h>
 
 #include <skalibs/stralloc.h>
 
@@ -25,18 +26,14 @@ int sastr_get_double_quote(stralloc *sa)
     if (!sa->len) return 0 ;
     int r ;
     size_t pos = 0 ;
-    stralloc kp = STRALLOC_ZERO ;
+    _init_stack_(stk, sa->len + 1) ;
     wild_zero_all(&MILL_GET_DOUBLE_QUOTE) ;
-    r = mill_element(&kp,sa->s,&MILL_GET_DOUBLE_QUOTE,&pos) ;
-    if (r == -1 || !r) goto err ;
-    if (!sastr_clean_element(&kp)) goto err ;
-    if (kp.len) if (!sastr_rebuild_in_oneline(&kp)) goto err ;
-    if (!stralloc_copy(sa,&kp) ||
-        !stralloc_0(sa)) goto err ;
-    sa->len-- ;
-    stralloc_free(&kp) ;
+    r = mill_element(&stk, sa->s, &MILL_GET_DOUBLE_QUOTE, &pos) ;
+    if (r == -1 || !r) return 0 ;
+    if (!stack_close(&stk)) return 0 ;
+    sa->len = 0 ;
+    if (!stralloc_copyb(sa, stk.s, stk.len)) return 0 ;
+    if (!sastr_clean_element(sa)) return 0 ;
+    if (sa->len) if (!sastr_rebuild_in_oneline(sa)) return 0 ;
     return 1 ;
-    err:
-        stralloc_free(&kp) ;
-        return 0 ;
 }

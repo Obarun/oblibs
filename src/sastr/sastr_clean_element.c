@@ -15,6 +15,7 @@
 #include <oblibs/string.h>
 #include <oblibs/sastr.h>
 #include <oblibs/mill.h>
+#include <oblibs/stack.h>
 
 #include <string.h>
 
@@ -24,21 +25,20 @@ int sastr_clean_element(stralloc *sa)
 {
     if (!sa->len) return 0 ;
     int r ;
-    stralloc split = STRALLOC_ZERO ;
+    _init_stack_(stk, sa->len + 1) ;
     stralloc clean = STRALLOC_ZERO ;
     wild_zero_all(&MILL_CLEAN_SPLITTED_VALUE) ;
-    if (!auto_stra(&split,sa->s)) goto err ;
-    if (!sastr_split_element_in_nline(&split)) goto err ;
-    r = mill_nstring(&clean,&split,&MILL_CLEAN_SPLITTED_VALUE) ;
+    if (!auto_stra(&clean,sa->s)) goto err ;
+    if (!sastr_split_element_in_nline(&clean)) goto err ;
+    r = mill_nstring(&stk, clean.s, clean.len, &MILL_CLEAN_SPLITTED_VALUE) ;
     if (r == -1 || !r) goto err ;
-    if (!stralloc_copy(sa,&clean) ||
-        !stralloc_0(sa)) goto err ;
-    sa->len-- ;
-    stralloc_free(&split) ;
+    if (!stack_close(&stk)) goto err ;
+    sa->len = 0 ;
+    if (!stralloc_copyb(sa, stk.s, stk.len)) return 0 ;
+
     stralloc_free(&clean) ;
     return 1 ;
     err:
-        stralloc_free(&split) ;
         stralloc_free(&clean) ;
         return 0 ;
 }

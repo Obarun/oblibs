@@ -12,29 +12,27 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/environ.h>
-
 #include <string.h>
+
+#include <oblibs/environ.h>
 #include <oblibs/mill.h>
+#include <oblibs/stack.h>
+#include <oblibs/string.h>
 
 #include <skalibs/stralloc.h>
 
-int environ_get_key_nclean(stralloc *sa,size_t *pos)
+int environ_get_key_nclean(stralloc *sa, size_t *pos)
 {
     if (!sa->len) return 0 ;
     int r ;
     size_t newpos = 0 ;
-    stralloc kp = STRALLOC_ZERO ;
+    _init_stack_(stk, sa->len + 1) ;
     wild_zero_all(&MILL_GET_KEY_NCLEAN) ;
-    r = mill_element(&kp,sa->s + *pos,&MILL_GET_KEY_NCLEAN,&newpos) ;
-    if (r == -1 || !r) goto err ;
-    if (!stralloc_copy(sa,&kp) ||
-        !stralloc_0(sa)) goto err ;
-    sa->len-- ;
+    r = mill_element(&stk, sa->s + *pos, &MILL_GET_KEY_NCLEAN, &newpos) ;
+    if (r == -1 || !r) return 0 ;
+    if (!stack_close(&stk)) return 0 ;
+    sa->len = 0 ;
+    if (!stralloc_copyb(sa, stk.s, stk.len)) return 0 ;
     *pos += newpos ;
-    stralloc_free(&kp) ;
     return 1 ;
-    err:
-        stralloc_free(&kp) ;
-        return 0 ;
 }

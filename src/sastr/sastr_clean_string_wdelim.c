@@ -12,10 +12,12 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <string.h>
+
 #include <oblibs/sastr.h>
 #include <oblibs/mill.h>
-
-#include <string.h>
+#include <oblibs/stack.h>
+#include <oblibs/string.h>
 
 #include <skalibs/stralloc.h>
 
@@ -24,8 +26,8 @@ int sastr_clean_string_wdelim(stralloc *sa,char const *str,unsigned int delim)
 
     int r ;
     stralloc kp = STRALLOC_ZERO ;
-    stralloc tmp = STRALLOC_ZERO ;
-    size_t pos ;
+    size_t pos = 0, len = strlen(str) ;
+    _init_stack_(stk, len + 1) ;
 
     parse_mill_t mill_delim = {
         .close = delim, .forceopen = 1, .keepopen = 1,
@@ -33,27 +35,25 @@ int sastr_clean_string_wdelim(stralloc *sa,char const *str,unsigned int delim)
 
     wild_zero_all(&mill_delim) ;
 
-    if (!stralloc_cats(&kp,str) ||
-    !stralloc_0(&kp)) goto err ;
+    if (!auto_stra(&kp,str)) goto err ;
 
-    r = mill_string(&tmp,&kp,&mill_delim) ;
+    r = mill_string(&stk, str, len, &mill_delim) ;
     if (r == -1 || !r) goto err ;
+    if (!stack_close(&stk)) goto err ;
 
-    for (pos = 0 ; pos < tmp.len; pos += strlen(tmp.s + pos) +1)
-    {
+    FOREACH_STK(&stk, pos) {
+
         kp.len = 0 ;
-        if (!stralloc_catb(&kp, tmp.s + pos,strlen(tmp.s + pos)) ||
+        if (!stralloc_catb(&kp, stk.s + pos, strlen(stk.s + pos)) ||
         !stralloc_0(&kp)) goto err ;
         if (!sastr_clean_element(&kp)) goto err ;
         if (!sastr_rebuild_in_oneline(&kp)) goto err ;
         if (!sastr_add_string(sa,kp.s)) goto err ;
     }
     stralloc_free(&kp) ;
-    stralloc_free(&tmp) ;
     return 1 ;
     err:
         stralloc_free(&kp) ;
-        stralloc_free(&tmp) ;
         return 0 ;
 }
 

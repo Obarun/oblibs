@@ -12,15 +12,17 @@
  * except according to the terms contained in the LICENSE file./
  * */
 
+#include <string.h>
 #include <sys/types.h>
+
 #include <oblibs/mill.h>
 #include <oblibs/log.h>
+#include <oblibs/stack.h>
 
-#include <string.h>
 #include <skalibs/stralloc.h>
 #include <skalibs/types.h>
 
-char mill_next(char const *s,size_t *pos)
+char mill_next(char const *s, size_t *pos)
 {
     char c = 0 ;
     size_t slen = strlen(s) ;
@@ -126,7 +128,7 @@ uint8_t mill_cclass (parse_mill_t *p)
 /** @Return 1 on sucess/end of string
  * @Return -1 system error
  * @Return 0 parsing error */
-int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
+int mill_config(stack *stk, parse_mill_t *p, char const *string, size_t *pos)
 {
     static uint8_t const table[6] = { IGN, KEEP, JUMP, END, EFILE } ;
     uint8_t what = 0, efile = 0 ;
@@ -156,10 +158,11 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
 
         if (p->inner.flushed)
         {
-            kp->len = 0 ;
+            stk->len = 0 ;
             wild_zero(p) ;
             what = IGN ;
         }
+
         // end of file
         //if (p->inner.curr == -1) what = EFILE ;
         DBG_PARSER ("   pos:%li::current:%c:",*pos,p->inner.curr) ;
@@ -169,15 +172,15 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
         {
             case KEEP:
                 if (p->inner.nopen)
-                    if (!stralloc_catb(kp,&p->inner.curr,1))
+                    if (!stack_add(stk, &p->inner.curr, 1))
                         return -1 ;
 
-                DBG_PARSER("    string state:%s:\n",kp->s) ;
+                DBG_PARSER("    string state:%s:\n", stk->s) ;
                 break ;
             case JUMP:
                     while (j != '\n')
                     {
-                        j = mill_next(string,pos) ;
+                        j = mill_next(string, pos) ;
                         if (j < 0) {
                              res = 1 ;
                              break ; //end of string
@@ -194,7 +197,7 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
                 break ;
             case END:
                 if (p->keepclose)
-                    if (!stralloc_catb(kp,&p->inner.curr,1))
+                    if (!stack_add(stk, &p->inner.curr, 1))
                         return -1 ;
                 res = 1 ;
                 break ;
@@ -202,12 +205,11 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
         }
     }
     p->inner.lastclose = (*pos) ;
-    if (p->inner.search || p->inner.jumped) kp->len = 0 ;
+    if (p->inner.search || p->inner.jumped) stk->len = 0 ;
     else
     {
-        if (!stralloc_0(kp)) return 0 ;
-        kp->len-- ;
-    //  if (kp->len == 1) kp->len = 0 ;
+        if (!stack_close(stk)) return 0 ;
+
     }
     DBG_PARSER("what:%s:efile:%i:res:%i:", !what ? "ign" : \
                                 what == 1 ? "keep" : \
@@ -221,10 +223,10 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
         else if (p->jump && !p->inner.jumped) return 0 ;
 
         if (!p->forceopen)
-            if (p->open && !p->inner.nopen){ kp->len = 0 ; return 0 ; }
+            if (p->open && !p->inner.nopen){ stk->len = 0 ; return 0 ; }
 
         if (!p->forceclose)
-            if (p->close && !p->inner.nclose){ kp->len = 0 ; return 0 ; }
+            if (p->close && !p->inner.nclose){ stk->len = 0 ; return 0 ; }
     }
 
     if (p->check && p->inner.nopen != p->inner.nclose)
@@ -239,12 +241,13 @@ int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos)
     return res ;
 }
 
-int mill_prepare(stralloc *dst, char const *string,parse_mill_t *sep,size_t *pos)
+int mill_prepare(stack *stk, char const *string, parse_mill_t *sep, size_t *pos)
 {
     int r = 0 ;
     size_t newpos = (*pos), ebase = sep->endlen, i = 0 ;
-    stralloc kp = STRALLOC_ZERO ;
     static char tend[64+2] ;
+
+    _init_stack_(tstk, strlen(string)) ;
 
     memset(tend,0,66) ;
 
@@ -300,52 +303,41 @@ int mill_prepare(stralloc *dst, char const *string,parse_mill_t *sep,size_t *pos
 
     tend[i] = 0 ;
     csep.end = tend ;
-    r = mill_config(&csep,string,&kp,&newpos) ;
+    r = mill_config(&tstk, &csep, string, &newpos) ;
     sep->inner.pos = newpos ;
     sep->inner.nline = csep.inner.nline ;
     if (r == -1) goto err ;
-    else if (!r || !kp.len) goto freed ;
-    if (!stralloc_catb(dst,kp.s,strlen(kp.s)+1)) goto err ;
-
+    else if (!r || !tstk.len) goto freed ;
+    if (!stack_add(stk, tstk.s, tstk.len + 1)) goto err ;
     freed:
         (*pos) = newpos ;
-        stralloc_free(&kp) ;
         return r ;
     err:
         (*pos) = newpos ;
-        stralloc_free(&kp) ;
         return -1 ;
 }
 
-int mill_element(stralloc *dst, char const *string, parse_mill_t *sep,size_t *pos)
+int mill_element(stack *stk, char const *string, parse_mill_t *sep, size_t *pos)
 {
     int r = 1 ;
     if (!string) return 0 ;
-    stralloc kp = STRALLOC_ZERO ;
-
-    r = mill_prepare(&kp,string,sep,pos) ;
-    if (r == -1) goto err ;
-    else if (!r || !kp.len) goto finish ;
-    if (!stralloc_catb(dst,kp.s,strlen(kp.s)+1)) goto err ;
-
-    finish:
-    stralloc_free(&kp) ;
+    _init_stack_(tstk, strlen(string) + 1) ;
+    r = mill_prepare(&tstk, string, sep, pos) ;
+    if (r == -1) return -1 ;
+    else if (!r || !tstk.len) return r ;
+    if (!stack_add(stk, tstk.s, strlen(tstk.s) + 1)) return -1 ;
     return r ;
-    err:
-        stralloc_free(&kp) ;
-        return -1 ;
 }
 
-int mill_string(stralloc *dst, stralloc *sa, parse_mill_t *sep)
+int mill_string(stack *stk, char const *string, size_t len, parse_mill_t *sep)
 {
+    if (!len) return 0 ;
     int r = 0 ;
-    if (!sa->len) return 0 ;
-    size_t len = sa->len, newpos = 0, pos = 0 ;
+    size_t newpos = 0, pos = 0 ;
 
-    while (pos < len)
-    {
+    while (pos < len) {
         newpos = 0 ;
-        r = mill_element(dst,sa->s+pos,sep,&newpos) ;
+        r = mill_element(stk, string + pos, sep, &newpos) ;
         if (r == -1) return -1 ;
         if (!r) return 0 ;
         pos += newpos ;
@@ -354,16 +346,15 @@ int mill_string(stralloc *dst, stralloc *sa, parse_mill_t *sep)
     return 1 ;
 }
 
-int mill_nstring(stralloc *dst, stralloc *sa, parse_mill_t *sep)
+int mill_nstring(stack *stk, char const *string, size_t len, parse_mill_t *sep)
 {
+    if (!len) return 0 ;
     int r = 0 ;
-    if (!sa->len) return 0 ;
-    size_t len = sa->len, newpos = 0, pos = 0 ;
+    size_t newpos = 0, pos = 0 ;
 
-    for (;pos < len; pos += strlen(sa->s + pos)+1)
-    {
+    for (; pos < len; pos += strlen(string + pos) + 1) {
         newpos = 0 ;
-        r = mill_element(dst,sa->s+pos,sep,&newpos) ;
+        r = mill_element(stk, string + pos, sep, &newpos) ;
         if (r == -1) return -1 ;
         if (!r) return 0 ;
         sep->inner.pos += newpos ;
