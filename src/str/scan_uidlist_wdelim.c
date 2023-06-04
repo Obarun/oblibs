@@ -18,34 +18,34 @@
 #include <oblibs/mill.h>
 #include <oblibs/sastr.h>
 #include <oblibs/string.h>
+#include <oblibs/stack.h>
 
 #include <skalibs/stralloc.h>
 
 int scan_uidlist_wdelim(char const *str, uid_t *array,int delim)
 {
     int r ;
+    size_t len = strlen(str) ;
+    _init_stack_(stk, len + 1) ;
     stralloc kp = STRALLOC_ZERO ;
-    stralloc sa = STRALLOC_ZERO ;
+
     parse_mill_t MILL_GET_DELIM = {
         .close = delim, .forceopen = 1, .keepopen = 1,
         .forceclose = 1 , .skip = " \t\r", .skiplen = 3,
         .forceskip = 1, .inner.debug = "get_delim" } ;
 
-    if (!auto_stra(&sa,str))
-        goto err ;
-
     wild_zero_all(&MILL_GET_DELIM) ;
 
-    r = mill_string(&kp,&sa,&MILL_GET_DELIM) ;
+    r = mill_string(&stk, str, len, &MILL_GET_DELIM) ;
     if (r == -1 || !r) goto err ;
+    if (!stack_close(&stk)) goto err ;
+    if (!stralloc_copyb(&kp, stk.s, stk.len)) return 0 ;
     if (!sastr_rebuild_in_oneline(&kp)) goto err ;
     if (!scan_uidlist(kp.s,array)) goto err ;
 
-    stralloc_free(&sa) ;
     stralloc_free(&kp) ;
     return 1 ;
     err:
-        stralloc_free(&sa) ;
         stralloc_free(&kp) ;
         return 0 ;
 }
