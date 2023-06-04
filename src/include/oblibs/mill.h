@@ -19,6 +19,8 @@
 #include <stdarg.h>
 #include <sys/types.h>
 
+#include <oblibs/stack.h>
+
 #include <skalibs/stralloc.h>
 #include <skalibs/types.h>
 #include <skalibs/buffer.h>
@@ -109,11 +111,11 @@ enum parse_enum_e
 // general function
 extern char mill_next(char const *s,size_t *pos) ;
 extern uint8_t mill_cclass (parse_mill_t *p) ;
-extern int mill_config(parse_mill_t *p, char const *string, stralloc *kp,size_t *pos) ;
-extern int mill_prepare(stralloc *dst, char const *string,parse_mill_t *sep,size_t *pos) ;
-extern int mill_element(stralloc *dst, char const *string, parse_mill_t *sep,size_t *pos) ;
-extern int mill_string(stralloc *dst, stralloc *sa, parse_mill_t *sep) ;
-extern int mill_nstring(stralloc *dst, stralloc *sa, parse_mill_t *sep) ;
+extern int mill_config(stack *stk, parse_mill_t *p, char const *string, size_t *pos) ;
+extern int mill_prepare(stack *stk, char const *string, parse_mill_t *sep, size_t *pos) ;
+extern int mill_element(stack *stk, char const *string, parse_mill_t *sep, size_t *pos) ;
+extern int mill_string(stack *stk, char const *string, size_t len, parse_mill_t *sep) ;
+extern int mill_nstring(stack *stk, char const *string, size_t len, parse_mill_t *sep) ;
 //helper
 extern void wild_zero(parse_mill_t *m) ;
 extern void wild_zero_nline(parse_mill_t *m) ;
