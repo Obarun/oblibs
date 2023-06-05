@@ -245,33 +245,33 @@ int mill_prepare(stack *stk, char const *string, parse_mill_t *sep, size_t *pos)
 {
     int r = 0 ;
     size_t newpos = (*pos), ebase = sep->endlen, i = 0 ;
+    parse_mill_t csep = PARSE_MILL_ZERO ;
+    _init_stack_(tstk, strlen(string)) ;
     static char tend[64+2] ;
 
-    _init_stack_(tstk, strlen(string)) ;
-
     memset(tend,0,66) ;
-
-    parse_mill_t csep = PARSE_MILL_ZERO ;
     mill_copy(&csep,sep) ;
-
     csep.inner.nclose = csep.inner.nopen = 0 ;
 
     /** end and skip cannot be the same */
-    for (; i < csep.endlen ; i++)
-    {
-        if (mill_inner_loop(csep.end[i],csep.skip,csep.skiplen))
-            goto err ;
+    for (; i < csep.endlen ; i++) {
+        if (mill_inner_loop(csep.end[i],csep.skip,csep.skiplen)) {
+            (*pos) = newpos ;
+            return -1 ;
+        }
     }
 
     /** open,close and skip cannot be the same */
     i = 0 ;
-    for (;i < csep.skiplen ; i++)
-        if ((csep.skip[i] == csep.open)  || (csep.skip[i] == csep.close))
-            goto err ;
-
+    for (;i < csep.skiplen ; i++) {
+        if ((csep.skip[i] == csep.open)  || (csep.skip[i] == csep.close)) {
+            (*pos) = newpos ;
+            return -1 ;
+        }
+    }
     /** prepare sep->end */
     i = 0 ;
-    while (i < ebase){
+    while (i < ebase) {
         tend[i] = csep.end[i] ;
         i++ ;
     }
@@ -281,21 +281,20 @@ int mill_prepare(stack *stk, char const *string, parse_mill_t *sep, size_t *pos)
      * this limit avoid complex exit status.
      * Reverse is also true */
 
-    if (csep.search || csep.jump)
-    {
+    if (csep.search || csep.jump) {
+
         csep.open = csep.close = csep.check = csep.skiplen = 0 ;
         csep.skip = 0 ;
         csep.forceopen = csep.forceclose = csep.forceskip = 0 ;
-    }
-    else
-    {
+
+    } else {
+
         csep.jumplen = csep.searchlen = 0 ;
         csep.search = csep.jump = 0 ;
         if (csep.forceopen)
             csep.open = string[(*pos)] ;
 
-        if (csep.forceclose)
-        {
+        if (csep.forceclose) {
             tend[i++] = string[strlen(string)] ;
             csep.endlen = ebase + 1 ;
         }
@@ -306,24 +305,22 @@ int mill_prepare(stack *stk, char const *string, parse_mill_t *sep, size_t *pos)
     r = mill_config(&tstk, &csep, string, &newpos) ;
     sep->inner.pos = newpos ;
     sep->inner.nline = csep.inner.nline ;
-    if (r == -1) goto err ;
-    else if (!r || !tstk.len) goto freed ;
-    if (!stack_add(stk, tstk.s, tstk.len + 1)) goto err ;
-    freed:
-        (*pos) = newpos ;
-        return r ;
-    err:
-        (*pos) = newpos ;
-        return -1 ;
+    if (r == -1) { (*pos) = newpos ; return -1 ; }
+    else if (!r || !tstk.len) { (*pos) = newpos ; return r ; }
+    if (!stack_add(stk, tstk.s, tstk.len + 1)) { (*pos) = newpos ; return -1 ; }
+
+    (*pos) = newpos ;
+    return r ;
 }
 
 int mill_element(stack *stk, char const *string, parse_mill_t *sep, size_t *pos)
 {
     int r = 1 ;
     if (!string) return 0 ;
-    _init_stack_(tstk, strlen(string) + 1) ;
+    size_t len = strlen(string) ;
+    _init_stack_(tstk, len + 1) ;
     r = mill_prepare(&tstk, string, sep, pos) ;
-    if (r == -1) return -1 ;
+    if (r == -1) return r ;
     else if (!r || !tstk.len) return r ;
     if (!stack_add(stk, tstk.s, strlen(tstk.s) + 1)) return -1 ;
     return r ;

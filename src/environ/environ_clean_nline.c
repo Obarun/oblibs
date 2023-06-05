@@ -42,6 +42,8 @@ int environ_clean_nline(stralloc *sa)
         !stralloc_catb(&final,"\n",1)) goto err ;
     }
     final.len-- ;
+    if (!stralloc_0(&final)) goto err ;
+    final.len-- ;
     if (!stralloc_copy(sa,&final) ||
         !stralloc_0(sa)) goto err ;
     sa->len-- ;

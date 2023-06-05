@@ -85,7 +85,6 @@ int environ_drop_previous_same_key(stralloc *list,stralloc *newlist)
     err:
         stralloc_free(&tmp) ;
         return 0 ;
-
 }
 
 

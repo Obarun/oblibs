@@ -28,8 +28,9 @@ int environ_get_commented_line(stralloc *tokeep,stralloc *src)
 
     memset(tmp,0,len) ;
 
-    if (!stralloc_copy(tokeep,src))
-        return 0 ;
+    if (!stralloc_copy(tokeep,src) ||
+        !stralloc_0(tokeep))
+            return 0 ;
 
     if (!sastr_split_string_in_nline(tokeep))
         return 0 ;
