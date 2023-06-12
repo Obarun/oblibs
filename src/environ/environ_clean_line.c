@@ -28,7 +28,6 @@ int environ_clean_line(stralloc *sa)
     int r ;
     _init_stack_(stk, sa->len + 1) ;
     stralloc clean = STRALLOC_ZERO ;
-    wild_zero_all(&MILL_SPLIT_ELEMENT) ;
     wild_zero_all(&MILL_CLEAN_SPLITTED_VALUE) ;
     if (!stralloc_copy(&clean,sa)) goto err ;
     if (!sastr_split_element_in_nline(&clean)) goto err ;

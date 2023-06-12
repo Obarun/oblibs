@@ -29,7 +29,7 @@ int sastr_split_element_in_nline(stralloc *sa)
     wild_zero_all(&MILL_SPLIT_ELEMENT) ;
     r = mill_string(&stk, sa->s, sa->len, &MILL_SPLIT_ELEMENT) ;
     if (r == -1 || !r) return 0 ;
-    if (!stack_close(&stk))
+    if (!stack_close(&stk)) return 0 ;
     sa->len = 0 ;
     if (!stralloc_copyb(sa, stk.s, stk.len)) return 0 ;
     return 1 ;
