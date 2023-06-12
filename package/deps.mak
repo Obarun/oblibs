@@ -69,7 +69,7 @@ src/sastr/sastr_sortndrop_element.o src/sastr/sastr_sortndrop_element.lo: src/sa
 src/sastr/sastr_split_element_in_nline.o src/sastr/sastr_split_element_in_nline.lo: src/sastr/sastr_split_element_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h
 src/sastr/sastr_split_string_in_nline.o src/sastr/sastr_split_string_in_nline.lo: src/sastr/sastr_split_string_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h
 src/sastr/sastr_to_char.o src/sastr/sastr_to_char.lo: src/sastr/sastr_to_char.c src/include/oblibs/sastr.h
-src/stack/stack.o src/stack/stack.lo: src/stack/stack.c src/include/oblibs/stack.h
+src/stack/stack.o src/stack/stack.lo: src/stack/stack.c src/include/oblibs/mill.h src/include/oblibs/stack.h
 src/str/auto.o src/str/auto.lo: src/str/auto.c
 src/str/get_flags.o src/str/get_flags.lo: src/str/get_flags.c src/include/oblibs/types.h
 src/str/get_gidbygroup.o src/str/get_gidbygroup.lo: src/str/get_gidbygroup.c src/include/oblibs/types.h
