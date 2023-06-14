@@ -14,9 +14,55 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
 
 #include <oblibs/stack.h>
 #include <oblibs/mill.h>
+#include <oblibs/string.h>
+
+uint8_t stack_add(stack *stk, char const *str, size_t len)
+{
+    if (stk->len + len > stk->maxlen)
+        { errno = EOVERFLOW ; return 0 ; }
+    memcpy(stk->s + stk->len, str, len) ;
+    stk->len += len ;
+    return 1 ;
+}
+
+uint8_t stack_add_g(stack *stk, char const *str)
+{
+    size_t len = strlen(str) ;
+    return stack_add(stk, str, len) ;
+}
+
+uint8_t stack_close(stack *stk)
+{
+    if (stk->len + 1 > stk->maxlen)
+        { errno = EOVERFLOW ; return 0 ; }
+    stack_add(stk, "", 1) ;
+    stk->len-- ;
+    return 1 ;
+}
+
+/**
+ * \t\r\n are not escaped
+ * */
+uint8_t stack_convert_tostring(stack *stk)
+{
+    if (!stk->len)
+        return 0 ;
+    size_t pos = 0, tmplen = 0 ;
+    char tmp[stk->maxlen + 1] ;
+    memset(tmp, 0, stk->maxlen + 1) ;
+    FOREACH_STK(stk, pos)
+        auto_strings(tmp + strlen(tmp), stk->s + pos, " ") ;
+    tmplen = strlen(tmp) ;
+    tmp[tmplen - 1] = 0 ;
+    memmove(stk->s, tmp, tmplen) ;
+    stk->len = tmplen ;
+    if (!stack_close(stk)) return 0 ;
+    return 1 ;
+}
 
 /**
  * \t\r\n are not escaped
@@ -37,26 +83,41 @@ uint8_t stack_convert_string(stack *stk, char const *string, size_t len)
     return 1 ;
 }
 
-uint8_t stack_add(stack *stk, char const *str, size_t len)
+uint8_t stack_convert_string_g(stack *stk, char const *string)
 {
-    if (stk->len + len > stk->maxlen)
-        return 0 ;
-    memcpy(stk->s + stk->len, str, len) ;
-    stk->len += len ;
+    size_t len = strlen(stk->s) ;
+    return stack_convert_string(stk, string, len) ;
+}
+
+ssize_t stack_retrieve_element(stack *stk, char const *string)
+{
+    size_t pos = 0 ;
+    FOREACH_STK(stk, pos)
+        if (!strcmp(stk->s + pos, string))
+            return pos ;
+
+    return -1 ;
+}
+
+size_t stack_count_element(stack *stk)
+{
+    size_t n = 0, pos = 0 ;
+    FOREACH_STK(stk, pos)
+        n++ ;
+    return n ;
+}
+
+uint8_t stack_remove_element(stack *stk, size_t index)
+{
+    size_t ilen = strlen(stk->s + index), next = index + ilen + 1, nextlen = strlen(stk->s + next) ;
+    memmove(stk->s + index, stk->s + next, stk->len - nextlen) ;
+    stk->len -= ilen + 1 ;
+    if (!stack_close(stk)) return 0 ;
     return 1 ;
 }
 
-uint8_t stack_add_g(stack *stk, char const *str)
+uint8_t stack_remove_element_g(stack *stk, char const *element)
 {
-    size_t len = strlen(str) ;
-    return stack_add(stk, str, len) ;
-}
-
-uint8_t stack_close(stack *stk)
-{
-    if (stk->len + 1 > stk->maxlen)
-        return 0 ;
-    stack_add(stk, "", 1) ;
-    stk->len-- ;
-    return 1 ;
+    ssize_t idx = stack_retrieve_element(stk, element) ;
+    return idx < 0 ? 1 : stack_remove_element(stk, (size_t)idx) ;
 }

@@ -17,8 +17,11 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <unistd.h>
 
 #define _init_stack_(stk,__stk__maxlen__) char __stk__store__[__stk__maxlen__ + 3] ; stack stk = { .s = __stk__store__, .len = 0, .maxlen = __stk__maxlen__ + 2 } ;
+
+#define STACK_ZERO { .s = 0, .len = 0, .maxlen = 0 }
 
 #define FOREACH_STK(stk,pos) \
     stack_ref __stk__ref__ = stk ; \
@@ -33,7 +36,12 @@ struct stack_s
 } ;
 
 extern uint8_t stack_convert_string(stack *stk, char const *string, size_t len) ;
+extern uint8_t stack_convert_tostring(stack *stk) ;
 extern uint8_t stack_add_g(stack *stk, char const *str) ;
 extern uint8_t stack_add(stack *stk, char const *string, size_t len) ;
 extern uint8_t stack_close(stack *stk) ;
+extern size_t stack_count_element(stack *stk) ;
+extern ssize_t stack_retrieve_element(stack *stk, char const *string) ;
+extern uint8_t stack_remove_element(stack *stk, size_t index) ;
+extern uint8_t stack_remove_element_g(stack *stk, char const *element) ;
 #endif
