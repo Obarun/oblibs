@@ -44,6 +44,15 @@ uint8_t stack_close(stack *stk)
     return 1 ;
 }
 
+uint8_t stack_copy(stack *stk, char const *string, size_t len)
+{
+    if (len > stk->maxlen)
+        { errno = EOVERFLOW ; return 0 ; }
+    memmove(stk->s, string, len) ;
+    stk->len = len ;
+    return 1 ;
+}
+
 /**
  * \t\r\n are not escaped
  * */
