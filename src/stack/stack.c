@@ -110,7 +110,8 @@ size_t stack_count_element(stack *stk)
 uint8_t stack_remove_element(stack *stk, size_t index)
 {
     size_t ilen = strlen(stk->s + index), next = index + ilen + 1, nextlen = strlen(stk->s + next) ;
-    memmove(stk->s + index, stk->s + next, stk->len - nextlen) ;
+    if (nextlen)
+        memmove(stk->s + index, stk->s + next, stk->len - nextlen) ;
     stk->len -= ilen + 1 ;
     if (!stack_close(stk)) return 0 ;
     return 1 ;
