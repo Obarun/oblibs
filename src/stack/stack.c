@@ -32,7 +32,7 @@ uint8_t stack_add(stack *stk, char const *str, size_t len)
 uint8_t stack_add_g(stack *stk, char const *str)
 {
     size_t len = strlen(str) ;
-    return stack_add(stk, str, len) ;
+    return stack_add(stk, str, len + 1) ;
 }
 
 uint8_t stack_close(stack *stk)
