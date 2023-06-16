@@ -120,7 +120,7 @@ uint8_t stack_remove_element(stack *stk, size_t index)
 {
     size_t ilen = strlen(stk->s + index), next = index + ilen + 1, nextlen = strlen(stk->s + next) ;
     if (nextlen)
-        memmove(stk->s + index, stk->s + next, stk->len - nextlen) ;
+        memmove(stk->s + index, stk->s + next, stk->len - next) ;
     stk->len -= ilen + 1 ;
     if (!stack_close(stk)) return 0 ;
     return 1 ;

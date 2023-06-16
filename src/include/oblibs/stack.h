@@ -40,6 +40,7 @@ extern uint8_t stack_convert_tostring(stack *stk) ;
 extern uint8_t stack_add_g(stack *stk, char const *str) ;
 extern uint8_t stack_add(stack *stk, char const *string, size_t len) ;
 extern uint8_t stack_close(stack *stk) ;
+extern uint8_t stack_copy(stack *stk, char const *string, size_t len) ;
 extern size_t stack_count_element(stack *stk) ;
 extern ssize_t stack_retrieve_element(stack *stk, char const *string) ;
 extern uint8_t stack_remove_element(stack *stk, size_t index) ;
