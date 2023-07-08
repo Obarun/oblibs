@@ -26,6 +26,7 @@ uint8_t stack_add(stack *stk, char const *str, size_t len)
         { errno = EOVERFLOW ; return 0 ; }
     memcpy(stk->s + stk->len, str, len) ;
     stk->len += len ;
+    stk->count++ ;
     return 1 ;
 }
 
@@ -94,8 +95,8 @@ uint8_t stack_convert_string(stack *stk, char const *string, size_t len)
 
 uint8_t stack_convert_string_g(stack *stk, char const *string)
 {
-    size_t len = strlen(stk->s) ;
-    return stack_convert_string(stk, string, len) ;
+    size_t len = strlen(string) ;
+    return stack_convert_string(stk, string, len + 1) ;
 }
 
 ssize_t stack_retrieve_element(stack *stk, char const *string)
