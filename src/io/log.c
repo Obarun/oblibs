@@ -312,9 +312,7 @@ void log_out_builder(log_dbg_info_t *db_info,int level, char const *msg[],char c
         if (DEFAULT_MSG) ap[i++] = PROG ;
         if (VERBOSITY >= LOG_LEVEL_DEBUG && level != LOG_LEVEL_FLOW)
         {
-            ap[i++] = "(" ;
-            ap[i++] = db_info->file ;
-            ap[i++] = ": " ;
+            ap[i++] = ": (" ;
             ap[i++] = db_info->func ;
             ap[i++] = "(): " ;
             ap[i++] = line ;
