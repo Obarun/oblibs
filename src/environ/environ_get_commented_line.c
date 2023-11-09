@@ -26,7 +26,7 @@ int environ_get_commented_line(stralloc *tokeep,stralloc *src)
     size_t pos = 0, len = src->len + 1, current = 0 ;
     char tmp[len] ;
 
-    memset(tmp,0,len) ;
+    memset(tmp,0,len * sizeof(char)) ;
 
     if (!stralloc_copy(tokeep,src) ||
         !stralloc_0(tokeep))

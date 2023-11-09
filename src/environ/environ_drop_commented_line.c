@@ -24,7 +24,7 @@ int environ_drop_commented_line(stralloc *sa)
     size_t pos = 0, len = sa->len + 1, current = 0 ;
     char tmp[len] ;
 
-    memset(tmp,0,len) ;
+    memset(tmp,0,len * sizeof(char)) ;
 
     if (!sastr_split_string_in_nline(sa))
         return 0 ;

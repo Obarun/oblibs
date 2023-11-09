@@ -126,7 +126,7 @@ int environ_clean_envfile(stralloc *modifs,char const *path)
         size_t cpos = 0, mpos = 0, len = modifs->len ;
         ssize_t cequal = -1, mequal = -1 ;
         char tmp[len + 1] ;
-        memset(tmp,0,len) ;
+        memset(tmp, 0, len * sizeof(char)); ;
 
         if (!sastr_split_string_in_nline(&commented))
             goto err ;

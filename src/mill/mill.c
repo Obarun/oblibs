@@ -249,7 +249,7 @@ int mill_prepare(stack *stk, char const *string, parse_mill_t *sep, size_t *pos)
     _init_stack_(tstk, strlen(string)) ;
     static char tend[64+2] ;
 
-    memset(tend,0,66) ;
+    memset(tend, 0, 66 * sizeof(char)) ;
     mill_copy(&csep,sep) ;
     csep.inner.nclose = csep.inner.nopen = 0 ;
 
