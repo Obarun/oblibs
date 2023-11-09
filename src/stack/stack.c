@@ -63,7 +63,7 @@ uint8_t stack_convert_tostring(stack *stk)
         return 0 ;
     size_t pos = 0, tmplen = 0 ;
     char tmp[stk->maxlen + 1] ;
-    memset(tmp, 0, stk->maxlen + 1) ;
+    memset(tmp, 0, (stk->maxlen + 1) * sizeof(char)) ;
     FOREACH_STK(stk, pos)
         auto_strings(tmp + strlen(tmp), stk->s + pos, " ") ;
     tmplen = strlen(tmp) ;
@@ -111,10 +111,7 @@ ssize_t stack_retrieve_element(stack *stk, char const *string)
 
 size_t stack_count_element(stack *stk)
 {
-    size_t n = 0, pos = 0 ;
-    FOREACH_STK(stk, pos)
-        n++ ;
-    return n ;
+    return stk->count ;
 }
 
 uint8_t stack_remove_element(stack *stk, size_t index)
@@ -124,6 +121,7 @@ uint8_t stack_remove_element(stack *stk, size_t index)
         memmove(stk->s + index, stk->s + next, stk->len - next) ;
     stk->len -= ilen + 1 ;
     if (!stack_close(stk)) return 0 ;
+    stk->count-- ;
     return 1 ;
 }
 
