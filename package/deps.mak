@@ -61,8 +61,8 @@ src/sastr/sastr_nelement.o src/sastr/sastr_nelement.lo: src/sastr/sastr_nelement
 src/sastr/sastr_rebuild_in_nline.o src/sastr/sastr_rebuild_in_nline.lo: src/sastr/sastr_rebuild_in_nline.c src/include/oblibs/sastr.h
 src/sastr/sastr_rebuild_in_oneline.o src/sastr/sastr_rebuild_in_oneline.lo: src/sastr/sastr_rebuild_in_oneline.c src/include/oblibs/sastr.h
 src/sastr/sastr_remove_element.o src/sastr/sastr_remove_element.lo: src/sastr/sastr_remove_element.c src/include/oblibs/sastr.h
-src/sastr/sastr_replace_all.o src/sastr/sastr_replace_all.lo: src/sastr/sastr_replace_all.c src/include/oblibs/sastr.h
 src/sastr/sastr_replace.o src/sastr/sastr_replace.lo: src/sastr/sastr_replace.c src/include/oblibs/sastr.h src/include/oblibs/string.h
+src/sastr/sastr_replace_all.o src/sastr/sastr_replace_all.lo: src/sastr/sastr_replace_all.c src/include/oblibs/sastr.h
 src/sastr/sastr_reverse.o src/sastr/sastr_reverse.lo: src/sastr/sastr_reverse.c src/include/oblibs/sastr.h
 src/sastr/sastr_sort.o src/sastr/sastr_sort.lo: src/sastr/sastr_sort.c src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/sastr/sastr_sortndrop_element.o src/sastr/sastr_sortndrop_element.lo: src/sastr/sastr_sortndrop_element.c src/include/oblibs/sastr.h
@@ -85,12 +85,6 @@ src/str/get_uidbyname.o src/str/get_uidbyname.lo: src/str/get_uidbyname.c src/in
 src/str/get_wasted_line.o src/str/get_wasted_line.lo: src/str/get_wasted_line.c src/include/oblibs/string.h
 src/str/ob_basename.o src/str/ob_basename.lo: src/str/ob_basename.c src/include/oblibs/string.h
 src/str/ob_dirname.o src/str/ob_dirname.lo: src/str/ob_dirname.c src/include/oblibs/string.h
-src/str/obstr_dup.o src/str/obstr_dup.lo: src/str/obstr_dup.c src/include/oblibs/string.h
-src/str/obstr_equal.o src/str/obstr_equal.lo: src/str/obstr_equal.c src/include/oblibs/string.h
-src/str/obstr_replace.o src/str/obstr_replace.lo: src/str/obstr_replace.c src/include/oblibs/string.h
-src/str/obstr_sep.o src/str/obstr_sep.lo: src/str/obstr_sep.c src/include/oblibs/string.h
-src/str/obstr_sub.o src/str/obstr_sub.lo: src/str/obstr_sub.c src/include/oblibs/memory.h
-src/str/obstr_trim.o src/str/obstr_trim.lo: src/str/obstr_trim.c src/include/oblibs/string.h
 src/str/scan_isspace.o src/str/scan_isspace.lo: src/str/scan_isspace.c src/include/oblibs/string.h
 src/str/scan_mode.o src/str/scan_mode.lo: src/str/scan_mode.c src/include/oblibs/types.h
 src/str/scan_timeout.o src/str/scan_timeout.lo: src/str/scan_timeout.c src/include/oblibs/sastr.h src/include/oblibs/types.h

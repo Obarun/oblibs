@@ -41,22 +41,6 @@
 
 #define auto_buf(b,...) auto_buf_builder(b,(char const *[]){__VA_ARGS__, NULL})
 
-/** remove all occurence of @occ into @str
- * @Return 1 on success else 0 */
-extern int obstr_trim(char *str, int occ) ;
-
-/** compare @str1 to @str2
- * @Return 1 on success else 0*/
-extern int obstr_equal(const char *str1, const char *str2) ;
-
-/** replace all occurence of @a by @b into @str*/
-extern void obstr_replace(char *str,int a,int b) ;
-
-/** duplicate a string, allocate a memory
- * return a * to @str which can be used by free()
- * return 0 is case of failure*/
-extern char *obstr_dup(const char *str) ;
-
 /** count the length of the string until the @end
  * character was found.
  * @Return -1 if @end was not found else @Return length*/
@@ -78,24 +62,8 @@ extern ssize_t get_rstrlen_until(char const *str,char const *search) ;
  * @Return length on success*/
 extern ssize_t get_sep_before (char const *line, char const sepstart, char const sepend) ;
 
-/** Extracts tokens from a string.
- * Replaces strset which is not portable (missing on Solaris).
- * Copyright (c) 2001 by François Gouget <fgouget_at_codeweavers.com>
- * Modified by Eric Vidal <eric@obarun.org>
- * Modifies str to point to the first character after the token if one is
- * found, or 0 if one is not.
- * return pointer to the first token in str if str is not 0, 0 if
- * str is 0
- */
-extern char *obstr_sep(char **str, const char *delims) ;
-
 /** @Return the number of line into @str */
 extern unsigned int get_nbline(char const *str, size_t len) ;
-
-/** copy @len bytes character from @str beginning at @index
- * @Return a new pointer to the copy
- * else @Return NULL */
-extern char *obstr_sub(char const *str, unsigned int index, size_t len) ;
 
 /** Check if the line is : empty,only contain \n,begin by # even
  * if the line contain space before it,line only containing space
