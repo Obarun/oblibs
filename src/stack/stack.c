@@ -42,6 +42,7 @@ uint8_t stack_close(stack *stk)
         { errno = EOVERFLOW ; return 0 ; }
     stack_add(stk, "", 1) ;
     stk->len-- ;
+    stk->count-- ; // stack_add modify the count integer, reverse it.
     return 1 ;
 }
 
@@ -52,6 +53,14 @@ uint8_t stack_copy(stack *stk, char const *string, size_t len)
     memmove(stk->s, string, len) ;
     stk->len = len ;
     return 1 ;
+}
+
+size_t stack_count(stack *stk)
+{
+    size_t n = 0, pos = 0 ;
+    FOREACH_STK(stk, pos)
+        n++ ;
+    return n ;
 }
 
 /**
@@ -90,6 +99,7 @@ uint8_t stack_convert_string(stack *stk, char const *string, size_t len)
     memmove(stk->s, tmp.s, tmp.len) ;
     stk->len = tmp.len ;
     if (!stack_close(stk)) return 0 ;
+    stk->count = stack_count(stk) ;
     return 1 ;
 }
 
