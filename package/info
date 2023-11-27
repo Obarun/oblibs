@@ -1,4 +1,3 @@
 package=oblibs
 version=0.1.4.0
-category=admin
 package_macro_name=OBLIBS

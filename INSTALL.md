@@ -5,8 +5,8 @@ Build Instructions
 
 - A POSIX-compliant C development environment
 - GNU make version 3.81 or later
-- skalibs version 2.11.0.0
-- execline version 2.8.1.0
+- skalibs version 2.14.0.1
+- execline version 2.9.4.0
 - If cross-compiling: the sysdeps for your target architecture (see the "Cross-compilation" section below)
 
 This software will install on any operating system that implements POSIX.1-2008, available at [opengroup](http://pubs.opengroup.org/onlinepubs/9699919799/)

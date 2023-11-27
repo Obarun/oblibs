@@ -1,6 +1,32 @@
 # Changelog for oblibs
 
 ---
+In 0.2.0.0
+
+- Adapt to skalibs 2.14.0.1
+
+- Adapt to execline 2.9.4.0
+
+- Bugs fix
+
+- New functions:
+    - Add graph_xxx familly function.
+    - Provide char **environ prototype (Thanks POSIX not providing it).
+    - Add auto_buf_builder function and auto_buf macro.
+    - Add dir_rm_rf function. Skarnet rm_rf function do not freed satmp stralloc.
+    - Add FLAGS_SET, FLAGS_CLEAR and FLAGS_GET macro.
+    - Add sastr_clean_string_flush_sa function.
+    - Add stack_xxx familly function.
+
+- Deprecate functions:
+    - remove oblist.h header file.
+    - remove obstr_{trim,equal,replace,dup,sep} function.
+
+- change interface of sastr_dir_get and sastr_dir_get_recursive.c allowing to pass multiple string at exclude parameter.
+
+- mill_xxx function use STACK instead of HEAP memory.
+
+---
 
 In 0.1.4.0
 
