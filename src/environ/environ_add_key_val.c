@@ -1,7 +1,7 @@
 /*
  * environ_add_key_val.c
  *
- * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ * Copyright (c) 2018-2023 Eric Vidal <eric@obarun.org>
  *
  * All rights reserved.
  *

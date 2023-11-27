@@ -1,7 +1,7 @@
 /*
  * sastr_dir_get_element.c
  *
- * Copyright (c) 2018-2021 Eric Vidal <eric@obarun.org>
+ * Copyright (c) 2018-2023 Eric Vidal <eric@obarun.org>
  *
  * All rights reserved.
  *
