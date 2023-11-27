@@ -375,13 +375,17 @@ static void graph_matrix_copy(graph_t *g, unsigned int *copy)
 
 }
 
-static int graph_matrix_edge_cycle(graph_t *g, unsigned int *involved, unsigned int *incount, unsigned int main, unsigned int edge)
+static int graph_matrix_edge_cycle(graph_t *g, unsigned int *involved, unsigned int *incount, unsigned int main, unsigned int edge, unsigned int *visit)
 {
     unsigned int list[g->mlen + 2], pos = 0 ;
 
     int count ;
 
     char *ename = g->data.s + genalloc_s(graph_hash_t,&g->hash)[edge].vertex ;
+
+    if (!visit[edge]) {
+        visit[edge] = 1 ;
+    } else return 1 ;
 
     graph_array_init_single(list, g->mlen) ;
 
@@ -401,7 +405,7 @@ static int graph_matrix_edge_cycle(graph_t *g, unsigned int *involved, unsigned 
             if (list[pos] == main)
                 return 0 ;
 
-            if (!graph_matrix_edge_cycle(g, involved, incount, main, list[pos]))
+            if (!graph_matrix_edge_cycle(g, involved, incount, main, list[pos], visit))
                 return 0 ;
         }
     }
@@ -795,8 +799,9 @@ int graph_matrix_build(graph_t *g)
 
 int graph_matrix_analyze_cycle(graph_t *g)
 {
-    unsigned int list[g->mlen], involved[g->mlen * g->mlen], main = 0, idx = 0, pos = 0 ;
+    unsigned int list[g->mlen], involved[g->mlen * g->mlen], visit[g->mlen], main = 0, idx = 0, pos = 0 ;
     int count ;
+
     graph_array_init_single(list, g->mlen) ;
 
     for (; main < g->mlen ; main++) {
@@ -804,6 +809,7 @@ int graph_matrix_analyze_cycle(graph_t *g)
         idx = pos = 0 ;
 
         graph_array_init_single(involved, g->mlen * g->mlen) ;
+        graph_array_init_single(visit, g->mlen) ;
 
         char *smain = g->data.s + genalloc_s(graph_hash_t,&g->hash)[main].vertex ;
 
@@ -828,7 +834,7 @@ int graph_matrix_analyze_cycle(graph_t *g)
                 if (list[pos] == main)
                     graph_show_cycle(g,involved, idx) ;
 
-                if (!graph_matrix_edge_cycle(g, involved, &idx, main, list[pos])) {
+                if (!graph_matrix_edge_cycle(g, involved, &idx, main, list[pos], visit)) {
                     graph_show_cycle(g,involved, idx) ;
                     return 0 ;
                 }
