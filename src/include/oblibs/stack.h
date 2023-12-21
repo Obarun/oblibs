@@ -36,6 +36,10 @@ struct stack_s
     size_t count ;
 } ;
 
+#define stack_clean_string_g(stk,s) stack_clean_string(stk, s, strlen(s))
+#define stack_copy_g(stack, s) stack_copy(stack, s, strlen(s))
+#define stack_copy_stack(dst, src) stack_copy_g(dst, src->s)
+
 extern uint8_t stack_convert_string(stack *stk, char const *string, size_t len) ;
 extern uint8_t stack_convert_string_g(stack *stk, char const *string) ;
 extern uint8_t stack_convert_tostring(stack *stk) ;
@@ -47,4 +51,8 @@ extern size_t stack_count_element(stack *stk) ;
 extern ssize_t stack_retrieve_element(stack *stk, char const *string) ;
 extern uint8_t stack_remove_element(stack *stk, size_t index) ;
 extern uint8_t stack_remove_element_g(stack *stk, char const *element) ;
+extern int stack_clean_element(stack *stk) ;
+extern int stack_split_element_in_nline(stack *stk) ;
+extern int stack_clean_string(stack *stk, char const *s, size_t len) ;
+
 #endif

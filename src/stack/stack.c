@@ -55,7 +55,7 @@ uint8_t stack_copy(stack *stk, char const *string, size_t len)
     return 1 ;
 }
 
-size_t stack_count(stack *stk)
+size_t stack_count_element(stack *stk)
 {
     size_t n = 0, pos = 0 ;
     FOREACH_STK(stk, pos)
