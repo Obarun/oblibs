@@ -1,6 +1,15 @@
 # Changelog for oblibs
 
 ---
+
+In 0.2.0.1
+
+- Bugs fix
+- New functions:
+    - Add stack_clean_string_g, stack_copy_g and stack_copy_stack macro
+    - Add stack_clean_element, stack_split_element_in_nline and stack_clean_string function
+
+---
 In 0.2.0.0
 
 - Adapt to skalibs 2.14.0.1
