@@ -99,7 +99,7 @@ uint8_t stack_convert_string(stack *stk, char const *string, size_t len)
     memmove(stk->s, tmp.s, tmp.len) ;
     stk->len = tmp.len ;
     if (!stack_close(stk)) return 0 ;
-    stk->count = stack_count(stk) ;
+    stk->count = stack_count_element(stk) ;
     return 1 ;
 }
 
@@ -119,11 +119,6 @@ ssize_t stack_retrieve_element(stack *stk, char const *string)
     return -1 ;
 }
 
-size_t stack_count_element(stack *stk)
-{
-    return stk->count ;
-}
-
 uint8_t stack_remove_element(stack *stk, size_t index)
 {
     size_t ilen = strlen(stk->s + index), next = index + ilen + 1, nextlen = strlen(stk->s + next) ;
@@ -139,4 +134,42 @@ uint8_t stack_remove_element_g(stack *stk, char const *element)
 {
     ssize_t idx = stack_retrieve_element(stk, element) ;
     return idx < 0 ? 1 : stack_remove_element(stk, (size_t)idx) ;
+}
+
+
+int stack_clean_string(stack *stk, char const *s, size_t len)
+{
+    if (!stack_copy(stk, s, len) ||
+        !stack_close(stk))
+        return 0 ;
+    return stack_clean_element(stk) ;
+}
+
+int stack_clean_element(stack *stk)
+{
+    if (!stk->len) return 0 ;
+    int r ;
+    _init_stack_(s, stk->len + 1) ;
+    wild_zero_all(&MILL_CLEAN_SPLITTED_VALUE) ;
+    if (!stack_split_element_in_nline(stk)) return 0 ;
+    r = mill_nstring(&s, stk->s, stk->len, &MILL_CLEAN_SPLITTED_VALUE) ;
+    if (r == -1 || !r) return 0 ;
+    if (!stack_close(&s) ||
+        !stack_copy(stk, s.s, s.len) ||
+        !stack_close(stk)) return 0 ;
+    return 1 ;
+}
+
+int stack_split_element_in_nline(stack *stk)
+{
+    if (!stk->len) return 0 ;
+    int r ;
+    _init_stack_(s, stk->len + 1) ;
+    wild_zero_all(&MILL_SPLIT_ELEMENT) ;
+    r = mill_string(&s, stk->s, stk->len, &MILL_SPLIT_ELEMENT) ;
+    if (r == -1 || !r) return 0 ;
+    if (!stack_close(&s) ||
+        !stack_copy(stk, s.s, s.len) ||
+        !stack_close(stk)) return 0 ;
+    return 1 ;
 }
