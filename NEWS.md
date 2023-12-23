@@ -2,6 +2,12 @@
 
 ---
 
+In 0.2.0.2
+
+- Fix macro definition of stack_xxx familly.
+
+---
+
 In 0.2.0.1
 
 - Bugs fix
