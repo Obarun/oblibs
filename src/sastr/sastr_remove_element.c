@@ -1,7 +1,7 @@
 /*
  * sastr_remove_element.c
  *
- * Copyright (c) 2018-2023 Eric Vidal <eric@obarun.org>
+ * Copyright (c) 2018-2024 Eric Vidal <eric@obarun.org>
  *
  * All rights reserved.
  *
