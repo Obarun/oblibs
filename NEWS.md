@@ -2,6 +2,12 @@
 
 ---
 
+In 0.2.1.0
+
+- Remove obstr_alloc, obstr_del, free_mem and getopt_args function
+
+---
+
 In 0.2.0.2
 
 - Fix macro definition of stack_xxx familly.
