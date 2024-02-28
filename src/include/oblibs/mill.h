@@ -106,7 +106,10 @@ enum parse_enum_e
     EFILE
 } ;
 
-
+// avoid cyclic dependencies between stack and mill
+extern int stack_split_string(stack *stk, parse_mill_t *config) ;
+#define stack_split_string_in_nline(stk) stack_split_string(stk, &MILL_SPLIT_LINE)
+#define stack_split_string_in_nelement(stk) stack_split_string(stk, &MILL_SPLIT_ELEMENT)
 
 // general function
 extern char mill_next(char const *s,size_t *pos) ;

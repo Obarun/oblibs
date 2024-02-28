@@ -151,7 +151,7 @@ int stack_clean_element(stack *stk)
     int r ;
     _init_stack_(s, stk->len + 1) ;
     wild_zero_all(&MILL_CLEAN_SPLITTED_VALUE) ;
-    if (!stack_split_element_in_nline(stk)) return 0 ;
+    if (!stack_split_string_in_nelement(stk)) return 0 ;
     r = mill_nstring(&s, stk->s, stk->len, &MILL_CLEAN_SPLITTED_VALUE) ;
     if (r == -1 || !r) return 0 ;
     if (!stack_close(&s) ||
@@ -160,13 +160,13 @@ int stack_clean_element(stack *stk)
     return 1 ;
 }
 
-int stack_split_element_in_nline(stack *stk)
+int stack_split_string(stack *stk, parse_mill_t *config)
 {
     if (!stk->len) return 0 ;
     int r ;
     _init_stack_(s, stk->len + 1) ;
-    wild_zero_all(&MILL_SPLIT_ELEMENT) ;
-    r = mill_string(&s, stk->s, stk->len, &MILL_SPLIT_ELEMENT) ;
+    wild_zero_all(config) ;
+    r = mill_string(&s, stk->s, stk->len, config) ;
     if (r == -1 || !r) return 0 ;
     if (!stack_close(&s) ||
         !stack_copy(stk, s.s, s.len) ||
