@@ -138,8 +138,11 @@ static inline int envfile_parse_config (char const *file, stralloc *sa)
         }
         if (what & 0x0800) envfile_scanoct(sa, mark) ;
     }
-    if (state > 14)
-        log_warn_return(LOG_EXIT_ZERO, "syntax error at line ", file) ;
+    if (state > 14) {
+        char fmt[UINT_FMT] ;
+        fmt[uint_fmt(fmt, line)] = 0 ;
+        log_warn_return(LOG_EXIT_ZERO, "syntax error at line: ", fmt, " in file: ", file) ;
+    }
 
     return 1 ;
 }
