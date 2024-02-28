@@ -17,29 +17,36 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <stdint.h>
+
+#include <oblibs/string.h>
 
 #include <skalibs/djbunix.h>
 
 int dir_beabsolute(char *dst,char const *dir)
 {
+    uint8_t file = 0 ;
     size_t dirlen = 4096 ;
     int e = errno ;
     int fd = open_read(".") ;
     if (fd < 0) return 0 ;
     if (chdir(dir) < 0) {
+
         if (errno == ENOTDIR) {
+
             if (chdir(".") < 0)
                 goto err ;
+            file = 1 ;
         }
         else
             goto err ;
     }
     char *p = getcwd(dst,dirlen) ;
-
     if (!p) goto err ;
     if (fd_chdir(fd) < 0) goto err ;
     fd_close(fd) ;
     errno = e ;
+    auto_strings(dst, p, "/", file ? dir : 0) ;
     return 1 ;
     err:
         fd_close(fd) ;
