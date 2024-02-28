@@ -18,30 +18,68 @@
 #include <sys/types.h>
 
 #include <oblibs/sastr.h>
+#include <oblibs/stack.h>
+#include <oblibs/mill.h>
 #include <oblibs/string.h>
 
 #include <skalibs/stralloc.h>
+
+static int environ_get_key(char const *str, char const *key)
+{
+    int r = -1 ;
+    size_t pos = 0, len = strlen(str) ;
+    _init_stack_(stk, len + 1) ;
+
+    if (!stack_copy(&stk, str, len))
+        return -1 ;
+
+    if (!stack_split_string_in_nline(&stk))
+        return -1 ;
+
+    FOREACH_STK(&stk, pos) {
+
+        r = get_len_until(stk.s + pos, '=') ;
+
+        if (r < 0)
+            return -1 ;
+
+        char tmp[r + 1] ;
+        memcpy(tmp, stk.s + pos, r) ;
+        tmp[r] = 0 ;
+
+        if (!strcmp(tmp, key))
+            return pos ;
+    }
+    return -1 ;
+}
 
 int environ_get_val_of_key(stralloc *sa,char const *key)
 {
     if (!sa->len) return 0 ;
     ssize_t pos = -1 ;
-    size_t ppos = 0, keylen = strlen(key) ;
+    size_t ppos = 0 ;
     stralloc tmp = STRALLOC_ZERO ;
-    if (!stralloc_copy(&tmp,sa)) goto err ;
+    if (!stralloc_copy(&tmp,sa) ||
+        !stralloc_0(&tmp)) goto err ;
     int r ;
 
     while (ppos < sa->len) {
 
-        pos = sastr_find(&tmp,key) ;
+        pos = environ_get_key(tmp.s, key) ;
+        if (pos < 0)
+            break ;
 
         r = get_sep_before(tmp.s + pos, '=', '\n') ;
 
         if (r <= 0) {
 
+            r = get_len_until(tmp.s + pos, '\n') ;
+
+            pos += r < 0 ? 0 : r ;
+
             tmp.len = 0 ;
 
-            if (!stralloc_cats(&tmp, sa->s + pos + keylen) ||
+            if (!stralloc_cats(&tmp, sa->s + pos) ||
                 !stralloc_0(&tmp))
                     goto err ;
 
