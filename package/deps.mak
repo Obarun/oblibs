@@ -3,7 +3,7 @@
 #
 
 src/include/oblibs/mill.h: src/include/oblibs/stack.h
-src/directory/dir_beabsolute.o src/directory/dir_beabsolute.lo: src/directory/dir_beabsolute.c src/include/oblibs/directory.h
+src/directory/dir_beabsolute.o src/directory/dir_beabsolute.lo: src/directory/dir_beabsolute.c src/include/oblibs/directory.h src/include/oblibs/string.h
 src/directory/dir_create.o src/directory/dir_create.lo: src/directory/dir_create.c src/include/oblibs/directory.h
 src/directory/dir_create_parent.o src/directory/dir_create_parent.lo: src/directory/dir_create_parent.c src/include/oblibs/directory.h
 src/directory/dir_create_tmp.o src/directory/dir_create_tmp.lo: src/directory/dir_create_tmp.c src/include/oblibs/string.h
@@ -22,7 +22,7 @@ src/environ/environ_get_commented_line.o src/environ/environ_get_commented_line.
 src/environ/environ_get_key_nclean.o src/environ/environ_get_key_nclean.lo: src/environ/environ_get_key_nclean.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/stack.h src/include/oblibs/string.h
 src/environ/environ_get_num_of_line.o src/environ/environ_get_num_of_line.lo: src/environ/environ_get_num_of_line.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/stack.h
 src/environ/environ_get_val.o src/environ/environ_get_val.lo: src/environ/environ_get_val.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/stack.h src/include/oblibs/string.h
-src/environ/environ_get_val_of_key.o src/environ/environ_get_val_of_key.lo: src/environ/environ_get_val_of_key.c src/include/oblibs/environ.h src/include/oblibs/sastr.h src/include/oblibs/string.h
+src/environ/environ_get_val_of_key.o src/environ/environ_get_val_of_key.lo: src/environ/environ_get_val_of_key.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h
 src/environ/environ_keyvalue_isvalid.o src/environ/environ_keyvalue_isvalid.lo: src/environ/environ_keyvalue_isvalid.c src/include/oblibs/environ.h src/include/oblibs/string.h
 src/environ/environ_rebuild_line.o src/environ/environ_rebuild_line.lo: src/environ/environ_rebuild_line.c src/include/oblibs/environ.h src/include/oblibs/log.h src/include/oblibs/mill.h src/include/oblibs/string.h
 src/environ/environ_remove_unexport.o src/environ/environ_remove_unexport.lo: src/environ/environ_remove_unexport.c src/include/oblibs/environ.h src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/string.h
@@ -36,12 +36,8 @@ src/files/file_write_unsafe.o src/files/file_write_unsafe.lo: src/files/file_wri
 src/files/file_write_unsafe_g.o src/files/file_write_unsafe_g.lo: src/files/file_write_unsafe_g.c src/include/oblibs/string.h
 src/graph/graph.o src/graph/graph.lo: src/graph/graph.c src/include/oblibs/graph.h src/include/oblibs/log.h src/include/oblibs/sastr.h
 src/io/log.o src/io/log.lo: src/io/log.c src/include/oblibs/log.h
-src/memory/free_mem.o src/memory/free_mem.lo: src/memory/free_mem.c src/include/oblibs/memory.h
-src/memory/obstr_alloc.o src/memory/obstr_alloc.lo: src/memory/obstr_alloc.c src/include/oblibs/memory.h
-src/memory/obstr_del.o src/memory/obstr_del.lo: src/memory/obstr_del.c src/include/oblibs/memory.h
 src/mill/mill.o src/mill/mill.lo: src/mill/mill.c src/include/oblibs/log.h src/include/oblibs/mill.h src/include/oblibs/stack.h
 src/mill/mill_config.o src/mill/mill_config.lo: src/mill/mill_config.c src/include/oblibs/mill.h
-src/opts/getopt_args.o src/opts/getopt_args.lo: src/opts/getopt_args.c src/include/oblibs/obgetopt.h
 src/sastr/sastr_add_string.o src/sastr/sastr_add_string.lo: src/sastr/sastr_add_string.c src/include/oblibs/sastr.h
 src/sastr/sastr_clean_element.o src/sastr/sastr_clean_element.lo: src/sastr/sastr_clean_element.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h
 src/sastr/sastr_clean_string.o src/sastr/sastr_clean_string.lo: src/sastr/sastr_clean_string.c src/include/oblibs/sastr.h src/include/oblibs/string.h
@@ -61,8 +57,8 @@ src/sastr/sastr_nelement.o src/sastr/sastr_nelement.lo: src/sastr/sastr_nelement
 src/sastr/sastr_rebuild_in_nline.o src/sastr/sastr_rebuild_in_nline.lo: src/sastr/sastr_rebuild_in_nline.c src/include/oblibs/sastr.h
 src/sastr/sastr_rebuild_in_oneline.o src/sastr/sastr_rebuild_in_oneline.lo: src/sastr/sastr_rebuild_in_oneline.c src/include/oblibs/sastr.h
 src/sastr/sastr_remove_element.o src/sastr/sastr_remove_element.lo: src/sastr/sastr_remove_element.c src/include/oblibs/sastr.h
-src/sastr/sastr_replace.o src/sastr/sastr_replace.lo: src/sastr/sastr_replace.c src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/sastr/sastr_replace_all.o src/sastr/sastr_replace_all.lo: src/sastr/sastr_replace_all.c src/include/oblibs/sastr.h
+src/sastr/sastr_replace.o src/sastr/sastr_replace.lo: src/sastr/sastr_replace.c src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/sastr/sastr_reverse.o src/sastr/sastr_reverse.lo: src/sastr/sastr_reverse.c src/include/oblibs/sastr.h
 src/sastr/sastr_sort.o src/sastr/sastr_sort.lo: src/sastr/sastr_sort.c src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/sastr/sastr_sortndrop_element.o src/sastr/sastr_sortndrop_element.lo: src/sastr/sastr_sortndrop_element.c src/include/oblibs/sastr.h
