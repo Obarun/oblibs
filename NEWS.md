@@ -2,6 +2,18 @@
 
 ---
 
+## In 0.2.1.1
+
+- Replace stack_split_element_in_nline by macro stack_split_string_in_nelement. Provide generic stack_split_string function.
+- Bugs fix:
+
+    - invocating relative path as a file at dir_beabsolute.c.
+    - comparison of key names at environ_get_val_of_key.c. This also fix the 66 [issue](https://git.obarun.org/Obarun/66/-/issues/11)
+
+- [WIP] Revamp of environ_xxx function familly. These functions are badly formatted, designed, named with also bad algorythm.
+
+---
+
 In 0.2.1.0
 
 - Remove obstr_alloc, obstr_del, free_mem and getopt_args function
