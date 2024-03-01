@@ -17,6 +17,7 @@
 
 #include <sys/types.h>
 
+#include <oblibs/stack.h>
 #include <skalibs/stralloc.h>
 #include <skalibs/genalloc.h>
 #include <skalibs/gccattributes.h>
@@ -24,7 +25,7 @@
 #include <execline/execline.h>
 
 #define MAXVAR  50
-#define MAXFILE 100
+#define MAXFILE 20
 #define MAXENV 8191
 #define VAR_UNEXPORT '!'
 
@@ -161,4 +162,9 @@ extern int environ_get_commented_line(stralloc *tokeep,stralloc *src) ;
  * @Return 1 on success
  * @Return 0 on fail */
 extern int environ_drop_previous_same_key(stralloc *list,stralloc *newlist) ;
+
+extern int environ_get_key(stack *stkkey, char const *str, char const *key) ;
+extern int environ_clean_key(stack *stk) ;
+extern int environ_parse_files(stralloc *sa, char const *file) ;
+
 #endif

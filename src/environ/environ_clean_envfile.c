@@ -26,12 +26,12 @@
 
 int environ_clean_envfile(stralloc *modifs,char const *path)
 {
-    int r ;
+    int r, e = 0 ;
     size_t pos = 0 ;
 
     stralloc toparse = STRALLOC_ZERO ;
     stralloc again = STRALLOC_ZERO ;
-    stralloc commented = STRALLOC_ZERO ;
+    stralloc tokeep = STRALLOC_ZERO ;
 
     char const *exclude[1] = { 0 } ;
 
@@ -60,119 +60,82 @@ int environ_clean_envfile(stralloc *modifs,char const *path)
 
         char *file = toparse.s + pos ;
 
-        if (!file_readputsa(&again,path,file))
+        if (!file_readputsa(&again, path, file))
             goto err ;
+
+        if (again.len > MAXENV) {
+
+            log_warn("too many bytes in file: ", path, file) ;
+            goto err ;
+        }
 
         if (again.len) {
 
-            if (!sastr_split_string_in_nline(&again))
+            _init_stack_(stk, again.len + 1) ;
+            size_t npos = 0, mpos = 0 ;
+            int kpos = -1, found = 1 ;
+
+            if (!stack_copy(&stk, again.s, again.len) ||
+                !stack_close(&stk))
                 goto err ;
 
-            /** file can be empty or just with " \n\t\r" */
-            if (again.len) {
+            again.len = 0 ;
+            tokeep.len = 0 ;
 
-                if (!environ_clean_nline(&again))
+            if (!environ_parse_files(&again, stk.s))
+                goto err ;
+
+            FOREACH_SASTR(&again, npos) {
+
+                mpos = 0 ;
+                found = 1 ;
+                kpos = -1 ;
+                char *line = again.s + npos ;
+                _init_stack_(key, strlen(line) + 1) ;
+
+                if (!stack_copy(&key, line, strlen(line)))
                     goto err ;
 
-                if (pos)
-                    if (!environ_get_commented_line(&commented,&again))
-                        goto err ;
-
-                if (!environ_drop_commented_line(&again))
+                if (!environ_clean_key(&key))
                     goto err ;
-
-                {
-                    /** may be badly formated */
-                    size_t tpos = 0 ;
-                    int nline = 0 ;
-                    FOREACH_SASTR(&again,tpos) {
-                        nline++ ;
-                        if (!environ_keyvalue_isvalid(again.s + tpos))
-                            goto err ;
-                    }
-
-                    if (nline > MAXVAR) {
-
-                        log_warn("too many variables in file: ", path, file) ;
-                        goto err ;
-                    }
-                }
 
                 if (!pos) {
-
-                    if (!sastr_add_string(modifs,again.s))
+                    /** First file, nothing to compare.
+                     * Copy it verbatim */
+                    if (!sastr_add_string(modifs, line))
                         goto err ;
 
-                } else {
+                    continue ;
+                }
 
-                    if (pos)
-                        if (!environ_drop_previous_same_key(modifs,&again))
+                /** more than one file, for a same key=value pair
+                 * keep the fresh one and or add it if it doesn't exist yet
+                 * in the list */
+                FOREACH_SASTR(modifs, mpos) {
+
+                    _init_stack_(same, strlen(modifs->s + mpos) + 1) ;
+                    kpos = environ_get_key(&same, modifs->s + mpos, key.s) ;
+
+                    if (kpos >= 0) {
+
+                        found = 0 ;
+                        if (!sastr_add_string(&tokeep, line))
                             goto err ;
+
+                        break ;
+                    }
                 }
 
-                if (again.len > MAXENV) {
-
-                    log_warn("too many bytes in file: ", path, file) ;
-                    goto err ;
-                }
-            }
-        }
-    }
-
-    again.len = 0 ;
-
-    if (commented.len) {
-
-        size_t cpos = 0, mpos = 0, len = modifs->len ;
-        ssize_t cequal = -1, mequal = -1 ;
-        char tmp[len + 1] ;
-        memset(tmp, 0, len * sizeof(char)); ;
-
-        if (!sastr_split_string_in_nline(&commented))
-            goto err ;
-
-        FOREACH_SASTR(&commented,cpos) {
-
-            cequal = get_len_until(commented.s + cpos,'=') ;
-
-            /** Real comment should not contain '=' */
-            if (cequal == -1)
-                continue ;
-
-            cequal-- ;
-            char ckey[cequal + 1] ;
-            memcpy(ckey,commented.s + cpos + 1 ,cequal) ;
-            ckey[cequal] = 0 ;
-
-            {
-                mpos = 0 ;
-                FOREACH_SASTR(modifs,mpos) {
-
-                    mequal = get_len_until(modifs->s + mpos,'=') ;
-
-                    if (mequal == -1)
+                /** doesn't exist yet*/
+                if (found)
+                    if (!sastr_add_string(&tokeep, line))
                         goto err ;
-
-                    char mkey[mequal + 1] ;
-                    memcpy(mkey,modifs->s + mpos ,mequal) ;
-                    mkey[mequal] = 0 ;
-
-                    if (strcmp(mkey,ckey))
-                        continue ;
-
-                    if (!sastr_add_string(&again,modifs->s + mpos))
-                        goto err ;
-                }
             }
-        }
 
-        {
-            pos = 0 ;
-            FOREACH_SASTR(&again,pos)
-                if (!sastr_remove_element(modifs,again.s + pos))
-                    goto err ;
+            /** update the list */
+            if (!stralloc_copy(modifs, &tokeep))
+                goto err ;
         }
-
     }
 
     if (!stralloc_0(modifs))
@@ -181,13 +144,10 @@ int environ_clean_envfile(stralloc *modifs,char const *path)
     modifs->len-- ;
 
     freed:
-    stralloc_free(&toparse) ;
-    stralloc_free(&again) ;
-    stralloc_free(&commented) ;
-    return 1 ;
+        e = 1 ;
     err:
         stralloc_free(&toparse) ;
         stralloc_free(&again) ;
-        stralloc_free(&commented) ;
-        return 0 ;
+        stralloc_free(&tokeep) ;
+        return e ;
 }
