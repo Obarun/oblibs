@@ -2,6 +2,14 @@
 
 ---
 
+## In 0.2.1.2
+
+- Bugs fix:
+
+    - fix typo at environ_parse_files function name
+
+---
+
 ## In 0.2.1.1
 
 - Replace stack_split_element_in_nline by macro stack_split_string_in_nelement. Provide generic stack_split_string function.
