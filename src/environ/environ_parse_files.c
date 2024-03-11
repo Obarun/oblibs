@@ -96,7 +96,7 @@ static inline char environ_next(char const *s,size_t *pos)
     return c ;
 }
 
-int environ_parse_file (stralloc *sa, char const *file)
+int environ_parse_files (stralloc *sa, char const *file)
 {
     static uint16_t const table[14][14] =
     {
