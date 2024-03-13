@@ -102,7 +102,8 @@ int environ_clean_envfile(stralloc *modifs, char const *path)
                 char *line = again.s + npos ;
                 _init_stack_(key, strlen(line) + 1) ;
 
-                if (!stack_copy(&key, line, strlen(line)))
+                if (!stack_copy(&key, line, strlen(line)) ||
+                    !stack_close(&key))
                     goto err ;
 
                 if (!environ_clean_key(&key))
