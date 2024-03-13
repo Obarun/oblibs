@@ -5,7 +5,7 @@ Build Instructions
 
 - A POSIX-compliant C development environment
 - GNU make version 3.81 or later
-- skalibs version 2.14.1.0
+- skalibs version 2.14.1.1
 - execline version 2.9.4.0
 - If cross-compiling: the sysdeps for your target architecture (see the "Cross-compilation" section below)
 

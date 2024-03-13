@@ -2,6 +2,14 @@
 
 ---
 
+## In 0.2.1.3
+
+- Bugs fix:
+
+    - Retain existing environment variables when calling a module's `configure` script. This issue arose with the changes introduced in the `0.2.1.1` tag.
+
+---
+
 ## In 0.2.1.2
 
 - Bugs fix:
