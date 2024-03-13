@@ -24,7 +24,7 @@
 
 #include <skalibs/stralloc.h>
 
-int environ_clean_envfile(stralloc *modifs,char const *path)
+int environ_clean_envfile(stralloc *modifs, char const *path)
 {
     int r, e = 0 ;
     size_t pos = 0 ;
@@ -32,8 +32,17 @@ int environ_clean_envfile(stralloc *modifs,char const *path)
     stralloc toparse = STRALLOC_ZERO ;
     stralloc again = STRALLOC_ZERO ;
     stralloc tokeep = STRALLOC_ZERO ;
-
     char const *exclude[1] = { 0 } ;
+    _init_stack_(smodifs, modifs->len + 1) ;
+
+    if (modifs->len) {
+
+        if (!stack_convert_string(&smodifs, modifs->s, modifs->len))
+            return e ;
+
+        if (!stralloc_copyb(modifs, smodifs.s, modifs->len))
+            return e ;
+    }
 
     r = sastr_dir_get(&toparse,path,exclude,S_IFREG) ;
 
@@ -111,15 +120,15 @@ int environ_clean_envfile(stralloc *modifs,char const *path)
                 /** more than one file, for a same key=value pair
                  * keep the fresh one and or add it if it doesn't exist yet
                  * in the list */
-                FOREACH_SASTR(modifs, mpos) {
+                FOREACH_STK(&smodifs, mpos) {
 
-                    _init_stack_(same, strlen(modifs->s + mpos) + 1) ;
-                    kpos = environ_get_key(&same, modifs->s + mpos, key.s) ;
+                    _init_stack_(same, strlen(smodifs.s + mpos) + 1) ;
+                    kpos = environ_get_key(&same, smodifs.s + mpos, key.s) ;
 
                     if (kpos >= 0) {
 
                         found = 0 ;
-                        if (!sastr_add_string(&tokeep, line))
+                        if (!sastr_add_string(modifs, line))
                             goto err ;
 
                         break ;
@@ -128,13 +137,9 @@ int environ_clean_envfile(stralloc *modifs,char const *path)
 
                 /** doesn't exist yet*/
                 if (found)
-                    if (!sastr_add_string(&tokeep, line))
+                    if (!sastr_add_string(modifs, line))
                         goto err ;
             }
-
-            /** update the list */
-            if (!stralloc_copy(modifs, &tokeep))
-                goto err ;
         }
     }
 
