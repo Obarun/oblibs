@@ -3,6 +3,7 @@
 #
 
 src/include/oblibs/environ.h: src/include/oblibs/stack.h
+src/include/oblibs/lexer.h: src/include/oblibs/stack.h
 src/include/oblibs/mill.h: src/include/oblibs/stack.h
 src/directory/dir_beabsolute.o src/directory/dir_beabsolute.lo: src/directory/dir_beabsolute.c src/include/oblibs/directory.h src/include/oblibs/string.h
 src/directory/dir_create.o src/directory/dir_create.lo: src/directory/dir_create.c src/include/oblibs/directory.h
@@ -40,6 +41,7 @@ src/files/file_write_unsafe.o src/files/file_write_unsafe.lo: src/files/file_wri
 src/files/file_write_unsafe_g.o src/files/file_write_unsafe_g.lo: src/files/file_write_unsafe_g.c src/include/oblibs/string.h
 src/graph/graph.o src/graph/graph.lo: src/graph/graph.c src/include/oblibs/graph.h src/include/oblibs/log.h src/include/oblibs/sastr.h
 src/io/log.o src/io/log.lo: src/io/log.c src/include/oblibs/log.h
+src/lexer/lexer.o src/lexer/lexer.lo: src/lexer/lexer.c src/include/oblibs/lexer.h src/include/oblibs/log.h src/include/oblibs/stack.h
 src/mill/mill.o src/mill/mill.lo: src/mill/mill.c src/include/oblibs/log.h src/include/oblibs/mill.h src/include/oblibs/stack.h
 src/mill/mill_config.o src/mill/mill_config.lo: src/mill/mill_config.c src/include/oblibs/mill.h
 src/sastr/sastr_add_string.o src/sastr/sastr_add_string.lo: src/sastr/sastr_add_string.c src/include/oblibs/sastr.h

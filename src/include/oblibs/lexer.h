@@ -1,0 +1,99 @@
+/*
+ * lexer.h
+ *
+ * Copyright (c) 2024 Eric Vidal <eric@obarun.org>
+ *
+ * All rights reserved.
+ *
+ * This file is part of Obarun. It is subject to the license terms in
+ * the LICENSE file found in the top-level directory of this
+ * distribution.
+ * This file may not be copied, modified, propagated, or distributed
+ * except according to the terms contained in the LICENSE file./
+ */
+
+#ifndef OB_LEXER_H
+#define OB_LEXER_H
+
+#include <stddef.h>
+#include <stdint.h>
+
+#include <oblibs/stack.h>
+
+// lexer state
+enum {
+    LEXER_STATE_CHAR,
+    LEXER_STATE_BEGIN_VALUE,
+    LEXER_STATE_IN_VALUE,
+    LEXER_STATE_SKIP,
+    LEXER_STATE_END,
+};
+
+enum {
+    LEXER_ACTION_OPEN,
+    LEXER_ACTION_CLOSE,
+    LEXER_ACTION_OTHER,
+    LEXER_ACTION_SKIP,
+    LEXER_ACTION_END,
+};
+
+/* If the style is greater than 0, then "open" and "close" are considered as strings,
+ * meaning that all characters must match their counterparts in the string to compare.
+ * If the style is 0, then "open" and "close" are considered as separate characters,
+ * one of them matching its counterpart is valid.
+ * */
+
+typedef struct lexer_config_s lexer_config, *lexer_config_ref ;
+struct lexer_config_s
+{
+    // API
+    const char *str ; // string to parse
+    size_t slen ;
+    char *open ; // char or string to begin the store process
+    size_t olen ;
+    char *close ; // char or string to end the store process
+    size_t clen ;
+    char *skip ; // characters to skip
+    size_t skiplen ;
+    uint8_t kopen ; // store the open character
+    uint8_t kclose ; // store the close character
+    uint8_t style ; // boolean: style of the open and close format to apply: 0 -> char or 1 -> string
+    uint8_t forceopen ; // boolean : begin to copy from the begin of str
+    uint8_t forceclose ; // boolean : consider string as a closed at the end of string
+
+
+    // inner usage
+    uint32_t pos ; // current position
+    uint32_t opos ; // open character position. if style > 0 its represent the last character of the string to open
+    uint32_t cpos ; // close character position. if style > 0 its represent the last character of the string to close
+    uint8_t invalue ; // boolean : state of the parser -> actually keeping character between open and close
+    uint32_t found ; // boolean : get a tmp
+    uint8_t exitcode ; // exit code of the parser
+} ;
+
+#define LEXER_CONFIG_ZERO { \
+    .str = 0,\
+    .slen = 0,\
+    .open = 0,\
+    .olen = 0,\
+    .close = 0,\
+    .clen = 0,\
+    .skip = 0,\
+    .skiplen = 0,\
+    .kopen = 1,\
+    .kclose = 1,\
+    .style = 0,\
+    .forceopen = 0,\
+    .forceclose = 0,\
+    .pos = 0,\
+    .opos = 0,\
+    .cpos = 0,\
+    .invalue = 0,\
+    .found = 0,\
+    .exitcode = 0,\
+}
+
+extern int lexer(stack *stk, lexer_config *cfg)  ;
+extern void lexer_reset(lexer_config *cfg) ;
+
+#endif
