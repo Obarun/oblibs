@@ -68,6 +68,7 @@ struct lexer_config_s
     uint32_t cpos ; // close character position. if style > 0 its represent the last character of the string to close
     uint8_t invalue ; // boolean : state of the parser -> actually keeping character between open and close
     uint32_t found ; // boolean : get a tmp
+    uint32_t count ; // count of character/string added
     uint8_t exitcode ; // exit code of the parser
 } ;
 
@@ -90,6 +91,7 @@ struct lexer_config_s
     .cpos = 0,\
     .invalue = 0,\
     .found = 0,\
+    .count = 0,\
     .exitcode = 0,\
 }
 
