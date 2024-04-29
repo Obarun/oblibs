@@ -57,18 +57,17 @@ struct lexer_config_s
     size_t skiplen ;
     uint8_t kopen ; // store the open character
     uint8_t kclose ; // store the close character
-    uint8_t style ; // boolean: style of the open and close format to apply: 0 -> char or 1 -> string
-    uint8_t forceopen ; // boolean : begin to copy from the begin of str
-    uint8_t forceclose ; // boolean : consider string as a closed at the end of string
-
-
+    uint8_t forceopen ; // boolean: begin to copy from the begin of str
+    uint8_t forceclose ; // boolean: consider string as a closed at the end of string
+    uint8_t firstoccurence ; // boolean: stop the parsing process at first occurence find
     // inner usage
     uint32_t pos ; // current position
     uint32_t opos ; // open character position. if style > 0 its represent the last character of the string to open
     uint32_t cpos ; // close character position. if style > 0 its represent the last character of the string to close
-    uint8_t invalue ; // boolean : state of the parser -> actually keeping character between open and close
-    uint32_t found ; // boolean : get a tmp
+    uint8_t invalue ; // boolean: state of the parser -> actually keeping character between open and close
+    uint32_t found ; // boolean: get a tmp
     uint32_t count ; // count of character/string added
+    uint8_t style ; // boolean: style of the open and close format to apply: 0 -> char or 1 -> string
     uint8_t exitcode ; // exit code of the parser
 } ;
 
@@ -83,19 +82,45 @@ struct lexer_config_s
     .skiplen = 0,\
     .kopen = 1,\
     .kclose = 1,\
-    .style = 0,\
     .forceopen = 0,\
     .forceclose = 0,\
+    .firstoccurence = 0,\
     .pos = 0,\
     .opos = 0,\
     .cpos = 0,\
     .invalue = 0,\
     .found = 0,\
     .count = 0,\
+    .style = 0,\
     .exitcode = 0,\
 }
 
-extern int lexer(stack *stk, lexer_config *cfg)  ;
+extern uint8_t lexer(stack *stk, lexer_config *cfg)  ;
+extern uint8_t lexer_trim(stack *stk, lexer_config *cfg) ;
+extern uint8_t lexer_trim_with(stack *stk, const char *s, size_t len, lexer_config *cfg) ;
+#define lexer_trim_with_g(stk,s,cfg) lexer_trim_with(stk, (s), strlen(s), (cfg))
+extern void lexer_cp_cfg(lexer_config *dst, lexer_config *src) ;
+/** set cfg->found = cfg->count = cfg->exitcode = 0 */
 extern void lexer_reset(lexer_config *cfg) ;
+extern void lexer_reset_hard(lexer_config *cfg) ;
+extern lexer_config const lexer_config_zero ;
+/** common configuration */
+// escape ' \t\r\n'
+extern lexer_config LEXER_CFG_TRIM_CLEAN ;
+// do not escape anything
+extern lexer_config LEXER_CFG_TRIM_UNCLEAN ;
+// trim by line
+extern lexer_config LEXER_CFG_GET_LINE ;
+
+// use LEXER_CFG_TRIM_CLEAN configuration
+extern uint8_t lexer_trim_clean(stack *stk, const char *s) ;
+// use LEXER_CFG_TRIM_UNCLEAN configuration
+extern uint8_t lexer_trim_unclean(stack *stk, const char *s) ;
+// use LEXER_CFG_GET_LINE configuration
+extern uint8_t lexer_trim_line(stack *stk, const char *s) ;
+
+#define stack_string_clean(stk,s) lexer_trim_clean(stk,(s))
+#define stack_string_unclean(stk,s) lexer_trim_unclean(stk,(s))
+#define stack_string_trimline(stk,s) lexer_trim_line(stk,(s))
 
 #endif

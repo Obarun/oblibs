@@ -18,19 +18,16 @@
 #include <oblibs/lexer.h>
 #include <oblibs/log.h>
 
-void lexer_reset(lexer_config *cfg)
-{
-    cfg->pos = cfg->found = cfg->invalue = cfg->count = 0, cfg->exitcode = 0 ;
-}
-
 static inline uint8_t lexer_loop(lexer_config *cfg, char const *regex, size_t len)
 {
-    if (cfg->style) {
+    if (!len)
+        return 0 ;
 
+    if (cfg->style) {
         size_t pos = 0 ;
         int found = 0 ;
-
         char cmp[len + 1] ;
+
         memcpy(cmp, cfg->str + cfg->pos, len) ;
         cmp[len] = 0 ;
 
@@ -39,51 +36,67 @@ static inline uint8_t lexer_loop(lexer_config *cfg, char const *regex, size_t le
             return 0 ;
 
         for (; pos < len ; pos++){
-
             if (cmp[pos] != regex[pos])
                 break ;
-
             found++ ;
         }
 
-        if (found && (pos == len))
+        if (found == len)
             return 1 ;
 
     } else {
 
         size_t pos = 0 ;
         char c = cfg->str[cfg->pos] ;
+
         for (; pos < len ; pos++) {
             if (c == regex[pos])
                 return 1 ;
         }
     }
-
     return 0 ;
 }
 
-static inline uint8_t lexer_switch_char(stack *stk, uint8_t state, lexer_config *cfg) {
+static inline uint8_t lexer_do(stack *stk, uint8_t state, lexer_config *cfg) {
 
     char c = cfg->str[cfg->pos] ;
 
     switch (state) {
         case LEXER_STATE_CHAR:
             if (cfg->invalue) {
-                stack_add(stk, &c, 1) ;
+
+                if (!stack_add(stk, &c, 1))
+                    return (errno = EOVERFLOW, 0) ;
+
                 cfg->count++ ;
             }
             break;
         case LEXER_STATE_BEGIN_VALUE:
             cfg->invalue = 1 ;
             cfg->opos = cfg->pos ;
+
+            if (cfg->style)
+                cfg->pos += cfg->olen - 1 ;
+
             if (cfg->kopen && !lexer_loop(cfg, cfg->skip, cfg->skiplen)) {
-                stack_add(stk, &c, 1) ;
+
+                if (cfg->style) {
+                    if (!stack_add(stk, cfg->open, cfg->olen))
+                        return (errno = EOVERFLOW, 0) ;
+                } else {
+                    if (!stack_add(stk, &c, 1))
+                        return (errno = EOVERFLOW, 0) ;
+                }
+
                 cfg->count++ ;
             }
             break;
         case LEXER_STATE_IN_VALUE:
             if (cfg->invalue) {
-                stack_add(stk, &c, 1) ;
+
+                if (!stack_add(stk, &c, 1))
+                    return (errno = EOVERFLOW, 0) ;
+
                 cfg->count++ ;
             }
             break;
@@ -91,64 +104,25 @@ static inline uint8_t lexer_switch_char(stack *stk, uint8_t state, lexer_config 
             break ;
         case LEXER_STATE_END:
             if (cfg->invalue) {
+
                 if (cfg->kclose) {
-                    stack_add(stk, &c, 1) ;
+                    if (cfg->style) {
+                        if (!stack_add(stk, cfg->close, cfg->clen))
+                            return (errno = EOVERFLOW, 0) ;
+                    } else {
+                        if (!stack_add(stk, &c, 1))
+                            return (errno = EOVERFLOW, 0) ;
+                    }
                     cfg->count++ ;
                 }
+
                 if (cfg->count)
-                    stack_add(stk, "", 1) ;
-                cfg->cpos = cfg->pos ;
-                cfg->pos++ ;
-                cfg->found = 1 ;
-                cfg->count = 0 ;
-                return 1 ;
-            }
-            break ;
-        default:
-            // Do nothing for LEXER_ACTION_OTHER states
-            break;
-    }
-    return 0 ;
-}
+                    if (!stack_add(stk, "", 1))
+                        return (errno = EOVERFLOW, 0) ;
 
-static inline uint8_t lexer_switch_string(stack *stk, uint8_t state, lexer_config *cfg)
-{
+                if (cfg->style)
+                    cfg->pos += cfg->clen - 1 ;
 
-    char c = cfg->str[cfg->pos] ;
-
-    switch (state) {
-        case LEXER_STATE_CHAR:
-            if (cfg->invalue) {
-                stack_add(stk, &c, 1) ;
-                cfg->count++ ;
-            }
-            break;
-        case LEXER_STATE_BEGIN_VALUE:
-            cfg->invalue = 1 ;
-            cfg->pos += cfg->olen - 1;
-            cfg->opos = cfg->pos ;
-            if (cfg->kopen) {
-                stack_add(stk, cfg->open, cfg->olen) ;
-                cfg->count++ ;
-            }
-            break;
-        case LEXER_STATE_IN_VALUE:
-            if (cfg->invalue) {
-                stack_add(stk, &c, 1) ;
-                cfg->count++ ;
-            }
-            break;
-        case LEXER_STATE_SKIP:
-            break ;
-        case LEXER_STATE_END:
-            if (cfg->invalue) {
-                if (cfg->kclose) {
-                    stack_add(stk, cfg->close, cfg->clen) ;
-                    cfg->count++ ;
-                }
-                if (cfg->count)
-                    stack_add(stk, "", 1) ;
-                cfg->pos += cfg->clen - 1 ;
                 cfg->cpos = cfg->pos ;
                 cfg->pos++ ;
                 cfg->found = 1 ;
@@ -186,7 +160,7 @@ static inline uint8_t lexer_cclass (char c, lexer_config *cfg)
     return LEXER_ACTION_OTHER ;
 }
 
-int lexer(stack *stk, lexer_config *cfg) {
+uint8_t lexer(stack *stk, lexer_config *cfg) {
 
     static uint16_t const state_table[5][5] = {
         [LEXER_STATE_CHAR] = {
@@ -235,30 +209,134 @@ int lexer(stack *stk, lexer_config *cfg) {
 
         char c = cfg->str[cfg->pos] ;
 
-        if (!cfg->opos && cfg->forceopen) {
+        if (!cfg->invalue && cfg->forceopen)
             state = LEXER_STATE_BEGIN_VALUE ;
-        } else {
+        else
             state = state_table[state][lexer_cclass(c, cfg)];
-        }
 
-        if (!cfg->style) {
-            if (lexer_switch_char(stk, state, cfg))
-                goto finish ;
-        } else {
-            if (lexer_switch_string(stk, state, cfg))
-                goto finish ;
-        }
+        if (lexer_do(stk, state, cfg))
+            goto finish ;
 
         cfg->pos++;
     }
 
-    if (state != LEXER_STATE_CHAR && state != LEXER_STATE_END && !cfg->forceclose)
-        log_warn_return(cfg->exitcode, "parse process ended in middle of value") ;
+    /** EOF and not closed but was opened.
+     * typically cfg->open = "whatever", cfg->close = "".
+     * With the forceclose, we consider as a good one.
+    */
+    if (cfg->forceclose && cfg->invalue && !cfg->found)
+        cfg->found = 1 ;
+
+    if (!cfg->forceclose && cfg->invalue && !cfg->found) {
+        log_warn_return(cfg->exitcode, "unmatched close ", cfg->style ? " string " : " character ", " request from the opened ", cfg->style ? " string " : " character ", ": ", cfg->open) ;
+    }
 
     finish:
         cfg->invalue = 0 ;
-
-    cfg->exitcode = 1 ;
+        cfg->exitcode = 1 ;
 
     return cfg->exitcode ;
+}
+
+uint8_t lexer_trim(stack *stk, lexer_config *cfg)
+{
+    if (!cfg->slen)
+        return 0 ;
+    lexer_config c = LEXER_CONFIG_ZERO ;
+    lexer_cp_cfg(&c, cfg) ;
+    c.str = cfg->str ;
+    c.slen = cfg->slen ;
+
+    while (c.pos < c.slen) {
+
+        c.opos = c.cpos = 0 ;
+        c.count = c.found = c.exitcode = 0 ;
+
+        if (!lexer(stk, &c))
+            return 0 ;
+
+        if (c.found) {
+            lexer_cp_cfg(cfg, &c) ;
+            if (c.firstoccurence)
+                break ;
+        }
+    }
+
+    if (!stack_close(stk))
+        log_warn_return(LOG_EXIT_ZERO, "stack overflow") ;
+
+    stk->count = stack_count_element(stk) ;
+
+    return 1 ;
+}
+
+uint8_t lexer_trim_with(stack *stk, const char *s, size_t len, lexer_config *cfg)
+{
+    if (!len)
+        return 0 ;
+    lexer_config c ;
+    uint8_t r = 0 ;
+    lexer_cp_cfg(&c, cfg) ;
+    c.str = s ; c.slen = len ;
+    r = lexer_trim(stk, &c) ;
+    if (c.found)
+        lexer_cp_cfg(cfg, &c) ;
+
+    return r ;
+}
+
+void lexer_cp_cfg(lexer_config *dst, lexer_config *src)
+{
+    dst->str = src->str ;
+    dst->slen = src->slen ;
+    dst->open = src->open ;
+    dst->olen = src->olen ;
+    dst->close = src->close ;
+    dst->clen = src->clen ;
+    dst->skip = src->skip ;
+    dst->skiplen = src->skiplen ;
+    dst->kopen = src->kopen ;
+    dst->kclose = src->kclose ;
+    dst->forceopen = src->forceopen ;
+    dst->forceclose = src->forceclose ;
+    dst->firstoccurence = src->firstoccurence ;
+    dst->pos = src->pos ;
+    dst->opos = src->opos ;
+    dst->cpos = src->cpos ;
+    dst->invalue = src->invalue ;
+    dst->found = src->found ;
+    dst->count = src->count ;
+    dst->style = src->style ;
+    dst->exitcode = src->exitcode ;
+}
+
+void lexer_reset(lexer_config *cfg)
+{
+    cfg->found = cfg->count = cfg->exitcode = 0 ;
+}
+
+void lexer_reset_hard(lexer_config *cfg)
+{
+    lexer_reset(cfg) ;
+    cfg->pos = cfg->opos = cfg->cpos = 0 ;
+}
+
+lexer_config const lexer_config_zero = LEXER_CONFIG_ZERO ;
+
+uint8_t lexer_trim_clean(stack *stk, const char *s)
+{
+    lexer_config cfg = LEXER_CFG_TRIM_CLEAN ;
+    return lexer_trim_with_g(stk, s, &cfg) ;
+}
+
+uint8_t lexer_trim_unclean(stack *stk, const char *s)
+{
+    lexer_config cfg = LEXER_CFG_TRIM_UNCLEAN ;
+    return lexer_trim_with_g(stk, s, &cfg) ;
+}
+
+uint8_t lexer_trim_line(stack *stk, const char *s)
+{
+    lexer_config cfg = LEXER_CFG_GET_LINE ;
+    return lexer_trim_with_g(stk, s, &cfg) ;
 }
