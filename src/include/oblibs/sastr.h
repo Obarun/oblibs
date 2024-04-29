@@ -23,6 +23,10 @@
     stralloc_ref _saref_ = sa ; \
     for (; (size_t)pos < _saref_->len ; pos += (size_t)strlen(_saref_->s + (size_t)pos) + 1)
 
+#define _cleanup_stralloc_ __attribute__((cleanup(stralloc_free)))
+
+#define _alloc_sa_(sa) _cleanup_stralloc_ stralloc sa = STRALLOC_ZERO
+
 /** get all compoments on @srcdir with mode @mode execpt string @exclude
  * and append @sa with the result in a chained stralloc
  * Note: srcdir must contain the last '/' e.g /etc/
