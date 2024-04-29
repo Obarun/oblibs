@@ -1,5 +1,5 @@
 /*
- * environ_parse_files.c
+ * environ_trim.c
  *
  * Copyright (c) 2018-2024 Eric Vidal <eric@obarun.org>
  *
@@ -12,31 +12,31 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/environ.h>
-
 #include <string.h>
-
-#include <oblibs/string.h>//get_len_until
-#include <oblibs/log.h>
 
 #include <skalibs/stralloc.h>
 #include <skalibs/types.h>
 #include <skalibs/bytestr.h>
 #include <skalibs/fmtscan.h>
 
+#include <oblibs/log.h>
+#include <oblibs/environ.h>
+
+
 /** this following function (environ_scanoct, environ_cclass, environ_next, environ_parse_files) come from:
  * https://git.skarnet.org/cgi-bin/cgit.cgi/execline/tree/src/execline/envfile.c
  * under license ISC. All credits go to Laurent Bercot authors of these functions.
- * These functions was modified by Eric Vidal <eric@obarun.org>  */
+ * These functions was modified by Eric Vidal <eric@obarun.org> to use struct stack instead
+ * of struct stralloc */
 
-static void environ_scanoct (stralloc *sa, size_t pos)
+static void environ_scanoct (stack *stk, size_t pos)
 {
     unsigned int u ;
-    if (!stralloc_0(sa))
-        log_die_nomem("stralloc") ;
-    uint_oscan(sa->s + pos, &u) ;
-    sa->s[pos] = u ;
-    sa->len = pos+1 ;
+    if (!stack_add(stk, "", 1))
+        log_die_nomem("stack") ;
+    uint_oscan(stk->s + pos, &u) ;
+    stk->s[pos] = u ;
+    stk->len = pos+1 ;
 }
 
 static inline uint8_t environ_cclass (char c)
@@ -96,7 +96,7 @@ static inline char environ_next(char const *s,size_t *pos)
     return c ;
 }
 
-int environ_parse_files (stralloc *sa, char const *file)
+int environ_trim (stack *stk, char const *file)
 {
     static uint16_t const table[14][14] =
     {
@@ -118,24 +118,23 @@ int environ_parse_files (stralloc *sa, char const *file)
     unsigned int line = 1 ;
     size_t mark = 0, pos = 0 ;
     uint8_t state = 0 ;
-    while (state < 14)
-    {
+    while (state < 14) {
         char c = environ_next(file, &pos) ;
         uint16_t what = table[state][environ_cclass(c)] ;
         state = what & 0x0f ;
-        if (what & 0x0400) environ_scanoct(sa, mark) ;
-        if (what & 0x0100) mark = sa->len ;
+        if (what & 0x0400) environ_scanoct(stk, mark) ;
+        if (what & 0x0100) mark = stk->len ;
         if (what & 0x1000) c = 7 + byte_chr("abtnvfr", 7, c) ;
-        if (what & 0x0010) if (!stralloc_catb(sa, &c, 1)) log_die_nomem("stralloc") ;
+        if (what & 0x0010) if (!stack_add(stk, &c, 1)) log_die_nomem("stack") ;
         if (what & 0x0020) line++ ;
-        if (what & 0x0080) sa->len = mark ;
-        if (what & 0x0040) if (!stralloc_0(sa)) log_die_nomem("stralloc") ;
+        if (what & 0x0080) stk->len = mark ;
+        if (what & 0x0040) if (!stack_add(stk,"",1)) log_die_nomem("stack") ;
         if (what & 0x0200)
         {
-        sa->s[sa->len-2] = (fmtscan_num(sa->s[sa->len-2], 16) << 4) + fmtscan_num(sa->s[sa->len-1], 16) ;
-        sa->len-- ;
+        stk->s[stk->len-2] = (fmtscan_num(stk->s[stk->len-2], 16) << 4) + fmtscan_num(stk->s[stk->len-1], 16) ;
+        stk->len-- ;
         }
-        if (what & 0x0800) environ_scanoct(sa, mark) ;
+        if (what & 0x0800) environ_scanoct(stk, mark) ;
     }
     if (state > 14) {
         char fmt[UINT_FMT] ;
@@ -143,5 +142,6 @@ int environ_parse_files (stralloc *sa, char const *file)
         log_warn_return(LOG_EXIT_ZERO, "syntax error at line: ", fmt, " in file: ", file) ;
     }
 
-    return 1 ;
+    return stack_close(stk) ;
 }
+

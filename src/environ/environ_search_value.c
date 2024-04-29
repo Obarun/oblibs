@@ -1,5 +1,5 @@
 /*
- * environ_get_val_of_key.c
+ * environ_get_val.c
  *
  * Copyright (c) 2018-2024 Eric Vidal <eric@obarun.org>
  *
@@ -12,24 +12,23 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/environ.h>
-
-#include <stddef.h>
+#include <string.h>
+#include <errno.h>
 
 #include <oblibs/stack.h>
+#include <oblibs/lexer.h>
+#include <oblibs/environ.h>
 
-#include <skalibs/stralloc.h>
-
-int environ_get_val_of_key(stralloc *sa,char const *key)
+#include <stdio.h>
+uint8_t environ_search_value(stack *stk, const char *str, const char *key)
 {
-    if (!sa->len) return 0 ;
-    ssize_t pos = -1 ;
-    _init_stack_(stk, sa->len + 1) ;
-    pos = environ_get_key(&stk, sa->s, key) ;
-    if (pos < 0)
-        return 0 ;
+    lexer_config cfg = LEXER_CONFIG_ZERO ;
+    _init_stack_(s, strlen(str) + 1) ;
 
-    if (!environ_get_val(sa,(size_t *)&pos))
+    if (!environ_search_key(&s, str, key, &cfg))
+        return (errno = EINVAL, 0) ;
+
+    if (!environ_get_value(stk, str + cfg.opos))
         return 0 ;
 
     return 1 ;

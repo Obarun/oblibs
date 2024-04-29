@@ -1,5 +1,5 @@
 /*
- * environ_clean_envfile_nunexport.c
+ * environ_merge_arguments.c
  *
  * Copyright (c) 2018-2024 Eric Vidal <eric@obarun.org>
  *
@@ -12,26 +12,18 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/environ.h>
-
-#include <string.h>
-#include <unistd.h>
+#include <errno.h>
 
 #include <oblibs/sastr.h>
-#include <oblibs/files.h>
-#include <oblibs/log.h>
-#include <oblibs/string.h>
-
 #include <skalibs/stralloc.h>
 
-int environ_clean_envfile_unexport(stralloc *modifs,char const *path)
+uint8_t environ_merge_arguments(stralloc *modifs, char const *const *environ)
 {
-    if (!environ_clean_envfile(modifs,path))
+    if (!environ || !environ[0])
         return 0 ;
-
-    if (!environ_remove_unexport(modifs,modifs->s, modifs->len) ||
-        !sastr_split_string_in_nline(modifs))
-            return 0 ;
-
+    char **e = (char **)environ ;
+    for(;*e;e++)
+        if (!sastr_add_string(modifs, *e))
+            return (errno = EOVERFLOW, 0) ;
     return 1 ;
 }

@@ -1,5 +1,5 @@
 /*
- * environ_get_clean_env.c
+ * environ_rebuild.c
  *
  * Copyright (c) 2018-2024 Eric Vidal <eric@obarun.org>
  *
@@ -12,36 +12,33 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/environ.h>
-
 #include <string.h>
-#include <oblibs/mill.h>
+
 #include <oblibs/sastr.h>
+#include <oblibs/stack.h>
 
 #include <skalibs/stralloc.h>
-#include <skalibs/types.h>
 
-int environ_get_clean_env(stralloc *sa)
+uint8_t environ_rebuild(stralloc *sa)
 {
-    size_t pos = 0 ;
-
-    if (!sastr_split_string_in_nline(sa))
-        return 0 ;
-
-    /** empty file? */
     if (!sa->len)
         return 1 ;
+    size_t pos = 0 ;
+    size_t n = sastr_nelement(sa) ;
+    _init_stack_(s, sa->len + n + 1) ;
 
-    if (!environ_clean_nline(sa))
-        return 0 ;
+    FOREACH_SASTR(sa, pos) {
+        if (!stack_add(&s, sa->s + pos, strlen(sa->s + pos)) ||
+            !stack_add(&s, "\n", 1))
+                return 0 ;
+    }
+    s.s[s.len] = 0 ;
 
-    if (!environ_drop_commented_line(sa))
-        return 0 ;
-
-    /** may be badly formated */
-    FOREACH_SASTR(sa,pos)
-        if (!environ_keyvalue_isvalid(sa->s + pos))
+    sa->len = 0 ;
+    if (!stralloc_copyb(sa, s.s, s.len) ||
+        !stralloc_0(sa))
             return 0 ;
+    sa->len-- ;
 
-    return 1 ;
+    return  1 ;
 }

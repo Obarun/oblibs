@@ -1,5 +1,5 @@
 /*
- * environ_add_key_val.c
+ * environ_get_key.c
  *
  * Copyright (c) 2018-2024 Eric Vidal <eric@obarun.org>
  *
@@ -12,42 +12,23 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/environ.h>
-
 #include <string.h>
 
+#include <oblibs/lexer.h>
 #include <oblibs/stack.h>
-#include <oblibs/mill.h>
 
-int environ_get_key(stack *stk, char const *str, char const *key)
+uint8_t environ_get_key(stack *stk, const char *str)
 {
-    int res = -1 ;
-    size_t pos = 0, len = strlen(str) ;
-    _init_stack_(s, len + 1) ;
+    lexer_config cfg = LEXER_CONFIG_ZERO ;
+    size_t slen = strlen(str) ;
+    cfg.str = str ; cfg.slen = slen ;
+    cfg.close = "=" ; cfg.clen = 1 ;
+    cfg.skip = " \t\r\n" ; cfg.skiplen = 4 ;
+    cfg.forceclose = 0 ; cfg.forceopen = 1 ; cfg.firstoccurence = 1 ;
+    cfg.style = 0 ; cfg.kopen = 1 ; cfg.kclose = 0 ;
 
-    if (!stack_copy(&s, str, len) ||
-        !stack_close(&s))
-        return res ;
+    if (!lexer_trim(stk, &cfg))
+        return 0 ;
 
-    if (!stack_split_string_in_nline(&s))
-        return res ;
-
-    FOREACH_STK(&s, pos) {
-
-        size_t l = strlen(s.s + pos) ;
-        stk->len = stk->count = 0 ;
-
-        if (!stack_copy(stk, s.s + pos, l) ||
-            !stack_close(stk)) return res ;
-
-        if (!environ_clean_key(stk))
-            continue ;
-
-        if (!strcmp(stk->s, key)) {
-            res = pos ;
-            break ;
-        }
-    }
-
-    return res ;
+    return 1 ;
 }

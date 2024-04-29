@@ -18,9 +18,9 @@
 #include <sys/types.h>
 
 #include <oblibs/stack.h>
+#include <oblibs/lexer.h>
 #include <skalibs/stralloc.h>
 #include <skalibs/genalloc.h>
-#include <skalibs/gccattributes.h>
 
 #include <execline/execline.h>
 
@@ -45,126 +45,112 @@ struct exlsn_s
 /** Please POSIX */
 extern char **environ ;
 
+/** Main parser
+ * Store the result to @stk format.
+ * Set errno.
+ * Use https://skarnet.org/software/execline/envfile.html algorithm
+ * @Return 0 on fail else 1
+ */
+extern int environ_trim(stack *stk, char const *file) ;
+
+/** Convenient API reading file and checking validity of
+ * the @stk size, then call environ_trim
+ * Set errno.
+ * @Return 0 on fail else 1
+ * */
+extern uint8_t environ_parse_file(stack *stk, const char *file) ;
+
 /** Substitute value of @key with @val into @envp
  * @Return 1 on success
  * @Return 0 on fail*/
-int environ_substitute(char const *key, char const *val,exlsn_t *info, char const *const *envp,int unexport) ;
+extern uint8_t environ_substitute(stralloc *modifs, exlsn_t *info) ;
 
-/** Add @key with value @val at struct @info
+/** Extract the key (meaning everything before '=') from @str,
+ * removing " \t\r\n" characters.
+ * Replace the content of @stk with the result of the process.
  * @Return 1 on success
- * @Return 0 on fail*/
-int environ_add_key_val (const char *key, const char *val, exlsn_t *info) ;
+ * @Return 0 on fail and set errno*/
+extern uint8_t environ_get_key(stack *stk, const char *str) ;
 
-/** Remove empty and commented line
- * Replace the content of @sa with the
- * result of the process
- * @Return 1 on success
- * @Return 0 on fail */
-extern int environ_get_clean_env(stralloc *sa) ;
-
-/** Get the key (meaning everything before '=') and
- * remove any " \t\r" character from it.
- * Replace the content of @sa with the
- * result of the process. Add up @pos with the position
- * of the '=' found + 1.
- * @Return 1 on success
- * @Return 0 on fail */
-extern int environ_get_key_nclean(stralloc *sa,size_t *pos) ;
-
-/** Get the value (meaning everything between '=' and '\n').
- * Replace the content of @sa with the
- * result of the process. Add up @pos with the position
- * of the '\n' found + 1.
- * @Return 1 on success
- * @Return 0 on fail*/
-extern int environ_get_val(stralloc *sa,size_t *pos) ;
-
-/** Get the value of @key from @sa.
- * Replace the content of @sa with the
+/** Extract @key (meaning verything before '=') from @str,
+ * removing " \t\r\n" characters.
+ * Replace the content of @stk with the
  * result of the process.
  * @Return 1 on success
- * @Return 0 on fail*/
-extern int environ_get_val_of_key(stralloc *sa,char const *key) ;
+ * @Return 0 on fail and set errno*/
+extern uint8_t environ_search_key(stack *stk, const char *str, const char *key, lexer_config *cfg) ;
 
-/** Rebuild a previously splitted line in one line.
+/** Get the value (meaning everything after '=' and '\n' or EOF)
+ * from @str. Replace the content of @stk with the result of
+ * the process.
+ * @Return 1 on success
+ * @Return 0 on fail and set errno */
+extern uint8_t environ_get_value(stack *stk, const char *str) ;
+
+/** Get the value (meaning everything after '=' and '\n' or EOF)
+ * of @key from @str. Replace the content of @stk with the
+ * result of the process.
+ * Set errno.
+ * @Return 1 on success
+ * @Return 0 on fail and set errno */
+extern uint8_t environ_search_value(stack *stk, const char *str, const char *key) ;
+
+/** Rebuild a string of sastr format
+ * appending '\n' at the end of each line.
  * Replace the content of @sa with the
  * result of the process.
+ * Set errno.
  * @Return 1 on success
- * @Return 0 on fail */
-extern int environ_rebuild_line(stralloc *sa) ;
+ * @Return 0 on fail. */
+extern uint8_t environ_rebuild(stralloc *sa) ;
 
-/** Split a line in multiple elements and remove
- * any extra ' \n\t\r' for each elements.
- * Replace the content of @sa with the
- * result of the process.
- * @Return 1 on success
- * @Return 0 on fail*/
-extern int environ_clean_line(stralloc *sa) ;
+/** Append @modifs with key=value pair from @file.
+ * For a same key=value pair in @modifs and @file,
+ * the one from the @file is kept.
+ * Set errno
+ * @Return 0 on fail else 1
+ */
+extern uint8_t environ_merge_file(stralloc *modifs, const char *file) ;
 
-/** Same as environ_clean_line but do the same process
- * for a string containing multiple line.
- * Replace the content of @sa with the
- * result of the process.
- * @Return 1 on success
- * @Return 0 on fail*/
-extern int environ_clean_nline(stralloc *sa) ;
+/** Append @modifs with key=value pair from
+ * a **@environ format.
+ * Set errno.
+ * @Return 0 on fail else 1
+*/
+extern uint8_t environ_merge_arguments(stralloc *modifs, char const *const *environ) ;
 
-/** Replace '=!' by '=' from @sa and write the
- * result of the proccess into @modifs
- * @Return 1 on success
- * @Return 0 on fail */
-extern int environ_remove_unexport(stralloc *modifs, char const *string, size_t len) ;
+/** Remove '!' character at the begin of the value
+ * Set errno.
+ * */
+extern uint8_t environ_clean_unexport(stralloc *modifs) ;
 
 /** @PATH MUST POINT TO A DIRECTORY NOT A FILE.
  * For each file found at @path:
  * - it sort the list of the file found at @path.
- * - it clean each key=value pair like environ_get_clean_env do.
+ * - it clean each key=value pair.
  * - it remove any empty and commented line.
  * - it check if MAXFILE and MAXENV is respected.
  * - it drop every same key=value pair from the list found.
  * For a same key=value found on multiple file,
  * the last occurence is kept.
+ * Set errno.
  * @Return 1 on success
  * @Return 0 on fail
  * WARNING: this function do not return 0 if @path is empty
  * or files are empty. Simply check the len of @modifs after the call
  * of this function.*/
-extern int environ_clean_envfile(stralloc *modifs,char const *path) ;
+extern uint8_t environ_merge_dir(stralloc *modifs, char const *path) ;
 
-/** Call environ_clean_envfile and call the environ_remove_unexport function.
- * @Return 1 on success
- * @Return 0 on fail */
-extern int environ_clean_envfile_unexport(stralloc *modifs,char const *path) ;
+/** same as environ_merge_dir but also call environ_clean_unexport
+ * Set errno.
+*/
+extern uint8_t environ_merge_dir_g(stralloc *modifs, const char *path) ;
 
-/** Get of line from @sa
- * @Return the number of line on success
- * @Return -1 on fail */
-extern unsigned int environ_get_num_of_line(stralloc *sa) ;
-
-/** check @keyvalue contain a '=' character
- * @Return 1 on success
- * @Return 0 on fail */
-extern int environ_keyvalue_isvalid(char const *key_value) ;
-
-/** Remove commented line from @sa where comment can be '#' or ';'
- * @Return 1 on success
- * @Return 0 on fail */
-extern int environ_drop_commented_line(stralloc *sa) ;
-
-/** Get commented line from @src and store it to @tokeep
- * where comment can be '#' or ';'.
- * @Return 1 on success
- * @Return 0 on fail */
-extern int environ_get_commented_line(stralloc *tokeep,stralloc *src) ;
-
-/** Compare @newlist to @list and remove from @list
- * a same key=value found at @newlist
- * @Return 1 on success
- * @Return 0 on fail */
-extern int environ_drop_previous_same_key(stralloc *list,stralloc *newlist) ;
-
-extern int environ_get_key(stack *stkkey, char const *str, char const *key) ;
-extern int environ_clean_key(stack *stk) ;
-extern int environ_parse_files(stralloc *sa, char const *file) ;
+/** Merge @new to @modifs. For a same key=value pair, @new
+ * take precedence.
+ * Set errno.
+ * @Return 0 on fail else 1
+ */
+extern uint8_t environ_merge_environ(stralloc *modifs, stralloc *new) ;
 
 #endif
