@@ -18,6 +18,7 @@
 #include <oblibs/sastr.h>
 #include <oblibs/stack.h>
 #include <oblibs/string.h>
+#include <oblibs/environ.h>
 
 #include <skalibs/stralloc.h>
 
@@ -37,7 +38,7 @@ uint8_t environ_clean_unexport(stralloc *modifs)
         if (r < 0)
             return 0 ;
 
-        if (line[r + 1] == '!') {
+        if (line[r + 1] == VAR_UNEXPORT) {
 
             if (!stack_add(&stk, line, ++r) ||
                 !stack_add(&stk, line + (r + 1), len - (r + 1)) ||
