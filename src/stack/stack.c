@@ -15,17 +15,36 @@
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include <oblibs/stack.h>
 #include <oblibs/mill.h>
 #include <oblibs/string.h>
+#include <oblibs/lexer.h>
+#include <oblibs/io.h>
+
+#ifndef MAXENV
+#define MAXENV 8192
+#endif
+
+void stack_reset(stack *stk)
+{
+    stk->len = stk->count = 0 ;
+}
 
 uint8_t stack_add(stack *stk, char const *str, size_t len)
 {
+    if (stk->maxlen >= MAXENV)
+        return (errno = ENOBUFS, 0) ;
+
     if (stk->len + len > stk->maxlen)
-        { errno = EOVERFLOW ; return 0 ; }
+        return (errno = EOVERFLOW, 0) ;
     memcpy(stk->s + stk->len, str, len) ;
     stk->len += len ;
+    /*
+     * a general hash table will be
+     * better
+     */
     stk->count++ ;
     return 1 ;
 }
@@ -38,8 +57,6 @@ uint8_t stack_add_g(stack *stk, char const *str)
 
 uint8_t stack_close(stack *stk)
 {
-    if (stk->len + 1 > stk->maxlen)
-        { errno = EOVERFLOW ; return 0 ; }
     stack_add(stk, "", 1) ;
     stk->len-- ;
     stk->count-- ; // stack_add modify the count integer, reverse it.
@@ -48,10 +65,14 @@ uint8_t stack_close(stack *stk)
 
 uint8_t stack_copy(stack *stk, char const *string, size_t len)
 {
+    if (stk->maxlen >= MAXENV)
+        return (errno = ENOBUFS, 0) ;
     if (len > stk->maxlen)
-        { errno = EOVERFLOW ; return 0 ; }
+        return (errno = EOVERFLOW, 0) ;
     memmove(stk->s, string, len) ;
     stk->len = len ;
+    if (!stack_close(stk))
+        return (errno = EOVERFLOW, 0) ;
     return 1 ;
 }
 
@@ -63,55 +84,10 @@ size_t stack_count_element(stack *stk)
     return n ;
 }
 
-/**
- * \t\r\n are not escaped
- * */
-uint8_t stack_convert_tostring(stack *stk)
-{
-    if (!stk->len)
-        return 0 ;
-    size_t pos = 0, tmplen = 0 ;
-    char tmp[stk->maxlen + 1] ;
-    memset(tmp, 0, (stk->maxlen + 1) * sizeof(char)) ;
-    FOREACH_STK(stk, pos)
-        auto_strings(tmp + strlen(tmp), stk->s + pos, " ") ;
-    tmplen = strlen(tmp) ;
-    tmp[tmplen - 1] = 0 ;
-    memmove(stk->s, tmp, tmplen) ;
-    stk->len = tmplen ;
-    if (!stack_close(stk)) return 0 ;
-    return 1 ;
-}
-
-/**
- * \t\r\n are not escaped
- * */
-uint8_t stack_convert_string(stack *stk, char const *string, size_t len)
-{
-    if (!len)
-        return 0 ;
-    int r ;
-    _init_stack_(tmp, len + 1) ;
-    wild_zero_all(&MILL_SPLIT_ELEMENT) ;
-    r = mill_string(&tmp, string, len, &MILL_SPLIT_ELEMENT) ;
-    if (r == -1 || !r) return 0 ;
-    if (!stack_close(&tmp)) return 0 ;
-    memmove(stk->s, tmp.s, tmp.len) ;
-    stk->len = tmp.len ;
-    if (!stack_close(stk)) return 0 ;
-    stk->count = stack_count_element(stk) ;
-    return 1 ;
-}
-
-uint8_t stack_convert_string_g(stack *stk, char const *string)
-{
-    size_t len = strlen(string) ;
-    return stack_convert_string(stk, string, len + 1) ;
-}
-
 ssize_t stack_retrieve_element(stack *stk, char const *string)
 {
     size_t pos = 0 ;
+    /**TODO: maybe an hash table to avoid this ugly loop*/
     FOREACH_STK(stk, pos)
         if (!strcmp(stk->s + pos, string))
             return pos ;
@@ -126,6 +102,7 @@ uint8_t stack_remove_element(stack *stk, size_t index)
         memmove(stk->s + index, stk->s + next, stk->len - next) ;
     stk->len -= ilen + 1 ;
     if (!stack_close(stk)) return 0 ;
+    /**TODO: removing it from hash table should be set here*/
     stk->count-- ;
     return 1 ;
 }
@@ -136,40 +113,79 @@ uint8_t stack_remove_element_g(stack *stk, char const *element)
     return idx < 0 ? 1 : stack_remove_element(stk, (size_t)idx) ;
 }
 
-
-int stack_clean_string(stack *stk, char const *s, size_t len)
+uint8_t stack_string_rebuild(stack *stk)
 {
-    if (!stack_copy(stk, s, len) ||
-        !stack_close(stk))
+    if (!stk->len)
         return 0 ;
-    return stack_clean_element(stk) ;
-}
 
-int stack_clean_element(stack *stk)
-{
-    if (!stk->len) return 0 ;
-    int r ;
-    _init_stack_(s, stk->len + 1) ;
-    wild_zero_all(&MILL_CLEAN_SPLITTED_VALUE) ;
-    if (!stack_split_string_in_nelement(stk)) return 0 ;
-    r = mill_nstring(&s, stk->s, stk->len, &MILL_CLEAN_SPLITTED_VALUE) ;
-    if (r == -1 || !r) return 0 ;
-    if (!stack_close(&s) ||
-        !stack_copy(stk, s.s, s.len) ||
-        !stack_close(stk)) return 0 ;
+    size_t pos = 0, tmplen = 0 ;
+    char tmp[stk->maxlen + 1] ;
+
+    memset(tmp, 0, (stk->maxlen + 1) * sizeof(char)) ;
+
+    FOREACH_STK(stk, pos)
+        auto_strings(tmp + strlen(tmp), stk->s + pos, " ") ;
+
+    tmplen = strlen(tmp) ;
+    tmp[tmplen - 1] = 0 ;
+
+    if (tmplen >= stk->maxlen)
+         return (errno = EOVERFLOW, 0) ;
+
+    memmove(stk->s, tmp, tmplen) ;
+
+    stk->len = tmplen ;
+
+    if (!stack_close(stk))
+        return (errno = EOVERFLOW, 0) ;
+
     return 1 ;
 }
 
-int stack_split_string(stack *stk, parse_mill_t *config)
+uint8_t stack_insert(stack *stk, size_t offset, char const *s)
 {
-    if (!stk->len) return 0 ;
-    int r ;
-    _init_stack_(s, stk->len + 1) ;
-    wild_zero_all(config) ;
-    r = mill_string(&s, stk->s, stk->len, config) ;
-    if (r == -1 || !r) return 0 ;
-    if (!stack_close(&s) ||
-        !stack_copy(stk, s.s, s.len) ||
-        !stack_close(stk)) return 0 ;
+    if (offset > stk->len)
+        return (errno = EINVAL, 0) ;
+    size_t len = strlen(s) ;
+    memmove(stk->s + offset + len, stk->s + offset, stk->len - offset) ;
+    stk->len += len ;
+    memmove(stk->s + offset, s, len) ;
     return 1 ;
+}
+
+int stack_read_file(stack *stk, const char *path)
+{
+    ssize_t fd = -1, e = errno ;
+    ssize_t r ;
+    struct stat st ;
+
+    fd = io_open(path, O_RDONLY | O_CLOEXEC) ;
+    if (fd < 0)
+        return 0 ;
+
+    if (fstat(fd, &st) < 0)
+        goto err ;
+
+    if (st.st_size >= (long int)stk->maxlen) {
+        e = ENOBUFS ;
+        goto err ;
+    }
+
+    r = io_read(stk->s, fd, (size_t)st.st_size) ;
+
+    if (r <= 0 || r != st.st_size) {
+        e = errno ;
+        goto err ;
+    }
+
+    stk->len = (size_t)st.st_size ;
+    if (!stack_close(stk))
+        goto err ;
+    close(fd) ;
+    errno = e ;
+    return 1 ;
+    err:
+        close(fd) ;
+        errno = e ;
+        return 0 ;
 }
