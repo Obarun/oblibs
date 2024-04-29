@@ -12,51 +12,165 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/environ.h>
-
 #include <string.h>
+#include <errno.h>
+#include <stdlib.h> // getenv
+
+#include <oblibs/environ.h>
+#include <oblibs/sastr.h>
+#include <oblibs/stack.h>
+#include <oblibs/log.h>
+#include <oblibs/string.h>
 
 #include <skalibs/stralloc.h>
 #include <skalibs/genalloc.h>
-#include <skalibs/env.h>//env_get2
 
 #include <execline/execline.h>
-
-int environ_substitute(char const *key, char const *val,exlsn_t *info, char const *const *envp,int unexport)
+uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
 {
-    char const *defaultval = "" ;
-    char const *x ;
-
+    if (!modifs->len)
+        return 1 ;
+    size_t pos = 0 ;
+    uint8_t unexport = 0 ;
     eltransforminfo_t si = ELTRANSFORMINFO_ZERO ;
     elsubst_t blah ;
+    _alloc_sa_(old) ; _alloc_sa_(new) ;
+    _init_stack_(regex, modifs->len + 1) ;
 
-    blah.var = info->vars.len ;
-    blah.value = info->values.len ;
+    lexer_config cfg = LEXER_CONFIG_ZERO ;
 
-    if (el_vardupl(key, info->vars.s, info->vars.len)) goto err ;
-    if (!stralloc_catb(&info->vars,key, strlen(key) + 1)) goto err ;
+    cfg.open = "${" ; cfg.olen = 2 ; cfg.close = "}" ;  cfg.clen = 1 ;
+    cfg.forceclose = 0 ; cfg.firstoccurence = 1 ;
+    cfg.style = 1 ; cfg.kopen = 0 ; cfg.kclose = 0 ;
 
-    x = env_get2(envp, key) ;
-    if (!x) x = defaultval ;
-    else if (unexport)
-    {
-        if (!stralloc_catb(&info->modifs, key, strlen(key) + 1)) goto err ;
+    if (!stralloc_copyb(&old, modifs->s, modifs->len) ||
+        !stralloc_copyb(&new, modifs->s, modifs->len) ||
+        !environ_rebuild(&old))
+            return 0 ;
+
+    FOREACH_SASTR(modifs, pos) {
+
+        lexer_reset_hard(&cfg) ;
+        regex.len = regex.count = 0 ;
+        char *line = modifs->s + pos ;
+        cfg.str = line ; cfg.slen = strlen(line) ;
+        unexport = 0 ;
+
+        _init_stack_(mkey, cfg.slen) ;
+        _init_stack_(mval, cfg.slen) ;
+        _init_stack_(value, old.len) ;
+
+        if (!environ_get_key(&mkey, line))
+            return 0 ;
+
+        if (!environ_get_value(&mval, line))
+            return 0 ;
+
+        if (mval.s[0] == VAR_UNEXPORT)
+            unexport = 1 ;
+
+        blah.var = info->vars.len ;
+        blah.value = info->values.len ;
+
+        if (sastr_cmp(&info->vars, mkey.s) == -1) {
+
+            if (!stralloc_catb(&info->vars, mkey.s, mkey.len + 1)) {
+                info->vars.len = blah.var ;
+                info->values.len = blah.value ;
+                return 0 ;
+            }
+        }
+
+        if (unexport) {
+
+            if (!stralloc_catb(&info->modifs, mkey.s, mkey.len + 1)) {
+                info->vars.len = blah.var ;
+                info->values.len = blah.value ;
+                return (errno = EOVERFLOW, 0) ;
+            }
+        }
+
+        while(cfg.pos < cfg.slen) {
+
+            lexer_reset(&cfg) ;
+            cfg.opos = cfg.cpos = 0 ;
+            regex.len = regex.count = 0 ;
+
+            if (!lexer(&regex, &cfg))
+                return 0 ;
+
+            if (cfg.found) {
+
+                stack_reset(&value) ;
+
+                /** Search first in the current environment */
+                char *gval = getenv(regex.s) ;
+                if (!gval) {
+
+                    if (!strcmp(mkey.s, regex.s)) {
+                        log_warn("recursive call of variable: ", regex.s, " -- ignoring it") ;
+                        continue ;
+                    }
+
+                    /** don't die here. If it doesn't exist, leave it as it*/
+                    if (!environ_search_value(&value, old.s, regex.s))
+                        continue ;
+
+                } else {
+                    auto_strings(value.s, gval) ;
+                }
+
+                if (regex.len) {
+
+                    _init_stack_(key, regex.len + 4) ;
+                    auto_strings(key.s, "${", regex.s, "}") ;
+
+                    if (!sastr_replace(&new, key.s, value.s)) {
+                        info->vars.len = blah.var ;
+                        info->values.len = blah.value ;
+                        return 0 ;
+                    }
+                }
+            }
+
+            if (!stralloc_copyb(&old, new.s, new.len) ||
+                !environ_rebuild(&old))
+                    return 0 ;
+        }
+
+        _init_stack_(nval, old.len) ;
+        if (!environ_search_value(&nval, old.s, mkey.s))
+            return 0 ;
+
+        if (!nval.s[0]) {
+            blah.n = 0 ;
+        } else {
+
+            int r ;
+            if (!stralloc_cats(&info->values, nval.s)) {
+                info->vars.len = blah.var ;
+                info->values.len = blah.value ;
+                return (errno = EOVERFLOW, 0) ;
+            }
+            r = el_transform(&info->values, blah.value, &si) ;
+            if (r < 0) {
+                info->vars.len = blah.var ;
+                info->values.len = blah.value ;
+                return 0 ;
+            }
+
+            blah.n = r ;
+        }
+
+        if (!genalloc_append(elsubst_t, &info->data, &blah)) {
+            info->vars.len = blah.var ;
+            info->values.len = blah.value ;
+            return 0 ;
+        }
     }
-    if (!x) blah.n = 0 ;
-    else
-    {
-        int r ;
-        if (!stralloc_cats(&info->values, x)) goto err ;
-        r = el_transform(&info->values, blah.value, &si) ;
-        if (r < 0) goto err ;
-        blah.n = r ;
-    }
-    if (!genalloc_append(elsubst_t, &info->data, &blah)) goto err ;
+
+    if (!stralloc_copyb(modifs, new.s, new.len))
+        return 0 ;
 
     return 1 ;
-
-    err:
-        info->vars.len = blah.var ;
-        info->values.len = blah.value ;
-        return 0 ;
 }
