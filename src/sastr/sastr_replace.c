@@ -12,60 +12,73 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <string.h>
+#include <errno.h>
+
 #include <oblibs/sastr.h>
 #include <oblibs/string.h>
-
-#include <string.h>
+#include <oblibs/lexer.h>
 
 #include <skalibs/stralloc.h>
 
 int sastr_replace (stralloc *sa,char const *regex,char const *by)
 {
-    if (!sa->len || !*regex || !strcmp(regex,by)) return 0 ;
-    size_t i = 0, j = 0, slen = strlen(regex) ;
-    unsigned int found = 0 ;
-    stralloc tmp = STRALLOC_ZERO ;
-    stralloc shrink = STRALLOC_ZERO ;
+if (!sa->len || !regex || !strcmp(regex,by))
+        return (errno = EINVAL, 0) ;
 
-    char ori[sa->len + 1] ;
-    auto_strings(ori,sa->s) ;
+    size_t pos = 0, bylen = strlen(by) ;
+    lexer_config cfg = LEXER_CONFIG_ZERO ;
+    _init_stack_(stk, sa->len) ;
+    _alloc_sa_(new) ;
 
-    for (; i < sa->len; i++)
-    {
-        found = 0 ; j = 0 ;
-        for (;j < slen;j++)
-        {
-            char c = regex[j] ;
-            if (c != sa->s[i+j]){ found = 0 ; break ; }
-            found++ ;
-        }
-        if (found){
-            if (!auto_stra(&tmp,by)) goto err ;
-            shrink.len = 0 ;
-            if (!auto_stra(&shrink,ori + i + slen)) goto err ;
-            if (shrink.len) // 0 mean end of line
-            {
-                if (!sastr_replace(&shrink,regex,by)) goto err ;
-                if (!auto_stra(&tmp,shrink.s)) goto err ;
-                break ;
-            }
-            if (!auto_stra(&tmp,ori + i + slen)) goto err ;
-            break ;
-        }
-        if (!stralloc_catb(&tmp,ori+i,1)) goto err ;
-        stralloc_0(&tmp) ;
-        tmp.len-- ;
+    cfg.open = (char *)regex ; cfg.olen = strlen(regex) ;
+    cfg.close = "" ;  cfg.clen = 1 ; cfg.style = 1 ; cfg.kopen = 0 ; cfg.kclose = 0 ;
+    cfg.forceclose = 1 ; cfg.firstoccurence = 1 ;
+
+    FOREACH_SASTR(sa, pos) {
+
+        stack_reset(&stk) ;
+        lexer_reset_hard(&cfg) ;
+        cfg.str = sa->s + pos ; cfg.slen = strlen(sa->s + pos) ;
+
+        if (!lexer(&stk, &cfg))
+            return 0 ;
+
+        if (cfg.found) {
+
+            _init_stack_(line, cfg.slen + bylen + 1) ;
+
+            if (!stack_add(&line, cfg.str, cfg.opos) ||
+                !stack_add(&line, by, bylen) ||
+                !stack_close(&line))
+                    return 0 ;
+
+            if (stk.len) {
+                /** the rest of the line may contain @regex*/
+                _init_stack_(c, new.len + 1) ;
+                if (!stack_copy(&c, new.s, new.len))
+                    return 0 ;
+
+                new.len = 0 ;
+
+                if (!stralloc_copyb(&new, stk.s, stk.len) ||
+                    !stralloc_0(&new) ||
+                    !sastr_replace(&new, regex, by) ||
+                    !stralloc_insertb(&new, 0, line.s, line.len) ||
+                    !stralloc_insertb(&new, 0, c.s, c.len))
+                        return 0 ;
+
+            } else if (!sastr_add_string(&new, line.s))
+                return 0 ;
+
+        } else if (!sastr_add_string(&new, cfg.str))
+            return 0 ;
     }
-    if (!stralloc_0(&tmp)) goto err ;
-    tmp.len-- ;
-    if (!stralloc_copy(sa,&tmp) ||
-        !stralloc_0(sa)) goto err ;
+
+    if (!stralloc_copyb(sa, new.s, new.len) ||
+        !stralloc_0(sa))
+            return 0 ;
+
     sa->len-- ;
-    stralloc_free(&tmp) ;
-    stralloc_free(&shrink) ;
     return 1 ;
-    err:
-        stralloc_free(&tmp) ;
-        stralloc_free(&shrink) ;
-        return 0 ;
 }

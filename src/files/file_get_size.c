@@ -19,7 +19,6 @@
 
 #include <oblibs/files.h>
 
-
 ssize_t file_get_size(const char* filename)
 {
     struct stat st;
