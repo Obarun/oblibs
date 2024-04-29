@@ -200,10 +200,12 @@ uint8_t lexer(stack *stk, lexer_config *cfg) {
         }
     };
 
-    uint8_t state = LEXER_STATE_CHAR;
+    uint8_t state = LEXER_STATE_CHAR, err = 0, exit = 0 ;
 
     if (!cfg->str || !cfg->slen)
         return cfg->exitcode ;
+
+    err = errno ;
 
     while (cfg->pos < cfg->slen) {
 
@@ -214,11 +216,19 @@ uint8_t lexer(stack *stk, lexer_config *cfg) {
         else
             state = state_table[state][lexer_cclass(c, cfg)];
 
-        if (lexer_do(stk, state, cfg))
-            goto finish ;
 
+        errno = 0 ;
+        exit = lexer_do(stk, state, cfg) ;
+        if (exit) {
+            goto finish ;
+        } else {
+            if (!exit && errno == EOVERFLOW)
+                return cfg->exitcode ;
+        }
         cfg->pos++;
     }
+
+    errno = err ;
 
     /** EOF and not closed but was opened.
      * typically cfg->open = "whatever", cfg->close = "".
