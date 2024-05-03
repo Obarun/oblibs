@@ -40,9 +40,9 @@ uint8_t environ_merge_environ(stralloc *modifs, stralloc *new)
     _init_stack_(nkey, new->len) ;
 
     /**
-     * Search from @modifs environment if the a
+     * Search from @modifs environment if a
      * same key=value pair exist comparing their
-     * respective keys.
+     * respective keys name.
      */
     FOREACH_SASTR(modifs, pos) {
 

@@ -21,11 +21,13 @@
 #include <oblibs/stack.h>
 #include <oblibs/log.h>
 #include <oblibs/string.h>
+#include <oblibs/lexer.h>
 
 #include <skalibs/stralloc.h>
 #include <skalibs/genalloc.h>
 
 #include <execline/execline.h>
+
 uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
 {
     if (!modifs->len)
