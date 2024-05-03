@@ -23,7 +23,7 @@ src/environ/environ_parse_file.o src/environ/environ_parse_file.lo: src/environ/
 src/environ/environ_rebuild.o src/environ/environ_rebuild.lo: src/environ/environ_rebuild.c src/include/oblibs/sastr.h src/include/oblibs/stack.h
 src/environ/environ_search_key.o src/environ/environ_search_key.lo: src/environ/environ_search_key.c src/include/oblibs/lexer.h src/include/oblibs/stack.h
 src/environ/environ_search_value.o src/environ/environ_search_value.lo: src/environ/environ_search_value.c src/include/oblibs/environ.h src/include/oblibs/lexer.h src/include/oblibs/stack.h
-src/environ/environ_substitute.o src/environ/environ_substitute.lo: src/environ/environ_substitute.c src/include/oblibs/environ.h src/include/oblibs/log.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h
+src/environ/environ_substitute.o src/environ/environ_substitute.lo: src/environ/environ_substitute.c src/include/oblibs/environ.h src/include/oblibs/lexer.h src/include/oblibs/log.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h
 src/environ/environ_trim.o src/environ/environ_trim.lo: src/environ/environ_trim.c src/include/oblibs/environ.h src/include/oblibs/log.h
 src/files/file_create_empty.o src/files/file_create_empty.lo: src/files/file_create_empty.c src/include/oblibs/files.h
 src/files/file_get_size.o src/files/file_get_size.lo: src/files/file_get_size.c src/include/oblibs/files.h
