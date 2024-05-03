@@ -23,7 +23,7 @@
 
 int sastr_replace (stralloc *sa,char const *regex,char const *by)
 {
-if (!sa->len || !regex || !strcmp(regex,by))
+    if (!sa->len || !regex || !strcmp(regex,by))
         return (errno = EINVAL, 0) ;
 
     size_t pos = 0, bylen = strlen(by) ;

@@ -16,6 +16,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdlib.h> //free, malloc
 
 #include <oblibs/stack.h>
 #include <oblibs/mill.h>
@@ -27,16 +28,43 @@
 #define MAXENV 8192
 #endif
 
-void stack_reset(stack *stk)
+uint8_t init_stack(stack *stk,char *store, size_t len)
+{
+    if (!len)
+        return (errno = EINVAL, 0) ;
+
+    if (len >= MAXENV) {
+        if (stk->allocated)
+            return (errno = EINVAL, 0) ;
+        stk->s = (char *)malloc(sizeof(char) * (len + 3))  ;
+        if (!stk->s)
+            return (errno = ERANGE, 0) ;
+        stk->len = 0 ; stk->maxlen = len + 2 ;
+        stk->count = 0 ; stk->allocated = 1 ;
+        memset(stk->s, 0, sizeof(char) * stk->maxlen) ;
+    } else {
+        stk->s = store ; stk->len = 0 ;
+        stk->maxlen = len + 2 ; stk->count = 0  ;
+        memset(stk->s, 0, sizeof(char) * len + 3) ;
+    }
+
+    return 1 ;
+}
+
+void stack_free(stack *s)
+{
+    if (s->allocated) free(s->s) ;
+}
+
+inline void stack_reset(stack *stk)
 {
     stk->len = stk->count = 0 ;
 }
 
 uint8_t stack_add(stack *stk, char const *str, size_t len)
 {
-    if (stk->maxlen >= MAXENV)
-        return (errno = ENOBUFS, 0) ;
-
+    if (!len || !*str)
+        return (errno = EINVAL) ;
     if (stk->len + len > stk->maxlen)
         return (errno = EOVERFLOW, 0) ;
     memcpy(stk->s + stk->len, str, len) ;
@@ -52,12 +80,13 @@ uint8_t stack_add(stack *stk, char const *str, size_t len)
 uint8_t stack_add_g(stack *stk, char const *str)
 {
     size_t len = strlen(str) ;
-    return stack_add(stk, str, len + 1) ;
+    return len ? stack_add(stk, str, len + 1) : 0 ;
 }
 
 uint8_t stack_close(stack *stk)
 {
-    stack_add(stk, "", 1) ;
+    if (!stack_add(stk, "", 1))
+        return 0 ;
     stk->len-- ;
     stk->count-- ; // stack_add modify the count integer, reverse it.
     return 1 ;
@@ -65,14 +94,15 @@ uint8_t stack_close(stack *stk)
 
 uint8_t stack_copy(stack *stk, char const *string, size_t len)
 {
-    if (stk->maxlen >= MAXENV)
-        return (errno = ENOBUFS, 0) ;
+    if (!len || !*string)
+        return (errno = EINVAL) ;
     if (len > stk->maxlen)
         return (errno = EOVERFLOW, 0) ;
     memmove(stk->s, string, len) ;
     stk->len = len ;
     if (!stack_close(stk))
-        return (errno = EOVERFLOW, 0) ;
+        return 0 ;
+    stk->count = stack_count_element(stk) ;
     return 1 ;
 }
 
@@ -97,6 +127,8 @@ ssize_t stack_retrieve_element(stack *stk, char const *string)
 
 uint8_t stack_remove_element(stack *stk, size_t index)
 {
+    if (!stk->len)
+        return (errno = EINVAL) ;
     size_t ilen = strlen(stk->s + index), next = index + ilen + 1, nextlen = strlen(stk->s + next) ;
     if (nextlen)
         memmove(stk->s + index, stk->s + next, stk->len - next) ;
@@ -116,12 +148,15 @@ uint8_t stack_remove_element_g(stack *stk, char const *element)
 uint8_t stack_string_rebuild(stack *stk)
 {
     if (!stk->len)
-        return 0 ;
+        return (errno = EINVAL, 0) ;
+
+    if (stk->len + 2 > stk->maxlen)
+        return (errno = EOVERFLOW, 0) ;
 
     size_t pos = 0, tmplen = 0 ;
-    char tmp[stk->maxlen + 1] ;
+    char tmp[stk->len + 2] ;
 
-    memset(tmp, 0, (stk->maxlen + 1) * sizeof(char)) ;
+    memset(tmp, 0, stk->len + 1) ;
 
     FOREACH_STK(stk, pos)
         auto_strings(tmp + strlen(tmp), stk->s + pos, " ") ;
@@ -144,12 +179,13 @@ uint8_t stack_string_rebuild(stack *stk)
 
 uint8_t stack_insert(stack *stk, size_t offset, char const *s)
 {
-    if (offset > stk->len)
+    if (offset > stk->len || !*s)
         return (errno = EINVAL, 0) ;
     size_t len = strlen(s) ;
     memmove(stk->s + offset + len, stk->s + offset, stk->len - offset) ;
     stk->len += len ;
     memmove(stk->s + offset, s, len) ;
+    stk->count = stack_count_element(stk) ;
     return 1 ;
 }
 
