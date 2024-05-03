@@ -19,9 +19,13 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#define _cleanup_stk_ __attribute__((cleanup(stack_free)))
+
+#define _alloc_stk_(stk, len) _cleanup_stk_ stack stk = STACK_ZERO ; char stk##__store__[len < MAXENV + 3 ? len + 3 : 0]  ; init_stack(&stk, len < MAXENV ? stk##__store__ : 0, len)
+
 #define _init_stack_(stk,__stk__maxlen__) char stk##__stk__store__[__stk__maxlen__ + 3] ; stack stk = { .s = stk##__stk__store__, .len = 0, .maxlen = __stk__maxlen__ + 2, .count = 0 } ;
 
-#define STACK_ZERO { .s = 0, .len = 0, .maxlen = 0, .count = 0 }
+#define STACK_ZERO { .s = 0, .len = 0, .maxlen = 0, .count = 0, .allocated = 0 }
 
 #define FOREACH_STK(stk,pos) \
     stack_ref __stk__ref__ = stk ; \
@@ -34,9 +38,13 @@ struct stack_s
     size_t len ;
     size_t maxlen ;
     size_t count ;
+    uint8_t allocated ;
 } ;
-
 /** See also, lexer.h for stack_string_XXX function */
+extern uint8_t init_stack(stack *stk,char *store, size_t len) ;
+extern void stack_free(stack *s) ;
+extern void stack_reset(stack *stk) ;
+
 extern uint8_t stack_add_g(stack *stk, char const *str) ;
 extern uint8_t stack_add(stack *stk, char const *string, size_t len) ;
 extern uint8_t stack_close(stack *stk) ;
@@ -50,5 +58,5 @@ extern uint8_t stack_remove_element_g(stack *stk, char const *element) ;
 extern uint8_t stack_string_rebuild(stack *stk) ;
 extern uint8_t stack_insert(stack *stk, size_t offset, char const *s) ;
 extern int stack_read_file(stack *stk, const char *path) ;
-extern void stack_reset(stack *stk) ;
+
 #endif
