@@ -23,8 +23,10 @@ static inline uint8_t lexer_loop(lexer_config *cfg, char const *regex, size_t le
     if (!len)
         return 0 ;
 
+    size_t pos = 0 ;
+
     if (cfg->style) {
-        size_t pos = 0 ;
+
         int found = 0 ;
         char cmp[len + 1] ;
 
@@ -41,12 +43,11 @@ static inline uint8_t lexer_loop(lexer_config *cfg, char const *regex, size_t le
             found++ ;
         }
 
-        if (found == len)
+        if (found && (pos == len))
             return 1 ;
 
     } else {
 
-        size_t pos = 0 ;
         char c = cfg->str[cfg->pos] ;
 
         for (; pos < len ; pos++) {
@@ -93,7 +94,6 @@ static inline uint8_t lexer_do(stack *stk, uint8_t state, lexer_config *cfg) {
             break;
         case LEXER_STATE_IN_VALUE:
             if (cfg->invalue) {
-
                 if (!stack_add(stk, &c, 1))
                     return (errno = EOVERFLOW, 0) ;
 
@@ -104,6 +104,7 @@ static inline uint8_t lexer_do(stack *stk, uint8_t state, lexer_config *cfg) {
             break ;
         case LEXER_STATE_END:
             if (cfg->invalue) {
+
 
                 if (cfg->kclose) {
                     if (cfg->style) {
@@ -116,9 +117,10 @@ static inline uint8_t lexer_do(stack *stk, uint8_t state, lexer_config *cfg) {
                     cfg->count++ ;
                 }
 
-                if (cfg->count)
+                if (cfg->count) {
                     if (!stack_add(stk, "", 1))
                         return (errno = EOVERFLOW, 0) ;
+                }
 
                 if (cfg->style)
                     cfg->pos += cfg->clen - 1 ;
@@ -216,16 +218,16 @@ uint8_t lexer(stack *stk, lexer_config *cfg) {
         else
             state = state_table[state][lexer_cclass(c, cfg)];
 
-
         errno = 0 ;
         exit = lexer_do(stk, state, cfg) ;
+
         if (exit) {
             goto finish ;
         } else {
-            if (!exit && errno == EOVERFLOW)
+            if (errno == EOVERFLOW)
                 return cfg->exitcode ;
         }
-        cfg->pos++;
+        cfg->pos++ ;
     }
 
     errno = err ;
@@ -266,9 +268,12 @@ uint8_t lexer_trim(stack *stk, lexer_config *cfg)
             return 0 ;
 
         if (c.found) {
+
             lexer_cp_cfg(cfg, &c) ;
             if (c.firstoccurence)
                 break ;
+
+            stk->len++ ;
         }
     }
 
