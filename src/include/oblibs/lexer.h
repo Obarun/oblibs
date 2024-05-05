@@ -118,6 +118,9 @@ extern uint8_t lexer_trim_clean(stack *stk, const char *s) ;
 extern uint8_t lexer_trim_unclean(stack *stk, const char *s) ;
 // use LEXER_CFG_GET_LINE configuration
 extern uint8_t lexer_trim_line(stack *stk, const char *s) ;
+/** trim @str with @delim as delimiter
+ * it also escapr ' \t\r\n'*/
+extern uint8_t lexer_trim_with_delim(stack *stk, const char *str, unsigned int delim) ;
 
 #define stack_string_clean(stk,s) lexer_trim_clean(stk,(s))
 #define stack_string_unclean(stk,s) lexer_trim_unclean(stk,(s))
