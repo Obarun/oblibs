@@ -19,9 +19,13 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#ifndef MAXENV
+#define MAXENV 8191
+#endif
+
 #define _cleanup_stk_ __attribute__((cleanup(stack_free)))
 
-#define _alloc_stk_(stk, len) _cleanup_stk_ stack stk = STACK_ZERO ; char stk##__store__[len < MAXENV + 3 ? len + 3 : 0]  ; init_stack(&stk, len < MAXENV ? stk##__store__ : 0, len)
+#define _alloc_stk_(stk, len) _cleanup_stk_ stack stk = STACK_ZERO ; char stk##__store__[(len) < MAXENV + 3 ? ((len) + 3) : 0]  ; init_stack(&stk, (len) < MAXENV ? stk##__store__ : 0, (len))
 
 #define _init_stack_(stk,__stk__maxlen__) char stk##__stk__store__[__stk__maxlen__ + 3] ; stack stk = { .s = stk##__stk__store__, .len = 0, .maxlen = __stk__maxlen__ + 2, .count = 0 } ;
 
