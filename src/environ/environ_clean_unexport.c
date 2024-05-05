@@ -53,8 +53,10 @@ uint8_t environ_clean_unexport(stralloc *modifs)
         }
     }
 
-    if (!stralloc_copyb(modifs, stk.s, stk.len))
-        return (errno = EOVERFLOW, 0) ;
+    if (!stralloc_copyb(modifs, stk.s, stk.len) ||
+        !stralloc_0(modifs))
+            return (errno = EOVERFLOW, 0) ;
+    modifs->len-- ;
 
     return 1 ;
 }

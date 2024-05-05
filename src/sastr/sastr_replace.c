@@ -62,8 +62,11 @@ int sastr_replace (stralloc *sa,char const *regex,char const *by)
                 new.len = 0 ;
 
                 if (!stralloc_copyb(&new, stk.s, stk.len) ||
-                    !stralloc_0(&new) ||
-                    !sastr_replace(&new, regex, by) ||
+                    !stralloc_0(&new))
+                        return 0 ;
+                new.len-- ;
+
+                if (!sastr_replace(&new, regex, by) ||
                     !stralloc_insertb(&new, 0, line.s, line.len) ||
                     !stralloc_insertb(&new, 0, c.s, c.len))
                         return 0 ;

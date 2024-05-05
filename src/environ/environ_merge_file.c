@@ -13,6 +13,7 @@
  */
 
 #include <string.h>
+#include <errno.h>
 
 #include <oblibs/sastr.h>
 #include <oblibs/stack.h>
@@ -30,15 +31,20 @@ uint8_t environ_merge_file(stralloc *modifs, const char *file)
 
     if (!modifs->len) {
         /** no previous file, copy verbatim*/
-        return stralloc_copyb(modifs, stk.s, stk.len) ;
+        if (!stralloc_copyb(modifs, stk.s, stk.len) ||
+            !stralloc_0(modifs))
+                return (errno = EOVERFLOW, 0) ;
 
+        modifs->len-- ;
+        return 1 ;
     }
 
     _alloc_sa_(new) ;
 
-    if (!stralloc_copyb(&new, stk.s, stk.len))
-        return 0 ;
-
+    if (!stralloc_copyb(&new, stk.s, stk.len) ||
+        !stralloc_0(&new))
+            return (errno = EOVERFLOW, 0) ;
+    new.len-- ;
     if (!environ_merge_environ(modifs, &new))
         return 0 ;
 

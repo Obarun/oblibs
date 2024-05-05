@@ -47,7 +47,13 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
 
     if (!stralloc_copyb(&old, modifs->s, modifs->len) ||
         !stralloc_copyb(&new, modifs->s, modifs->len) ||
-        !environ_rebuild(&old))
+        !stralloc_0(&old) ||
+        !stralloc_0(&new))
+            return (errno = EOVERFLOW, 0) ;
+
+    old.len-- ; new.len-- ;
+
+        if (!environ_rebuild(&old))
             return 0 ;
 
     FOREACH_SASTR(modifs, pos) {
@@ -136,8 +142,13 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
             }
 
             if (!stralloc_copyb(&old, new.s, new.len) ||
-                !environ_rebuild(&old))
-                    return 0 ;
+                !stralloc_0(&old))
+                    return (errno = EOVERFLOW, 0) ;
+
+            old.len-- ;
+
+            if (!environ_rebuild(&old))
+                return 0 ;
         }
 
         _init_stack_(nval, old.len) ;
@@ -171,8 +182,10 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
         }
     }
 
-    if (!stralloc_copyb(modifs, new.s, new.len))
-        return 0 ;
+    if (!stralloc_copyb(modifs, new.s, new.len) ||
+        !stralloc_0(modifs))
+            return (errno = EOVERFLOW, 0) ;
+    modifs->len-- ;
 
     return 1 ;
 }

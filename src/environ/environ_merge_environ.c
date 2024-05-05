@@ -62,8 +62,11 @@ uint8_t environ_merge_environ(stralloc *modifs, stralloc *new)
     }
 
     // flush the modifs environment with the new one
-    if (!stralloc_copyb(modifs, sa.s, sa.len))
-        return (errno = EOVERFLOW, 0) ;
+    if (!stralloc_copyb(modifs, sa.s, sa.len) ||
+        !stralloc_0(modifs))
+            return (errno = EOVERFLOW, 0) ;
+
+    modifs->len-- ;
 
     return 1 ;
 }
