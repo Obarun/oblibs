@@ -4,7 +4,6 @@
 
 src/include/oblibs/environ.h: src/include/oblibs/lexer.h src/include/oblibs/stack.h
 src/include/oblibs/lexer.h: src/include/oblibs/stack.h
-src/include/oblibs/mill.h: src/include/oblibs/stack.h
 src/directory/dir_beabsolute.o src/directory/dir_beabsolute.lo: src/directory/dir_beabsolute.c src/include/oblibs/directory.h src/include/oblibs/string.h
 src/directory/dir_create.o src/directory/dir_create.lo: src/directory/dir_create.c src/include/oblibs/directory.h
 src/directory/dir_create_parent.o src/directory/dir_create_parent.lo: src/directory/dir_create_parent.c src/include/oblibs/directory.h
@@ -38,12 +37,8 @@ src/io/io_read.o src/io/io_read.lo: src/io/io_read.c src/include/oblibs/io.h
 src/io/log.o src/io/log.lo: src/io/log.c src/include/oblibs/log.h
 src/lexer/lexer.o src/lexer/lexer.lo: src/lexer/lexer.c src/include/oblibs/lexer.h src/include/oblibs/log.h src/include/oblibs/stack.h
 src/lexer/lexer_config.o src/lexer/lexer_config.lo: src/lexer/lexer_config.c src/include/oblibs/lexer.h
-src/mill/mill.o src/mill/mill.lo: src/mill/mill.c src/include/oblibs/log.h src/include/oblibs/mill.h src/include/oblibs/stack.h
-src/mill/mill_config.o src/mill/mill_config.lo: src/mill/mill_config.c src/include/oblibs/mill.h
 src/sastr/sastr_add_string.o src/sastr/sastr_add_string.lo: src/sastr/sastr_add_string.c src/include/oblibs/sastr.h
-src/sastr/sastr_clean_element.o src/sastr/sastr_clean_element.lo: src/sastr/sastr_clean_element.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h
-src/sastr/sastr_clean_string.o src/sastr/sastr_clean_string.lo: src/sastr/sastr_clean_string.c src/include/oblibs/sastr.h src/include/oblibs/string.h
-src/sastr/sastr_clean_string_wdelim.o src/sastr/sastr_clean_string_wdelim.lo: src/sastr/sastr_clean_string_wdelim.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h
+src/sastr/sastr_clean_string.o src/sastr/sastr_clean_string.lo: src/sastr/sastr_clean_string.c src/include/oblibs/lexer.h src/include/oblibs/stack.h
 src/sastr/sastr_cmp.o src/sastr/sastr_cmp.lo: src/sastr/sastr_cmp.c src/include/oblibs/sastr.h
 src/sastr/sastr_dir_drop_child.o src/sastr/sastr_dir_drop_child.lo: src/sastr/sastr_dir_drop_child.c src/include/oblibs/directory.h src/include/oblibs/sastr.h
 src/sastr/sastr_dir_get.o src/sastr/sastr_dir_get.lo: src/sastr/sastr_dir_get.c src/include/oblibs/sastr.h src/include/oblibs/types.h
@@ -53,7 +48,6 @@ src/sastr/sastr_drop_same_element.o src/sastr/sastr_drop_same_element.lo: src/sa
 src/sastr/sastr_find.o src/sastr/sastr_find.lo: src/sastr/sastr_find.c src/include/oblibs/sastr.h
 src/sastr/sastr_find_element_byid.o src/sastr/sastr_find_element_byid.lo: src/sastr/sastr_find_element_byid.c src/include/oblibs/sastr.h
 src/sastr/sastr_find_element_byname.o src/sastr/sastr_find_element_byname.lo: src/sastr/sastr_find_element_byname.c src/include/oblibs/sastr.h
-src/sastr/sastr_get_double_quote.o src/sastr/sastr_get_double_quote.lo: src/sastr/sastr_get_double_quote.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h
 src/sastr/sastr_len.o src/sastr/sastr_len.lo: src/sastr/sastr_len.c src/include/oblibs/sastr.h
 src/sastr/sastr_nelement.o src/sastr/sastr_nelement.lo: src/sastr/sastr_nelement.c src/include/oblibs/sastr.h
 src/sastr/sastr_rebuild_in_nline.o src/sastr/sastr_rebuild_in_nline.lo: src/sastr/sastr_rebuild_in_nline.c src/include/oblibs/sastr.h
@@ -64,10 +58,9 @@ src/sastr/sastr_replace_all.o src/sastr/sastr_replace_all.lo: src/sastr/sastr_re
 src/sastr/sastr_reverse.o src/sastr/sastr_reverse.lo: src/sastr/sastr_reverse.c src/include/oblibs/sastr.h
 src/sastr/sastr_sort.o src/sastr/sastr_sort.lo: src/sastr/sastr_sort.c src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/sastr/sastr_sortndrop_element.o src/sastr/sastr_sortndrop_element.lo: src/sastr/sastr_sortndrop_element.c src/include/oblibs/sastr.h
-src/sastr/sastr_split_element_in_nline.o src/sastr/sastr_split_element_in_nline.lo: src/sastr/sastr_split_element_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h
-src/sastr/sastr_split_string_in_nline.o src/sastr/sastr_split_string_in_nline.lo: src/sastr/sastr_split_string_in_nline.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h
+src/sastr/sastr_split_string_in_nline.o src/sastr/sastr_split_string_in_nline.lo: src/sastr/sastr_split_string_in_nline.c src/include/oblibs/lexer.h src/include/oblibs/stack.h
 src/sastr/sastr_to_char.o src/sastr/sastr_to_char.lo: src/sastr/sastr_to_char.c src/include/oblibs/sastr.h
-src/stack/stack.o src/stack/stack.lo: src/stack/stack.c src/include/oblibs/io.h src/include/oblibs/lexer.h src/include/oblibs/mill.h src/include/oblibs/stack.h src/include/oblibs/string.h
+src/stack/stack.o src/stack/stack.lo: src/stack/stack.c src/include/oblibs/io.h src/include/oblibs/lexer.h src/include/oblibs/stack.h src/include/oblibs/string.h
 src/str/auto.o src/str/auto.lo: src/str/auto.c
 src/str/get_flags.o src/str/get_flags.lo: src/str/get_flags.c src/include/oblibs/types.h
 src/str/get_gidbygroup.o src/str/get_gidbygroup.lo: src/str/get_gidbygroup.c src/include/oblibs/types.h
@@ -88,7 +81,6 @@ src/str/scan_mode.o src/str/scan_mode.lo: src/str/scan_mode.c src/include/oblibs
 src/str/scan_timeout.o src/str/scan_timeout.lo: src/str/scan_timeout.c src/include/oblibs/sastr.h src/include/oblibs/types.h
 src/str/scan_uid.o src/str/scan_uid.lo: src/str/scan_uid.c src/include/oblibs/types.h
 src/str/scan_uidlist.o src/str/scan_uidlist.lo: src/str/scan_uidlist.c src/include/oblibs/sastr.h src/include/oblibs/types.h
-src/str/scan_uidlist_wdelim.o src/str/scan_uidlist_wdelim.lo: src/str/scan_uidlist_wdelim.c src/include/oblibs/mill.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h src/include/oblibs/types.h
 src/str/scan_uint32.o src/str/scan_uint32.lo: src/str/scan_uint32.c src/include/oblibs/string.h src/include/oblibs/types.h
 src/str/str_contain.o src/str/str_contain.lo: src/str/str_contain.c src/include/oblibs/string.h
 src/str/str_start_with.o src/str/str_start_with.lo: src/str/str_start_with.c src/include/oblibs/string.h
