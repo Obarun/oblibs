@@ -69,43 +69,11 @@ extern int sastr_replace(stralloc *sa,char const *regex,char const *by) ;
  * @Return 0 on fail */
 extern int sastr_replace_all(stralloc *sa,char const *regex,char const *by) ;
 
-/** Split each elements of @sa in a chained string
- * on multiple lines where element means everything between
- * ' ' character e.g ' value '.
- * @Return 1 on success
- * @Return 0 on fail*/
-extern int sastr_split_element_in_nline(stralloc *sa) ;
-
-/** Use sastr_split_element_in_nline and remove any
- *  ' \n\t\r' character of each element.
- * @Return 1 on success
- * @Return 0 on fail*/
-extern int sastr_clean_element(stralloc *sa) ;
-
 /** Append @sa with @string and call sastr_clean_element
+ * escape ' \t\r\n' characters.
  * @Return 1 on success
  * @Return 0 on fail */
 extern int sastr_clean_string(stralloc *sa,char const *string) ;
-
-/** Flush the contain of @sa and call sastr_clean_string
- * @Return 1 on success
- * @Return 0 on fail */
-extern int sastr_clean_string_flush_sa(stralloc *sa, char const *string) ;
-
-/** Split sting @str with delimiter @delim and clean
- * each element calling sastr_clean_element. Append @sa
- * with the result of the process
- * @Return 1 on success
- * @Return 0 on fail */
-extern int sastr_clean_string_wdelim(stralloc *sa,char const *str,unsigned int delim) ;
-
-/** Get the content between double quote and
- * call sastr_clean_element to clean up
- * Replace the content of @sa with the
- * result of the process.
- * @Return 1 on success
- * @Return 0 on fail */
-extern int sastr_get_double_quote(stralloc *sa) ;
 
 /** Split each elements of @sa in a chained string
  * on multiple lines where element means everything
