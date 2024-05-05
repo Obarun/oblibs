@@ -12,26 +12,25 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/sastr.h>
-#include <oblibs/string.h>
+#include <string.h>
+#include <errno.h>
+
+#include <oblibs/stack.h>
+#include <oblibs/lexer.h>
 
 #include <skalibs/stralloc.h>
 
 int sastr_clean_string(stralloc *sa,char const *string)
 {
-    if (!auto_stra(sa,string) ||
-        !sastr_clean_element(sa))
-            return 0 ;
+    if (!*string) return (errno = EINVAL, 0) ;
+    _alloc_stk_(stk, strlen(string) + 1) ;
+
+    if (!stack_string_clean(&stk, string) ||
+        !stralloc_copyb(sa, stk.s, stk.len) ||
+        !stralloc_0(sa))
+            return (errno = EOVERFLOW, 0) ;
+
+    sa->len-- ;
+
     return 1 ;
-}
-
-int sastr_clean_string_flush_sa(stralloc *sa, char const *string)
-{
-    char tmp[sa->len + 1] ;
-
-    auto_strings(tmp, sa->s) ;
-
-    sa->len = 0 ;
-
-    return sastr_clean_string(sa, tmp) ;
 }

@@ -12,35 +12,29 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/sastr.h>
-
 #include <string.h>
+#include <errno.h>
+
+#include <oblibs/sastr.h>
 
 #include <skalibs/stralloc.h>
 
 int sastr_remove_element(stralloc *sa, char const *element)
 {
-    ssize_t el = sastr_cmp(sa, element) ;
+    if (!sa->len)
+        return (errno = EINVAL) ;
 
-    if (el == -1)
-        return 0 ;
+    ssize_t index = sastr_cmp(sa, element) ;
 
-    size_t len = sa->len, pos = 0 ;
+    if (index == -1)
+        return 1 ;
 
-    char t[len + 1] ;
-
-    sastr_to_char(t, sa) ;
-
-    sa->len = 0 ;
-
-    for (;pos < len; pos += strlen(t + pos) + 1) {
-
-        if (pos == (size_t)el)
-            continue ;
-
-        if (!sastr_add_string(sa, t + pos))
-            return 0 ;
-    }
+    size_t ilen = strlen(sa->s + index), next = index + ilen + 1, nextlen = strlen(sa->s + next) ;
+    if (nextlen)
+        memmove(sa->s + index, sa->s + next, sa->len - next) ;
+    sa->len -= ilen + 1 ;
+    if (!stralloc_0(sa)) return 0 ;
+    sa->len-- ;
 
     return 1 ;
 }

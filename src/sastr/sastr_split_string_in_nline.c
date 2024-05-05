@@ -12,25 +12,25 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <string.h>
+#include <errno.h>
 
-#include <oblibs/sastr.h>
-#include <oblibs/mill.h>
-#include <oblibs/string.h>
 #include <oblibs/stack.h>
+#include <oblibs/lexer.h>
 
 #include <skalibs/stralloc.h>
 
 int sastr_split_string_in_nline(stralloc *sa)
 {
     if (!sa->len) return 0 ;
-    int r ;
-    _init_stack_(stk, sa->len + 1) ;
-    wild_zero_all(&MILL_SPLIT_LINE) ;
-    r = mill_string(&stk, sa->s, sa->len, &MILL_SPLIT_LINE) ;
-    if (r == -1 || !r) return 0 ;
-    if (!stack_close(&stk)) return 0 ;
-    sa->len = 0 ;
-    if (!stralloc_copyb(sa, stk.s, stk.len)) return 0 ;
+    _alloc_stk_(stk, sa->len + 1) ;
+    if (!stack_string_trimline(&stk, sa->s))
+        return 0 ;
+
+    if (!stralloc_copyb(sa, stk.s, stk.len) ||
+        !stralloc_0(sa))
+            return (errno = EOVERFLOW, 0 ) ;
+
+    sa->len-- ;
+
     return 1 ;
 }
