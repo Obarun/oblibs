@@ -128,7 +128,6 @@ static inline uint8_t lexer_do(stack *stk, uint8_t state, lexer_config *cfg) {
                 cfg->cpos = cfg->pos ;
                 cfg->pos++ ;
                 cfg->found = 1 ;
-                cfg->count = 0 ;
                 return 1 ;
             }
             break ;
@@ -204,7 +203,7 @@ uint8_t lexer(stack *stk, lexer_config *cfg) {
 
     uint8_t state = LEXER_STATE_CHAR, err = 0, exit = 0 ;
 
-    if (!cfg->str || !cfg->slen)
+    if (!*cfg->str || !cfg->slen)
         return cfg->exitcode ;
 
     err = errno ;
@@ -257,11 +256,13 @@ uint8_t lexer_trim(stack *stk, lexer_config *cfg)
     lexer_config c = LEXER_CONFIG_ZERO ;
     lexer_cp_cfg(&c, cfg) ;
     c.str = cfg->str ;
-    c.slen = cfg->slen ;
+    c.slen = strlen(cfg->str) ;
 
     while (c.pos < c.slen) {
 
+        lexer_reset(&c) ;
         c.opos = c.cpos = 0 ;
+
         c.count = c.found = c.exitcode = 0 ;
 
         if (!lexer(stk, &c))
@@ -273,7 +274,9 @@ uint8_t lexer_trim(stack *stk, lexer_config *cfg)
             if (c.firstoccurence)
                 break ;
 
-            stk->len++ ;
+            // avoid entry with no words
+            if (c.count)
+                stk->len++ ;
         }
     }
 
@@ -292,7 +295,7 @@ uint8_t lexer_trim_with(stack *stk, const char *s, size_t len, lexer_config *cfg
     lexer_config c ;
     uint8_t r = 0 ;
     lexer_cp_cfg(&c, cfg) ;
-    c.str = s ; c.slen = len ;
+    c.str = s ; c.slen = strlen(s) ;
     r = lexer_trim(stk, &c) ;
     if (c.found)
         lexer_cp_cfg(cfg, &c) ;
@@ -354,4 +357,16 @@ uint8_t lexer_trim_line(stack *stk, const char *s)
 {
     lexer_config cfg = LEXER_CFG_GET_LINE ;
     return lexer_trim_with_g(stk, s, &cfg) ;
+}
+
+uint8_t lexer_trim_with_delim(stack *stk, const char *str, unsigned int delim)
+{
+    lexer_config cfg = LEXER_CONFIG_ZERO ;
+    char c[2] = { delim, 0 } ;
+    cfg.close = c ; cfg.clen = 1 ;
+    cfg.skip = " \t\r\n" ; cfg.skiplen = 4 ;
+    cfg.forceclose = 1 ; cfg.forceopen = 1 ;
+    cfg.kopen = 1 ; cfg.kclose = 0 ;
+
+    return lexer_trim_with_g(stk,str,&cfg) ;
 }
