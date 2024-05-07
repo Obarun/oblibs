@@ -25,7 +25,7 @@
 
 #define _cleanup_stk_ __attribute__((cleanup(stack_free)))
 
-#define _alloc_stk_(stk, len) _cleanup_stk_ stack stk = STACK_ZERO ; char stk##__store__[(len) < MAXENV + 3 ? ((len) + 3) : 0]  ; init_stack(&stk, (len) < MAXENV ? stk##__store__ : 0, (len))
+#define _alloc_stk_(stk, len) _cleanup_stk_ stack stk = STACK_ZERO ; char stk##__store__[((len) + 3) < MAXENV ? ((len) + 3) : 0]  ; init_stack(&stk, (len) < MAXENV ? stk##__store__ : 0, (len))
 
 #define _init_stack_(stk,__stk__maxlen__) char stk##__stk__store__[__stk__maxlen__ + 3] ; stack stk = { .s = stk##__stk__store__, .len = 0, .maxlen = __stk__maxlen__ + 2, .count = 0 } ;
 
@@ -59,7 +59,7 @@ extern size_t stack_count_element(stack *stk) ;
 extern ssize_t stack_retrieve_element(stack *stk, char const *string) ;
 extern uint8_t stack_remove_element(stack *stk, size_t index) ;
 extern uint8_t stack_remove_element_g(stack *stk, char const *element) ;
-extern uint8_t stack_string_rebuild(stack *stk) ;
+extern uint8_t stack_string_rebuild_with_delim(stack *stk, unsigned int delim) ;
 extern uint8_t stack_insert(stack *stk, size_t offset, char const *s) ;
 extern int stack_read_file(stack *stk, const char *path) ;
 

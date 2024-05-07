@@ -40,7 +40,7 @@ uint8_t init_stack(stack *stk,char *store, size_t len)
             return (errno = ERANGE, 0) ;
         stk->len = 0 ; stk->maxlen = len + 2 ;
         stk->count = 0 ; stk->allocated = 1 ;
-        memset(stk->s, 0, sizeof(char) * stk->maxlen) ;
+        memset(stk->s, 0, sizeof(char) * len + 3) ;
     } else {
         stk->s = store ; stk->len = 0 ;
         stk->maxlen = len + 2 ; stk->count = 0  ;
@@ -62,8 +62,9 @@ inline void stack_reset(stack *stk)
 
 uint8_t stack_add(stack *stk, char const *str, size_t len)
 {
-    if (!len || !*str)
-        return (errno = EINVAL) ;
+    // only check empty pointer at @str
+    if (!len || !str)
+        return (errno = EINVAL, 0) ;
     if (stk->len + len > stk->maxlen)
         return (errno = EOVERFLOW, 0) ;
     memcpy(stk->s + stk->len, str, len) ;
@@ -86,7 +87,9 @@ uint8_t stack_close(stack *stk)
 {
     if (!stack_add(stk, "", 1))
         return 0 ;
-    stk->len-- ;
+    if ((stk->len - 1) < 0) {
+        stk->len = 0 ;
+    } else { stk->len-- ; }
     stk->count-- ; // stack_add modify the count integer, reverse it.
     return 1 ;
 }
@@ -144,7 +147,7 @@ uint8_t stack_remove_element_g(stack *stk, char const *element)
     return idx < 0 ? 1 : stack_remove_element(stk, (size_t)idx) ;
 }
 
-uint8_t stack_string_rebuild(stack *stk)
+uint8_t stack_string_rebuild_with_delim(stack *stk, unsigned int delim)
 {
     if (!stk->len)
         return (errno = EINVAL, 0) ;
@@ -154,11 +157,12 @@ uint8_t stack_string_rebuild(stack *stk)
 
     size_t pos = 0, tmplen = 0 ;
     char tmp[stk->len + 2] ;
+    char d[2] = { delim, 0 } ;
 
     memset(tmp, 0, stk->len + 1) ;
 
     FOREACH_STK(stk, pos)
-        auto_strings(tmp + strlen(tmp), stk->s + pos, " ") ;
+        auto_strings(tmp + strlen(tmp), stk->s + pos, d) ;
 
     tmplen = strlen(tmp) ;
     tmp[tmplen - 1] = 0 ;
