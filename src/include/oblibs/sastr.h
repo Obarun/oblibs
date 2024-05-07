@@ -58,16 +58,18 @@ extern int sastr_rebuild_in_oneline(stralloc *sa) ;
  * @Return 0 on fail */
 extern int sastr_rebuild_in_nline(stralloc *sa) ;
 
-/** Replace first occurence found of @regex by @by into @sa
- * @str must be matched exactly.
+/** Replace all occurence found of @regex by @by into @sa
+ * @regex must be matched exactly.
  * @Return 1 on success
  * @Return 0 on fail */
 extern int sastr_replace(stralloc *sa,char const *regex,char const *by) ;
 
-/** Same as sastr_replace but for all @regex found into @sa
+/** split the contents of @sa by line then
+ * call sastr_replace for each line then
+ * rebuild @sa appending each line with `\n` character.
  * @Return 1 on success
  * @Return 0 on fail */
-extern int sastr_replace_all(stralloc *sa,char const *regex,char const *by) ;
+extern int sastr_replace_g(stralloc *sa,char const *regex,char const *by) ;
 
 /** Append @sa with @string and call sastr_clean_element
  * escape ' \t\r\n' characters.
