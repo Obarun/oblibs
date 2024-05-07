@@ -87,7 +87,7 @@ uint8_t stack_close(stack *stk)
 {
     if (!stack_add(stk, "", 1))
         return 0 ;
-    if ((stk->len - 1) < 0) {
+    if (!stk->len) {
         stk->len = 0 ;
     } else { stk->len-- ; }
     stk->count-- ; // stack_add modify the count integer, reverse it.
@@ -159,7 +159,7 @@ uint8_t stack_string_rebuild_with_delim(stack *stk, unsigned int delim)
     char tmp[stk->len + 2] ;
     char d[2] = { delim, 0 } ;
 
-    memset(tmp, 0, stk->len + 1) ;
+    memset(tmp, 0, stk->len + 2) ;
 
     FOREACH_STK(stk, pos)
         auto_strings(tmp + strlen(tmp), stk->s + pos, d) ;
