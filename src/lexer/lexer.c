@@ -263,8 +263,6 @@ uint8_t lexer_trim(stack *stk, lexer_config *cfg)
         lexer_reset(&c) ;
         c.opos = c.cpos = 0 ;
 
-        c.count = c.found = c.exitcode = 0 ;
-
         if (!lexer(stk, &c))
             return 0 ;
 
@@ -275,7 +273,7 @@ uint8_t lexer_trim(stack *stk, lexer_config *cfg)
                 break ;
 
             // avoid entry with no words
-            if (c.count)
+            if (c.count && c.firstoccurence)
                 stk->len++ ;
         }
     }
