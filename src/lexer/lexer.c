@@ -117,10 +117,17 @@ static inline uint8_t lexer_do(stack *stk, uint8_t state, lexer_config *cfg) {
                     cfg->count++ ;
                 }
 
-                if (cfg->count) {
-                    if (!stack_add(stk, "", 1))
-                        return (errno = EOVERFLOW, 0) ;
-                }
+                /** Lexer_trim will clean the string twice which create
+                 * empty entry at the stack array.
+                 *
+                 * So, the lexer deliver the stack as it. It's the
+                 * responsability to others functions to close or not
+                 * the string after the call of the lexer() function.
+                */
+                // if (cfg->count) {
+                //     if (!stack_add(stk, "", 1))
+                //         return (errno = EOVERFLOW, 0) ;
+                // }
 
                 if (cfg->style)
                     cfg->pos += cfg->clen - 1 ;
@@ -266,15 +273,16 @@ uint8_t lexer_trim(stack *stk, lexer_config *cfg)
         if (!lexer(stk, &c))
             return 0 ;
 
+        if (c.count) {
+            if (!stack_add(stk, "", 1))
+                return 0 ;
+        }
+
         if (c.found) {
 
             lexer_cp_cfg(cfg, &c) ;
             if (c.firstoccurence)
                 break ;
-
-            // avoid entry with no words
-            if (c.count && c.firstoccurence)
-                stk->len++ ;
         }
     }
 
