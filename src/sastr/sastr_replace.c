@@ -28,7 +28,7 @@ int sastr_replace (stralloc *sa,char const *regex,char const *by)
 
     size_t pos = 0, bylen = strlen(by) ;
     lexer_config cfg = LEXER_CONFIG_ZERO ;
-    _init_stack_(stk, sa->len) ;
+    _alloc_stk_(stk, sa->len + 1) ;
     _alloc_sa_(new) ;
 
     cfg.open = (char *)regex ; cfg.olen = strlen(regex) ;
@@ -41,12 +41,13 @@ int sastr_replace (stralloc *sa,char const *regex,char const *by)
         lexer_reset_hard(&cfg) ;
         cfg.str = sa->s + pos ; cfg.slen = strlen(sa->s + pos) ;
 
-        if (!lexer(&stk, &cfg))
+        if (!lexer(&stk, &cfg) ||
+            !stack_close(&stk))
             return 0 ;
 
         if (cfg.found) {
 
-            _init_stack_(line, cfg.slen + bylen + 1) ;
+            _alloc_stk_(line, cfg.slen + bylen + 1) ;
 
             if (!stack_add(&line, cfg.str, cfg.opos) ||
                 !stack_add(&line, by, bylen) ||
@@ -55,7 +56,7 @@ int sastr_replace (stralloc *sa,char const *regex,char const *by)
 
             if (stk.len) {
                 /** the rest of the line may contain @regex*/
-                _init_stack_(c, new.len + 1) ;
+                _alloc_stk_(c, new.len + 1) ;
                 if (!stack_copy(&c, new.s, new.len))
                     return 0 ;
 

@@ -37,7 +37,7 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
     eltransforminfo_t si = ELTRANSFORMINFO_ZERO ;
     elsubst_t blah ;
     _alloc_sa_(old) ; _alloc_sa_(new) ;
-    _init_stack_(regex, modifs->len + 1) ;
+    _alloc_stk_(regex, modifs->len + 1) ;
 
     lexer_config cfg = LEXER_CONFIG_ZERO ;
 
@@ -64,9 +64,9 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
         cfg.str = line ; cfg.slen = strlen(line) ;
         unexport = 0 ;
 
-        _init_stack_(mkey, cfg.slen) ;
-        _init_stack_(mval, cfg.slen) ;
-        _init_stack_(value, old.len) ;
+        _alloc_stk_(mkey, cfg.slen + 1) ;
+        _alloc_stk_(mval, cfg.slen + 1) ;
+        _alloc_stk_(value, old.len + 1) ;
 
         if (!environ_get_key(&mkey, line))
             return 0 ;
@@ -101,11 +101,12 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
         while(cfg.pos < cfg.slen) {
 
             lexer_reset(&cfg) ;
+            stack_reset(&regex) ;
             cfg.opos = cfg.cpos = 0 ;
-            regex.len = regex.count = 0 ;
 
-            if (!lexer(&regex, &cfg))
-                return 0 ;
+            if (!lexer(&regex, &cfg) ||
+                !stack_close(&regex))
+                    return 0 ;
 
             if (cfg.found) {
 
@@ -130,7 +131,7 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
 
                 if (regex.len) {
 
-                    _init_stack_(key, regex.len + 4) ;
+                    _alloc_stk_(key, regex.len + 4) ;
                     auto_strings(key.s, "${", regex.s, "}") ;
 
                     if (!sastr_replace(&new, key.s, value.s)) {
@@ -151,7 +152,7 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
                 return 0 ;
         }
 
-        _init_stack_(nval, old.len) ;
+        _alloc_stk_(nval, old.len + 1) ;
         if (!environ_search_value(&nval, old.s, mkey.s))
             return 0 ;
 
