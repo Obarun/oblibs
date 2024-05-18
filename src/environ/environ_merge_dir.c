@@ -50,7 +50,7 @@ uint8_t environ_merge_dir(stralloc *modifs, char const *path)
 
     FOREACH_SASTR(&sa, pos) {
 
-        _init_stack_(spath, plen + (strlen(sa.s + pos)) + 2) ;
+        _alloc_stk_(spath, plen + (strlen(sa.s + pos)) + 2) ;
 
         if (!stack_add(&spath, path, plen) ||
             !stack_add(&spath, "/", 1) ||

@@ -37,7 +37,7 @@ uint8_t environ_merge_environ(stralloc *modifs, stralloc *new)
         return 0 ;
 
     lexer_config c = LEXER_CONFIG_ZERO ;
-    _init_stack_(nkey, new->len) ;
+    _alloc_stk_(nkey, new->len + 1) ;
 
     /**
      * Search from @modifs environment if a
@@ -47,7 +47,7 @@ uint8_t environ_merge_environ(stralloc *modifs, stralloc *new)
     FOREACH_SASTR(modifs, pos) {
 
         char *line = modifs->s + pos ;
-        _init_stack_(ekey, strlen(line) + 1) ;
+        _alloc_stk_(ekey, strlen(line) + 1) ;
         lexer_reset_hard(&c) ;
 
         // get the @modifs environment key

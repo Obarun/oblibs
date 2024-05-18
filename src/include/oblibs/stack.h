@@ -27,8 +27,6 @@
 
 #define _alloc_stk_(stk, len) _cleanup_stk_ stack stk = STACK_ZERO ; char stk##__store__[((len) + 3) < MAXENV ? ((len) + 3) : 0]  ; init_stack(&stk, (len) < MAXENV ? stk##__store__ : 0, (len))
 
-#define _init_stack_(stk,__stk__maxlen__) char stk##__stk__store__[__stk__maxlen__ + 3] ; stack stk = { .s = stk##__stk__store__, .len = 0, .maxlen = __stk__maxlen__ + 2, .count = 0 } ;
-
 #define STACK_ZERO { .s = 0, .len = 0, .maxlen = 0, .count = 0, .allocated = 0 }
 
 #define FOREACH_STK(stk,pos) \
@@ -44,6 +42,7 @@ struct stack_s
     size_t count ;
     uint8_t allocated ;
 } ;
+
 /** See also, lexer.h for stack_string_XXX function */
 extern uint8_t init_stack(stack *stk,char *store, size_t len) ;
 extern void stack_free(stack *s) ;

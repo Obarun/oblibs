@@ -36,7 +36,7 @@ uint8_t environ_parse_file(stack *stk, const char *file)
         return 0 ;
     }
 
-    _init_stack_(f, flen + 1) ;
+    _alloc_stk_(f, flen + 1) ;
     if (!stack_read_file(&f, file))
         return 0 ;
 

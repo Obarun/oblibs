@@ -25,7 +25,7 @@ uint8_t environ_rebuild(stralloc *sa)
         return 1 ;
     size_t pos = 0 ;
     size_t n = sastr_nelement(sa) ;
-    _init_stack_(s, sa->len + n + 1) ;
+    _alloc_stk_(s, sa->len + n + 1) ;
 
     FOREACH_SASTR(sa, pos) {
         if (!stack_add(&s, sa->s + pos, strlen(sa->s + pos)) ||

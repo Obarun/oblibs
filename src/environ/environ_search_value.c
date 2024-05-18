@@ -19,11 +19,10 @@
 #include <oblibs/lexer.h>
 #include <oblibs/environ.h>
 
-#include <stdio.h>
 uint8_t environ_search_value(stack *stk, const char *str, const char *key)
 {
     lexer_config cfg = LEXER_CONFIG_ZERO ;
-    _init_stack_(s, strlen(str) + 1) ;
+    _alloc_stk_(s, strlen(str) + 1) ;
 
     if (!environ_search_key(&s, str, key, &cfg))
         return (errno = EINVAL, 0) ;

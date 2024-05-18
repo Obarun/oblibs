@@ -28,7 +28,7 @@ uint8_t environ_clean_unexport(stralloc *modifs)
         return 1 ;
 
     size_t pos = 0 ;
-    _init_stack_(stk, modifs->len) ;
+    _alloc_stk_(stk, modifs->len + 1) ;
 
     FOREACH_SASTR(modifs, pos) {
 
