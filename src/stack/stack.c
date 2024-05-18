@@ -62,7 +62,7 @@ inline void stack_reset(stack *stk)
 
 uint8_t stack_add(stack *stk, char const *str, size_t len)
 {
-    // only check empty pointer at @str
+    // only check pointer address
     if (!len || !str)
         return (errno = EINVAL, 0) ;
     if (stk->len + len > stk->maxlen)
@@ -87,9 +87,8 @@ uint8_t stack_close(stack *stk)
 {
     if (!stack_add(stk, "", 1))
         return 0 ;
-    if (!stk->len) {
-        stk->len = 0 ;
-    } else { stk->len-- ; }
+    if (stk->len > 0)
+        stk->len-- ;
     stk->count-- ; // stack_add modify the count integer, reverse it.
     return 1 ;
 }
