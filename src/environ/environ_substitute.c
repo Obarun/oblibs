@@ -53,13 +53,13 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
 
     old.len-- ; new.len-- ;
 
-        if (!environ_rebuild(&old))
-            return 0 ;
+    if (!environ_rebuild(&old))
+        return 0 ;
 
     FOREACH_SASTR(modifs, pos) {
 
         lexer_reset_hard(&cfg) ;
-        regex.len = regex.count = 0 ;
+        stack_reset(&regex) ;
         char *line = modifs->s + pos ;
         cfg.str = line ; cfg.slen = strlen(line) ;
         unexport = 0 ;
@@ -142,6 +142,8 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
                 }
             }
 
+            old.len = 0 ;
+
             if (!stralloc_copyb(&old, new.s, new.len) ||
                 !stralloc_0(&old))
                     return (errno = EOVERFLOW, 0) ;
@@ -161,7 +163,8 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
         } else {
 
             int r ;
-            if (!stralloc_cats(&info->values, nval.s)) {
+            unexport = (nval.s[0] == VAR_UNEXPORT) ? 1 : 0 ;
+            if (!stralloc_cats(&info->values, nval.s + unexport)) {
                 info->vars.len = blah.var ;
                 info->values.len = blah.value ;
                 return (errno = EOVERFLOW, 0) ;
