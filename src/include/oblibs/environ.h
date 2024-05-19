@@ -117,7 +117,7 @@ extern uint8_t environ_merge_file(stralloc *modifs, const char *file) ;
  * Set errno.
  * @Return 0 on fail else 1
 */
-extern uint8_t environ_merge_arguments(stralloc *modifs, char const *const *environ) ;
+extern uint8_t environ_import_arguments(stralloc *modifs, char const *const *environ, size_t len) ;
 
 /** Remove '!' character at the begin of the value
  * Set errno.
