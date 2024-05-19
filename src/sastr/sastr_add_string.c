@@ -12,20 +12,21 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/sastr.h>
-
 #include <string.h>
+#include <errno.h>
+
+#include <oblibs/sastr.h>
 
 #include <skalibs/stralloc.h>
 
 int sastr_add_string(stralloc *sa,char const *str)
 {
-    if (!*str) return 0 ;
+    if (!*str) return (errno = EINVAL, 0) ;
     size_t len = strlen(str) ;
     /** close the string to copy*/
     char tmp[len + 1] ;
     memcpy(tmp, str, len) ;
     tmp[len] = 0 ;
-    if (!stralloc_catb(sa, tmp, len + 1)) return 0 ;
+    if (!stralloc_catb(sa, tmp, len + 1)) return (errno = EOVERFLOW, 0) ; ;
     return 1 ;
 }
