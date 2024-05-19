@@ -14,7 +14,7 @@ src/directory/dir_unslash.o src/directory/dir_unslash.lo: src/directory/dir_unsl
 src/environ/environ_clean_unexport.o src/environ/environ_clean_unexport.lo: src/environ/environ_clean_unexport.c src/include/oblibs/environ.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h
 src/environ/environ_get_key.o src/environ/environ_get_key.lo: src/environ/environ_get_key.c src/include/oblibs/lexer.h src/include/oblibs/stack.h
 src/environ/environ_get_value.o src/environ/environ_get_value.lo: src/environ/environ_get_value.c src/include/oblibs/environ.h src/include/oblibs/stack.h src/include/oblibs/string.h
-src/environ/environ_merge_arguments.o src/environ/environ_merge_arguments.lo: src/environ/environ_merge_arguments.c src/include/oblibs/sastr.h
+src/environ/environ_import_arguments.o src/environ/environ_import_arguments.lo: src/environ/environ_import_arguments.c src/include/oblibs/sastr.h
 src/environ/environ_merge_dir.o src/environ/environ_merge_dir.lo: src/environ/environ_merge_dir.c src/include/oblibs/environ.h src/include/oblibs/log.h src/include/oblibs/sastr.h src/include/oblibs/stack.h
 src/environ/environ_merge_environ.o src/environ/environ_merge_environ.lo: src/environ/environ_merge_environ.c src/include/oblibs/environ.h src/include/oblibs/lexer.h src/include/oblibs/sastr.h src/include/oblibs/stack.h
 src/environ/environ_merge_file.o src/environ/environ_merge_file.lo: src/environ/environ_merge_file.c src/include/oblibs/environ.h src/include/oblibs/files.h src/include/oblibs/sastr.h src/include/oblibs/stack.h
