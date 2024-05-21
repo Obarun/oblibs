@@ -2,6 +2,25 @@
 
 ---
 
+## In 0.3.0.0
+
+- New changes and changes of functions:
+
+    - Add lexer_xxx familly. This is complete replacement of the mill_xxx functions. It is faster, easier to debug and brings features not possible with the old mill functions.
+    - Add io_read and io_open to read and open files.
+    - Revamp environ_substitute. This function now integrate the el_transform process to be able to merge environment with another environment substituting variable by value from getenv call.
+    - Revamps of environ_xxx function familly finishing the WIP started at 0.2.1.1 version.
+    - Add macro to freed automatically stralloc avoiding to use stralloc_free() function.
+    - Improving stack_xxx familly functions providing macro to allocate the stack array with HEAP memory when the size of the array exceed MAX_ENV value.
+    - Remove sastr_get_double_quote, scan_uidlist_wdelim, sastr_split_element_in_nline.
+    - Replaces sastr_clean_element  by sastr_clean_string.
+    - Replaces sastr_clean_string_wdelim by lexer_trim_with_delim.
+    - Adapt all sastr_xxx functions with the new lexer_xxx functions familly.
+    - Rename sastr_replace_all by sastr_replace_g.
+    - Rename stack_string_rebuild by stack_string_rebuild_with_delim.
+
+---
+
 ## In 0.2.1.3
 
 - Bugs fix:
