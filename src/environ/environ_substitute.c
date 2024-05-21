@@ -133,8 +133,8 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
 
                     _alloc_stk_(key, regex.len + 4) ;
                     auto_strings(key.s, "${", regex.s, "}") ;
-
-                    if (!sastr_replace(&new, key.s, value.s)) {
+                    unexport = (value.s[0] == VAR_UNEXPORT) ? 1 : 0 ;
+                    if (!sastr_replace(&new, key.s, value.s + unexport)) {
                         info->vars.len = blah.var ;
                         info->values.len = blah.value ;
                         return 0 ;
