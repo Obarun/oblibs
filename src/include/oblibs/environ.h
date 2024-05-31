@@ -42,6 +42,8 @@ struct exlsn_s
     .vars = STRALLOC_ZERO, .values = STRALLOC_ZERO, \
     .data = GENALLOC_ZERO, .modifs = STRALLOC_ZERO }
 
+extern void exlsn_free (exlsn_t *) ;
+
 /** Please POSIX */
 extern char **environ ;
 
@@ -152,5 +154,8 @@ extern uint8_t environ_merge_dir_g(stralloc *modifs, const char *path) ;
  * @Return 0 on fail else 1
  */
 extern uint8_t environ_merge_environ(stralloc *modifs, stralloc *new) ;
+
+
+uint8_t environ_merge_string(stralloc *modifs, const char *str) ;
 
 #endif
