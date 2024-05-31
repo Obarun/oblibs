@@ -28,7 +28,6 @@ uint8_t environ_merge_file(stralloc *modifs, const char *file)
     if (!filesize)
         return (errno = EINVAL, 0) ;
     _alloc_stk_(stk, filesize + 1) ;
-    _alloc_sa_(sa) ;
 
     if (!environ_parse_file(&stk, file))
         return 0 ;

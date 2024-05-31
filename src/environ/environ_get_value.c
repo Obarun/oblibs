@@ -25,7 +25,7 @@ uint8_t environ_get_value(stack *stk, const char *str)
     if (!environ_trim(stk, str))
         return (errno = EINVAL, 0) ;
     ssize_t r = get_len_until(stk->s, '=') ;
-    /** environ_trim parse the @str,
+    /** environ_trim parse the whole @str,
      * only keep the first value */
     size_t len = strlen(stk->s) - (++r) ;
     memmove(stk->s, stk->s + r, len) ;
