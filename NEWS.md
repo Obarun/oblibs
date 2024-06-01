@@ -2,6 +2,12 @@
 
 ---
 
+## In 0.3.0.1
+
+- Provide exlsn_free prototype.
+
+---
+
 ## In 0.3.0.0
 
 - New changes and changes of functions:
