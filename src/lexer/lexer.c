@@ -246,7 +246,7 @@ uint8_t lexer(stack *stk, lexer_config *cfg) {
         cfg->found = 1 ;
 
     if (!cfg->forceclose && cfg->invalue && !cfg->found) {
-        log_warn_return(cfg->exitcode, "unmatched close ", cfg->style ? " string " : " character ", " request from the opened ", cfg->style ? " string " : " character ", ": ", cfg->open) ;
+        log_warn_return(cfg->exitcode, "unmatched close ", cfg->style ? "string" : "character", " request from the opened ", cfg->style ? "string" : "character ", " : ", cfg->open) ;
     }
 
     finish:
