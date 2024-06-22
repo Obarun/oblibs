@@ -56,6 +56,8 @@ uint8_t environ_merge_environ(stralloc *modifs, stralloc *new)
 
         // search for the @modifs key to the new environment
         if (!environ_search_key(&nkey, new->s, ekey.s, &c)) {
+            if (errno == EOVERFLOW)
+                return (errno = EOVERFLOW, 0) ;
             if (!sastr_add_string(&sa, line))
                 return 0 ;
         }

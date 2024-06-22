@@ -27,7 +27,7 @@ uint8_t environ_search_key(stack *stk, const char *str, const char *key, lexer_c
     _alloc_stk_(s, slen + 2) ;
 
     if (!stack_add(&s, "\n", 1) ||
-        !stack_add(&s, str, strlen(str)) ||
+        !stack_add(&s, str, slen) ||
         !stack_close(&s))
             return (errno = EOVERFLOW, 0) ;
 
