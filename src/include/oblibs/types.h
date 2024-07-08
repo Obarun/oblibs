@@ -24,7 +24,7 @@
 #define FLAGS_SET(has, want) ((has) |= (want))
 #define FLAGS_CLEAR(has, want) ((has) &= ~(want))
 // return the interger of the flag if its set, 0 otherwise
-#define FLAGS_ISSET(has, want) (((has) & (want)))
+#define FLAGS_ISSET(has, want) (((has) & (want)) == (want))
 
 /** Scan if @str has the corresponding @mode
  * @Return 1 on success
