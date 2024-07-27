@@ -49,8 +49,11 @@ int sastr_replace (stralloc *sa,char const *regex,char const *by)
 
             _alloc_stk_(line, cfg.slen + bylen + 1) ;
 
-            if (!stack_add(&line, cfg.str, cfg.opos) ||
-                !stack_add(&line, by, bylen) ||
+            if (cfg.opos)
+                if (!stack_add(&line, cfg.str, cfg.opos))
+                    return 0 ;
+
+            if (!stack_add(&line, by, bylen) ||
                 !stack_close(&line))
                     return 0 ;
 
