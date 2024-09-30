@@ -1,0 +1,30 @@
+/*
+ * socket_bind.c
+ *
+ * Copyright (c) 2024 Eric Vidal <eric@obarun.org>
+ *
+ * All rights reserved.
+ *
+ * This file is part of Obarun. It is subject to the license terms in
+ * the LICENSE file found in the top-level directory of this
+ * distribution.
+ * This file may not be copied, modified, propagated, or distributed
+ * except according to the terms contained in the LICENSE file./
+ */
+
+#include <string.h>
+#include <fcntl.h>
+#include <sys/un.h> // socket in Unix
+#include <sys/socket.h>
+
+/** Return 0 on success else -1 */
+int socket_bind(int fd, const char *path)
+{
+    struct sockaddr_un addr ;
+    size_t len = strlen(path) ;
+    memset(&addr, 0, sizeof(addr)) ;
+    addr.sun_family = AF_UNIX ;
+    memcpy(addr.sun_path, path, len + 1) ;
+
+    return bind(fd, (struct sockaddr *) &addr, sizeof(addr)) ;
+}
