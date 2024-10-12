@@ -156,6 +156,6 @@ extern uint8_t environ_merge_dir_g(stralloc *modifs, const char *path) ;
 extern uint8_t environ_merge_environ(stralloc *modifs, stralloc *new) ;
 
 
-uint8_t environ_merge_string(stralloc *modifs, const char *str) ;
+extern uint8_t environ_merge_string(stralloc *modifs, const char *str) ;
 
 #endif
