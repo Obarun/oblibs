@@ -48,7 +48,7 @@ You can invoke make with a few variables for more configuration.
 ## Static binaries
 By default, binaries are linked against static versions of all the libraries they depend on, except for the libc. You can enforce linking against the static libc with *--enable-static-libc*.
 
-(If you are using a GNU/Linux system, be aware that the GNU libc behaves badly with static linking and produces huge executables, which is why it is not the default. Other libcs are better suited to static linking, for instance [musl](http://musl-libc.org/)
+If you are using a GNU/Linux system, be aware that the GNU libc behaves badly with static linking and produces huge executables, which is why it is not the default. Other libcs are better suited to static linking, for instance [musl](http://musl-libc.org/).
 
 ## Cross-compilation
 skarnet.org packages centralize all the difficulty of cross-compilation in one place: skalibs. Once you have
