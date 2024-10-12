@@ -18,6 +18,7 @@ src/environ/environ_import_arguments.o src/environ/environ_import_arguments.lo: 
 src/environ/environ_merge_dir.o src/environ/environ_merge_dir.lo: src/environ/environ_merge_dir.c src/include/oblibs/environ.h src/include/oblibs/log.h src/include/oblibs/sastr.h src/include/oblibs/stack.h
 src/environ/environ_merge_environ.o src/environ/environ_merge_environ.lo: src/environ/environ_merge_environ.c src/include/oblibs/environ.h src/include/oblibs/lexer.h src/include/oblibs/sastr.h src/include/oblibs/stack.h
 src/environ/environ_merge_file.o src/environ/environ_merge_file.lo: src/environ/environ_merge_file.c src/include/oblibs/environ.h src/include/oblibs/files.h src/include/oblibs/sastr.h src/include/oblibs/stack.h
+src/environ/environ_merge_string.o src/environ/environ_merge_string.lo: src/environ/environ_merge_string.c src/include/oblibs/environ.h src/include/oblibs/files.h src/include/oblibs/log.h src/include/oblibs/sastr.h src/include/oblibs/stack.h
 src/environ/environ_parse_file.o src/environ/environ_parse_file.lo: src/environ/environ_parse_file.c src/include/oblibs/environ.h src/include/oblibs/files.h src/include/oblibs/log.h src/include/oblibs/stack.h
 src/environ/environ_rebuild.o src/environ/environ_rebuild.lo: src/environ/environ_rebuild.c src/include/oblibs/sastr.h src/include/oblibs/stack.h
 src/environ/environ_search_key.o src/environ/environ_search_key.lo: src/environ/environ_search_key.c src/include/oblibs/lexer.h src/include/oblibs/stack.h
