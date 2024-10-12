@@ -60,6 +60,9 @@ src/sastr/sastr_sort.o src/sastr/sastr_sort.lo: src/sastr/sastr_sort.c src/inclu
 src/sastr/sastr_sortndrop_element.o src/sastr/sastr_sortndrop_element.lo: src/sastr/sastr_sortndrop_element.c src/include/oblibs/sastr.h
 src/sastr/sastr_split_string_in_nline.o src/sastr/sastr_split_string_in_nline.lo: src/sastr/sastr_split_string_in_nline.c src/include/oblibs/lexer.h src/include/oblibs/stack.h
 src/sastr/sastr_to_char.o src/sastr/sastr_to_char.lo: src/sastr/sastr_to_char.c src/include/oblibs/sastr.h
+src/socket/fd_set_flags.o src/socket/fd_set_flags.lo: src/socket/fd_set_flags.c
+src/socket/socket_accept.o src/socket/socket_accept.lo: src/socket/socket_accept.c src/include/oblibs/log.h src/include/oblibs/socket.h
+src/socket/socket_bind.o src/socket/socket_bind.lo: src/socket/socket_bind.c
 src/stack/stack.o src/stack/stack.lo: src/stack/stack.c src/include/oblibs/io.h src/include/oblibs/lexer.h src/include/oblibs/stack.h src/include/oblibs/string.h
 src/str/auto.o src/str/auto.lo: src/str/auto.c
 src/str/get_flags.o src/str/get_flags.lo: src/str/get_flags.c src/include/oblibs/types.h
