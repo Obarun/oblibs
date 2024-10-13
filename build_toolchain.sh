@@ -6,8 +6,8 @@ if [ "$1" == "commit" ]; then
     tag=0
 fi
 
-skalibs_tag="v2.14.1.1"
-execline_tag="v2.9.4.0"
+skalibs_tag="v2.14.3.0"
+execline_tag="v2.9.6.1"
 
 check_tag(){
 
@@ -23,9 +23,7 @@ build_skalibs() {
     cd skalibs
     check_tag "${skalibs_tag}"
     ./configure \
-        --prefix=/usr \
-        --enable-shared \
-        --enable-static
+        --prefix=/usr
 
     make install || return 1
     cd ..
@@ -40,7 +38,8 @@ build_execline() {
     ./configure \
         --prefix=/usr \
         --enable-shared \
-        --enable-static
+        --disable-allstatic \
+        --libdir=/usr/lib/execline
 
     make install || return 1
     cd ..

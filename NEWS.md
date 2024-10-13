@@ -1,5 +1,20 @@
 # Changelog for oblibs
 
+
+---
+
+## In 0.3.1.0
+
+- Bugs fix:
+
+    - environ_merge_environ(): Prevent overflow and set errno.
+    - sastr_replace(): Allow to get a regex even at begins of the line.
+    - environ_merge_string(): provide the source code.
+    - configure.sh: set --disable-static enabled.
+
+- New functions:
+    - Add socket familly function and macro.
+
 ---
 
 ## In 0.3.0.1
