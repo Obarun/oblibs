@@ -1,7 +1,7 @@
 /*
  * io.h
  *
- * Copyright (c) 2024 Eric Vidal <eric@obarun.org>
+ * Copyright (c) 2024-2025 Eric Vidal <eric@obarun.org>
  *
  * All rights reserved.
  *
@@ -22,6 +22,7 @@
 #define O_CLOEXEC 0x40000000
 #endif
 
+extern int io_set_flags(int fd, int flags) ;
 extern ssize_t io_open(const char *path, unsigned int flags) ;
 extern ssize_t io_read(char *store, int fd, size_t len) ;
 

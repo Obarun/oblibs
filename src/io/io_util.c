@@ -1,7 +1,7 @@
 /*
- * fd_set_flags.c
+ * io_utils.h
  *
- * Copyright (c) 2024 Eric Vidal <eric@obarun.org>
+ * Copyright (c) 2024-2025 Eric Vidal <eric@obarun.org>
  *
  * All rights reserved.
  *
@@ -14,12 +14,11 @@
 
 #include <fcntl.h>
 
-int fd_set_flags(int fd, int flags)
+int io_set_flags(int fd, int flags)
 {
     int f ;
     f = fcntl(fd, F_GETFL) ;
-    f |= flags ;
-    if (flags < 0 || (fcntl(fd, F_SETFL, f) < 0))
+    if (f < 0 || fcntl(fd, F_SETFL, f | flags) < 0)
         return 0 ;
 
     return 1 ;
