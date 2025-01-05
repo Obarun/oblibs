@@ -1,5 +1,15 @@
 # Changelog for oblibs
 
+---
+
+## In 0.3.1.1
+
+- Bugs fix:
+    - environ_substitute: allow recursive replacement of a variable.
+    - environ_rebuild: Do not add a new line to rebuild the environment string.
+
+- Interface changes:
+    - fd_set_flags: Replaced by io_set_flags
 
 ---
 

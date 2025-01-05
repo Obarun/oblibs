@@ -4,6 +4,7 @@
 
 src/include/oblibs/environ.h: src/include/oblibs/lexer.h src/include/oblibs/stack.h
 src/include/oblibs/lexer.h: src/include/oblibs/stack.h
+src/include/oblibs/socket.h: src/include/oblibs/io.h
 src/directory/dir_beabsolute.o src/directory/dir_beabsolute.lo: src/directory/dir_beabsolute.c src/include/oblibs/directory.h src/include/oblibs/string.h
 src/directory/dir_create.o src/directory/dir_create.lo: src/directory/dir_create.c src/include/oblibs/directory.h
 src/directory/dir_create_parent.o src/directory/dir_create_parent.lo: src/directory/dir_create_parent.c src/include/oblibs/directory.h
@@ -35,6 +36,7 @@ src/files/file_write_unsafe_g.o src/files/file_write_unsafe_g.lo: src/files/file
 src/graph/graph.o src/graph/graph.lo: src/graph/graph.c src/include/oblibs/graph.h src/include/oblibs/log.h src/include/oblibs/sastr.h
 src/io/io_open.o src/io/io_open.lo: src/io/io_open.c src/include/oblibs/io.h
 src/io/io_read.o src/io/io_read.lo: src/io/io_read.c src/include/oblibs/io.h
+src/io/io_util.o src/io/io_util.lo: src/io/io_util.c
 src/io/log.o src/io/log.lo: src/io/log.c src/include/oblibs/log.h
 src/lexer/lexer.o src/lexer/lexer.lo: src/lexer/lexer.c src/include/oblibs/lexer.h src/include/oblibs/log.h src/include/oblibs/stack.h
 src/lexer/lexer_config.o src/lexer/lexer_config.lo: src/lexer/lexer_config.c src/include/oblibs/lexer.h
@@ -61,7 +63,6 @@ src/sastr/sastr_sort.o src/sastr/sastr_sort.lo: src/sastr/sastr_sort.c src/inclu
 src/sastr/sastr_sortndrop_element.o src/sastr/sastr_sortndrop_element.lo: src/sastr/sastr_sortndrop_element.c src/include/oblibs/sastr.h
 src/sastr/sastr_split_string_in_nline.o src/sastr/sastr_split_string_in_nline.lo: src/sastr/sastr_split_string_in_nline.c src/include/oblibs/lexer.h src/include/oblibs/stack.h
 src/sastr/sastr_to_char.o src/sastr/sastr_to_char.lo: src/sastr/sastr_to_char.c src/include/oblibs/sastr.h
-src/socket/fd_set_flags.o src/socket/fd_set_flags.lo: src/socket/fd_set_flags.c
 src/socket/socket_accept.o src/socket/socket_accept.lo: src/socket/socket_accept.c src/include/oblibs/log.h src/include/oblibs/socket.h
 src/socket/socket_bind.o src/socket/socket_bind.lo: src/socket/socket_bind.c
 src/stack/stack.o src/stack/stack.lo: src/stack/stack.c src/include/oblibs/io.h src/include/oblibs/lexer.h src/include/oblibs/stack.h src/include/oblibs/string.h
