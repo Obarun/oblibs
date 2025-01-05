@@ -32,7 +32,7 @@ uint8_t environ_rebuild(stralloc *sa)
             !stack_add(&s, "\n", 1))
                 return 0 ;
     }
-    s.s[s.len] = 0 ;
+    s.s[s.len - 1] = 0 ;
 
     sa->len = 0 ;
     if (!stralloc_copyb(sa, s.s, s.len) ||
