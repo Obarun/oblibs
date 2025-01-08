@@ -114,6 +114,14 @@ extern uint8_t environ_rebuild(stralloc *sa) ;
  */
 extern uint8_t environ_merge_file(stralloc *modifs, const char *file) ;
 
+/** Append @modifs with key=value pair from @str.
+ * For a same key=value pair in @modifs and @str,
+ * the one from the @str is kept.
+ * Set errno
+ * @Return 0 on fail else 1
+ */
+extern uint8_t environ_merge_string(stralloc *modifs, const char *str) ;
+
 /** Append @modifs with key=value pair from
  * a **@environ format.
  * Set errno.
@@ -155,7 +163,11 @@ extern uint8_t environ_merge_dir_g(stralloc *modifs, const char *path) ;
  */
 extern uint8_t environ_merge_environ(stralloc *modifs, stralloc *new) ;
 
-
-extern uint8_t environ_merge_string(stralloc *modifs, const char *str) ;
+/** Create an new @nenvp environ array merging
+ * first @modifs to @env.For a same key=value pair, @modifs
+ * take precedence.
+ * @Return 0 on fail else 1
+ */
+extern uint8_t environ_create_environ(char const **nenvp, char const *const *env, stralloc *modifs) ;
 
 #endif
