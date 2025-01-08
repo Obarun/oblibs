@@ -55,8 +55,39 @@ static int dollar_find(stack *regex, const char *line)
      return 0 ;
 }
 
+static int dollar_recursive(stack *value, const char *key, const char *old, size_t olen, exlsn_t *info, elsubst_t *blah)
+{
+    size_t klen = strlen(key) ;
+    _alloc_sa_(sa) ;
+    _alloc_stk_(nvalue, olen + 1) ;
+    _alloc_stk_(nkey, klen + 4) ;
+
+    if (!environ_search_value(&nvalue, old, key))
+        /** don't die here. If it doesn't exist, leave it as it*/
+        return 2 ;
+
+    if (!stralloc_copyb(&sa, value->s, strlen(value->s)) ||
+        !stralloc_0(&sa))
+        return (errno = EOVERFLOW, 0) ;
+    sa.len-- ;
+
+    auto_strings(nkey.s, "${", key, "}") ;
+    uint8_t unexport = (nvalue.s[0] == VAR_UNEXPORT) ? 1 : 0 ;
+
+    if (!sastr_replace(&sa, nkey.s, nvalue.s + unexport)) {
+        info->vars.len = blah->var ;
+        info->values.len = blah->value ;
+        return 0 ;
+    }
+
+    auto_strings(value->s, sa.s) ;
+
+    return 1 ;
+}
 static int dollar_replace(stralloc *old, const char *line, const char *mkey, exlsn_t *info, elsubst_t *blah)
 {
+
+    int r ;
     _alloc_sa_(new) ;
     _alloc_stk_(regex, old->len + 1) ;
     _alloc_stk_(value, old->len + 1) ;
@@ -88,7 +119,6 @@ static int dollar_replace(stralloc *old, const char *line, const char *mkey, exl
 
             /** Search first in the current environment */
             char *gval = getenv(regex.s) ;
-
             if (!gval) {
 
                 if (!strcmp(mkey, regex.s)) {
@@ -101,7 +131,6 @@ static int dollar_replace(stralloc *old, const char *line, const char *mkey, exl
                 if (!environ_search_value(&value, old->s, regex.s))
                     continue ;
 
-
             } else {
                 auto_strings(value.s, gval) ;
             }
@@ -113,31 +142,14 @@ static int dollar_replace(stralloc *old, const char *line, const char *mkey, exl
 
                 _alloc_stk_(nregex, value.len + 1) ;
 
-                if (dollar_find(&nregex, value.s)) {
+                while (dollar_find(&nregex, value.s)) {
 
-                    _alloc_stk_(nvalue, old->len + 1) ;
-                    _alloc_stk_(nkey, nregex.len + 4) ;
+                    r = dollar_recursive(&value, nregex.s, old->s, old->len, info, blah) ;
+                    if (!r)
+                      return 0 ;
 
-                    if (!environ_search_value(&nvalue, old->s, nregex.s))
-                        /** don't die here. If it doesn't exist, leave it as it*/
-                        goto next ;
-
-                    _alloc_sa_(sa) ;
-                    if (!stralloc_copyb(&sa, value.s, value.len) ||
-                        !stralloc_0(&sa))
-                        return (errno = EOVERFLOW, 0) ;
-                    sa.len-- ;
-
-                    auto_strings(nkey.s, "${", nregex.s, "}") ;
-                    uint8_t unexport = (nvalue.s[0] == VAR_UNEXPORT) ? 1 : 0 ;
-
-                    if (!sastr_replace(&sa, nkey.s, nvalue.s + unexport)) {
-                        info->vars.len = blah->var ;
-                        info->values.len = blah->value ;
-                        return 0 ;
-                    }
-
-                    auto_strings(value.s, sa.s) ;
+                    if (r == 2)
+                      goto next ;
                 }
             }
 
@@ -247,9 +259,10 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
 
         nval.s[strlen(nval.s)] = 0 ;
 
-
         if (!nval.s[0]) {
+
             blah.n = 0 ;
+
         } else {
 
             int r ;
@@ -275,8 +288,10 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
             info->values.len = blah.value ;
             return 0 ;
         }
-
     }
+
+    if (!sastr_split_string_in_nline(&new))
+        return 0 ;
 
     if (!stralloc_copyb(modifs, new.s, new.len) ||
         !stralloc_0(modifs))

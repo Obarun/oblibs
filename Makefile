@@ -99,4 +99,26 @@ liboblibs.a.xyzzy: $(ALL_SOBJS)
 liboblibs.so.xyzzy: $(ALL_DOBJS)
 	exec $(REALCC) -o $@ $(CFLAGS_ALL) $(CFLAGS_SHARED) $(LDFLAGS_ALL) $(LDFLAGS_SHARED) -Wl,-soname,liboblibs.so.$(version_M) $^ $(EXTRA_LIBS) $(LDLIBS)
 
-.PHONY: it all clean distclean txz strip install install-dynlib install-lib install-include
+check:
+	@echo "Running tests..."
+	@for dir in src/; do \
+		echo "Scanning $$dir for tests..."; \
+		find $$dir -type d -name test | while read testdir; do \
+			if [ -f $$testdir/Makefile ]; then \
+				echo "Building tests in $$testdir..."; \
+				$(MAKE) -C $$testdir LIB_PATH=$(PWD) all || exit 1; \
+				for binary in $$testdir/*; do \
+					if [ -x $$binary ]; then \
+						echo "Executing $$binary"; \
+						LD_LIBRARY_PATH=$(PWD):$$LD_LIBRARY_PATH $(MAKE) -C $$testdir run || exit 1; \
+					fi; \
+				done; \
+				echo "Cleaning up in $$testdir..."; \
+				$(MAKE) -C $$testdir clean; \
+			else \
+				echo "Skipping $$testdir: Makefile not found."; \
+			fi; \
+		done; \
+	done
+
+.PHONY: it all clean check distclean txz strip install install-dynlib install-lib install-include

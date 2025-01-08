@@ -1,21 +1,31 @@
-PROGRAM = environ_substitute
-
 CC = gcc
-
-
-CFLAGS=-g -Wall -Wextra -std=c99 -D_XOPEN_SOURCE=700
+CFLAGS=-g -Wall -Wextra -std=c99 -D_XOPEN_SOURCE=700 -I../../include/66
 
 LIBS_PATH = -L/usr/lib/skalibs \
-			-L/usr/lib/execline \
-            -L/usr/lib/oblibs \
+			-L/usr/lib/execline
 
-LIBS = 	-loblibs \
-		-lexecline \
-		-lskarnet
+LIBS = 	-lexecline \
+		-lskarnet \
+		../../../liboblibs.so.xyzzy
 
-build:
+LDFLAGS = $(LIBS_PATH) $(LIBS)
+# List all source files for tests
+# parse_bracket.c another_test.c some_other_test.c
+TEST_SOURCES = environ_substitute.c
+TEST_BINARIES = $(TEST_SOURCES:.c=)
 
-	$(CC) $(CFLAGS) -c $(PROGRAM).c
-	$(CC) $(CFLAGS) $(PROGRAM).o  $(LIBS) $(LIBS_PATH) -o $(PROGRAM)
+all: $(TEST_BINARIES)
 
-.PHONY: build
+%: %.c
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+
+run: $(TEST_BINARIES)
+	@for binary in $(TEST_BINARIES); do \
+		echo "Executing $$binary"; \
+		LD_PRELOAD=$(abspath ../../../liboblibs.so.xyzzy) LD_LIBRARY_PATH=../../../:$$LD_LIBRARY_PATH ./$$binary || exit 1; \
+	done
+
+clean:
+	@exec rm -f $(TEST_BINARIES) $(wildcard *.o *.lo)
+
+.PHONY: run clean

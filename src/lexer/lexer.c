@@ -58,8 +58,8 @@ static inline uint8_t lexer_loop(lexer_config *cfg, char const *regex, size_t le
     return 0 ;
 }
 
-static inline uint8_t lexer_do(stack *stk, uint8_t state, lexer_config *cfg) {
-
+static inline uint8_t lexer_do(stack *stk, uint8_t state, lexer_config *cfg)
+{
     char c = cfg->str[cfg->pos] ;
 
     switch (state) {
@@ -168,8 +168,8 @@ static inline uint8_t lexer_cclass (char c, lexer_config *cfg)
     return LEXER_ACTION_OTHER ;
 }
 
-uint8_t lexer(stack *stk, lexer_config *cfg) {
-
+uint8_t lexer(stack *stk, lexer_config *cfg)
+{
     static uint16_t const state_table[5][5] = {
         [LEXER_STATE_CHAR] = {
             [LEXER_ACTION_OPEN] = LEXER_STATE_BEGIN_VALUE,
