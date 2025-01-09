@@ -21,9 +21,14 @@
 
 #include <oblibs/log.h>
 #include <oblibs/sastr.h>
+#include <oblibs/types.h>
 
 #include <skalibs/stralloc.h>
 #include <skalibs/genalloc.h>
+
+#ifndef STATE_FLAGS_MISSING
+#define STATE_FLAGS_MISSING (1 << 16)
+#endif
 
 /**
  *
@@ -756,7 +761,7 @@ int graph_edge_remove_g(graph_t *g, char const *vertex, char const *edge)
  *
  * */
 
-int graph_matrix_build(graph_t *g)
+int graph_matrix_build(graph_t *g, uint32_t flag)
 {
     if (!graph_init(g))
         log_warnu_return(LOG_EXIT_ONE,"init graph") ;
@@ -786,9 +791,14 @@ int graph_matrix_build(graph_t *g)
                 char *dname = g->data.s + id ;
                 ssize_t d = graph_hash_vertex_get_id(g, dname) ;
 
-                if (d == -1)
-                    log_warnu_return (LOG_EXIT_ZERO,"find: ", dname) ;
-
+                if (d == -1) {
+                    if (FLAGS_ISSET(flag, STATE_FLAGS_MISSING)) {
+                        log_warnu("find: ", dname) ;
+                        continue ;
+                    } else {
+                        log_warnu_return (LOG_EXIT_ZERO,"find: ", dname) ;
+                    }
+                }
                 g->matrix[i * g->mlen + (unsigned int)d] = 1 ;
             }
         }
@@ -1128,7 +1138,7 @@ int graph_matrix_get_edge_g_sorted_sa(stralloc *sa, graph_t *g, char const *name
 
     count = -1 ;
 
-    if (!graph_matrix_build(&gc)) {
+    if (!graph_matrix_build(&gc, 0)) {
 
         log_warnu("build the matrix") ;
         goto freed ;
@@ -1170,7 +1180,7 @@ int graph_matrix_get_edge_g_sorted_list(unsigned int *list, graph_t *g, char con
 
     count = -1 ;
 
-    if (!graph_matrix_build(&gc)) {
+    if (!graph_matrix_build(&gc, 0)) {
 
         log_warnu("build the matrix") ;
         goto freed ;

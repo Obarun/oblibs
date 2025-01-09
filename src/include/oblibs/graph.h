@@ -148,7 +148,7 @@ extern int graph_edge_remove_g(graph_t *g, char const *vertex, char const *edge)
  *
  * */
 
-extern int graph_matrix_build(graph_t *g) ;
+extern int graph_matrix_build(graph_t *g, uint32_t flag) ;
 extern int graph_matrix_analyze_cycle(graph_t *g) ;
 extern int graph_matrix_sort(graph_t *g) ;
 /* Reverse the graph.matrix array */
