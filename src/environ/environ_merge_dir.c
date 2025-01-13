@@ -14,7 +14,7 @@
 
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/errno.h>
+#include <errno.h>
 
 #include <oblibs/sastr.h>
 #include <oblibs/log.h>
