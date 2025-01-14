@@ -13,10 +13,13 @@ src/directory/dir_is_child.o src/directory/dir_is_child.lo: src/directory/dir_is
 src/directory/dir_rm_rf.o src/directory/dir_rm_rf.lo: src/directory/dir_rm_rf.c src/include/oblibs/directory.h
 src/directory/dir_unslash.o src/directory/dir_unslash.lo: src/directory/dir_unslash.c src/include/oblibs/directory.h
 src/environ/environ_clean_unexport.o src/environ/environ_clean_unexport.lo: src/environ/environ_clean_unexport.c src/include/oblibs/environ.h src/include/oblibs/sastr.h src/include/oblibs/stack.h src/include/oblibs/string.h
-src/environ/environ_create_environ.o src/environ/environ_create_environ.lo: src/environ/environ_create_environ.c src/include/oblibs/sastr.h
+src/environ/environ_create_environ.o src/environ/environ_create_environ.lo: src/environ/environ_create_environ.c src/include/oblibs/environ.h src/include/oblibs/sastr.h
 src/environ/environ_get_key.o src/environ/environ_get_key.lo: src/environ/environ_get_key.c src/include/oblibs/lexer.h src/include/oblibs/stack.h
 src/environ/environ_get_value.o src/environ/environ_get_value.lo: src/environ/environ_get_value.c src/include/oblibs/environ.h src/include/oblibs/stack.h src/include/oblibs/string.h
 src/environ/environ_import_arguments.o src/environ/environ_import_arguments.lo: src/environ/environ_import_arguments.c src/include/oblibs/sastr.h
+src/environ/environ_length.o src/environ/environ_length.lo: src/environ/environ_length.c src/include/oblibs/environ.h
+src/environ/environ_make.o src/environ/environ_make.lo: src/environ/environ_make.c src/include/oblibs/environ.h
+src/environ/environ_merge.o src/environ/environ_merge.lo: src/environ/environ_merge.c
 src/environ/environ_merge_dir.o src/environ/environ_merge_dir.lo: src/environ/environ_merge_dir.c src/include/oblibs/environ.h src/include/oblibs/log.h src/include/oblibs/sastr.h src/include/oblibs/stack.h
 src/environ/environ_merge_environ.o src/environ/environ_merge_environ.lo: src/environ/environ_merge_environ.c src/include/oblibs/environ.h src/include/oblibs/lexer.h src/include/oblibs/sastr.h src/include/oblibs/stack.h
 src/environ/environ_merge_file.o src/environ/environ_merge_file.lo: src/environ/environ_merge_file.c src/include/oblibs/environ.h src/include/oblibs/files.h src/include/oblibs/sastr.h src/include/oblibs/stack.h
@@ -35,10 +38,16 @@ src/files/file_readputsa_g.o src/files/file_readputsa_g.lo: src/files/file_readp
 src/files/file_write_unsafe.o src/files/file_write_unsafe.lo: src/files/file_write_unsafe.c src/include/oblibs/string.h
 src/files/file_write_unsafe_g.o src/files/file_write_unsafe_g.lo: src/files/file_write_unsafe_g.c src/include/oblibs/string.h
 src/graph/graph.o src/graph/graph.lo: src/graph/graph.c src/include/oblibs/graph.h src/include/oblibs/log.h src/include/oblibs/sastr.h src/include/oblibs/types.h
+src/io/io_coe.o src/io/io_coe.lo: src/io/io_coe.c src/include/oblibs/io.h
 src/io/io_open.o src/io/io_open.lo: src/io/io_open.c src/include/oblibs/io.h
 src/io/io_read.o src/io/io_read.lo: src/io/io_read.c src/include/oblibs/io.h
-src/io/io_util.o src/io/io_util.lo: src/io/io_util.c
-src/io/log.o src/io/log.lo: src/io/log.c src/include/oblibs/log.h
+src/io/io_set_block.o src/io/io_set_block.lo: src/io/io_set_block.c src/include/oblibs/io.h
+src/io/io_set_flags.o src/io/io_set_flags.lo: src/io/io_set_flags.c src/include/oblibs/io.h
+src/io/io_set_nonblock.o src/io/io_set_nonblock.lo: src/io/io_set_nonblock.c src/include/oblibs/io.h
+src/io/io_uncoe.o src/io/io_uncoe.lo: src/io/io_uncoe.c src/include/oblibs/io.h
+src/io/io_unset_flags.o src/io/io_unset_flags.lo: src/io/io_unset_flags.c src/include/oblibs/io.h
+src/io/io_write.o src/io/io_write.lo: src/io/io_write.c src/include/oblibs/io.h
+src/io/log.o src/io/log.lo: src/io/log.c src/include/oblibs/environ.h src/include/oblibs/log.h
 src/lexer/lexer.o src/lexer/lexer.lo: src/lexer/lexer.c src/include/oblibs/lexer.h src/include/oblibs/log.h src/include/oblibs/stack.h
 src/lexer/lexer_config.o src/lexer/lexer_config.lo: src/lexer/lexer_config.c src/include/oblibs/lexer.h
 src/sastr/sastr_add_string.o src/sastr/sastr_add_string.lo: src/sastr/sastr_add_string.c src/include/oblibs/sastr.h
