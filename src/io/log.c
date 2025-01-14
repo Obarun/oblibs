@@ -20,9 +20,9 @@
 #include <fcntl.h>
 
 #include <oblibs/log.h>
+#include <oblibs/environ.h>
 
 #include <skalibs/buffer.h>
-#include <skalibs/env.h>
 #include <skalibs/types.h>
 #include <skalibs/tai.h>
 #include <skalibs/djbtime.h>
@@ -299,7 +299,7 @@ void log_out_builder(log_dbg_info_t *db_info,int level, char const *msg[],char c
         if (COLOR_ENABLED) log_color = &log_color_enable ;
         log_color_init() ;
 
-        size_t len = 3 + env_len(str) + env_len(msg) + (size_t)LOG_SYS ;
+        size_t len = 3 + environ_length(str) + environ_length(msg) + (size_t)LOG_SYS ;
 
         if (VERBOSITY >= LOG_LEVEL_DEBUG)
             len += 7 ;

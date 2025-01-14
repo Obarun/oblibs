@@ -170,4 +170,14 @@ extern uint8_t environ_merge_environ(stralloc *modifs, stralloc *new) ;
  */
 extern uint8_t environ_create_environ(char const **nenvp, char const *const *env, stralloc *modifs) ;
 
+/** Get the length of @e
+ * @Return the length of @e
+*/
+extern size_t environ_length (char const *const *e) ;
+
+/** Make @v with the string @s
+ * @Return 1 on success else 0 and set errno
+*/
+extern int environ_make (char const **v, size_t argc, char const *s, size_t len) ;
+
 #endif
