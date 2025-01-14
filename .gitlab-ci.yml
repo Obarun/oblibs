@@ -4,8 +4,13 @@ before_script:
   - pacman -Syu --noconfirm
   - pacman -S autoconf automake binutils bison file flex gcc gettext groff libtool m4 make patch pkgconf texinfo which git grep --noconfirm
 
-test:
-  stage: test
+stages:
+  - build
+  - release
+  - request
+
+request:
+  stage: request
   script:
   - ./build_toolchain.sh "commit"
   - ./configure --prefix=/usr
@@ -29,7 +34,7 @@ build:
       - master
 
 release:
-  stage: tag
+  stage: release
   script:
   - ./build_toolchain.sh
   - ./configure --bindir=/usr/bin --shebangdir=/usr/bin --with-lib=/usr/lib/skalibs --with-lib=/usr/lib/execline --with-lib=/usr/lib/s6 --with-lib=/usr/lib/oblibs
