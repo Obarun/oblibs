@@ -1,5 +1,5 @@
 /*
- * io_unset_flags.h
+ * io_unset_flags.c
  *
  * Copyright (c) 2024-2025 Eric Vidal <eric@obarun.org>
  *

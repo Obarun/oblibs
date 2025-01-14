@@ -1,5 +1,5 @@
 /*
- * io_coe.h
+ * io_coe.c
  *
  * Copyright (c) 2024-2025 Eric Vidal <eric@obarun.org>
  *
@@ -15,7 +15,7 @@
 #include <fcntl.h>
 #include <oblibs/io.h>
 
-io_coe(int fd)
+int io_coe(int fd)
 {
     return io_set_flags(fd, FD_CLOEXEC) ;
 }

@@ -17,5 +17,5 @@
 
 ssize_t io_write(const char *s)
 {
-    io_open(s, O_WRONLY | O_NONBLOCK) ;
+    return io_open(s, O_WRONLY | O_NONBLOCK) ;
 }

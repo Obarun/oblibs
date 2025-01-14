@@ -1,5 +1,5 @@
 /*
- * io_set_flags.h
+ * io_set_flags.c
  *
  * Copyright (c) 2024-2025 Eric Vidal <eric@obarun.org>
  *

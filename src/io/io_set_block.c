@@ -1,6 +1,5 @@
-
 /*
- * io_set_block.h
+ * io_set_block.c
  *
  * Copyright (c) 2024-2025 Eric Vidal <eric@obarun.org>
  *
@@ -18,5 +17,5 @@
 
 int io_set_block(int fd)
 {
-    io_unset_flags(fd, O_NONBLOCK) ;
+    return io_unset_flags(fd, O_NONBLOCK) ;
 }

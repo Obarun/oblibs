@@ -1,5 +1,5 @@
 /*
- * io_uncoe.h
+ * io_uncoe.c
  *
  * Copyright (c) 2024-2025 Eric Vidal <eric@obarun.org>
  *
@@ -15,7 +15,7 @@
 #include <fcntl.h>
 #include <oblibs/io.h>
 
-io_uncoe(int fd)
+int io_uncoe(int fd)
 {
     return io_unset_flags(fd, FD_CLOEXEC) ;
 }
