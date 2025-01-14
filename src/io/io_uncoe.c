@@ -1,5 +1,5 @@
 /*
- * io_utils.h
+ * io_uncoe.h
  *
  * Copyright (c) 2024-2025 Eric Vidal <eric@obarun.org>
  *
@@ -13,13 +13,9 @@
  */
 
 #include <fcntl.h>
+#include <oblibs/io.h>
 
-int io_set_flags(int fd, int flags)
+io_uncoe(int fd)
 {
-    int f ;
-    f = fcntl(fd, F_GETFL) ;
-    if (f < 0 || fcntl(fd, F_SETFL, f | flags) < 0)
-        return 0 ;
-
-    return 1 ;
+    return io_unset_flags(fd, FD_CLOEXEC) ;
 }
