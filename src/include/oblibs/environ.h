@@ -180,4 +180,10 @@ extern size_t environ_length (char const *const *e) ;
 */
 extern int environ_make (char const **v, size_t argc, char const *s, size_t len) ;
 
+/* Takes the environment with envlen variables contained in envp,
+ * applies the modifications encoded in the modif modifs of length modiflen, and stores the result in v with a terminating NULL
+ * @Return the number of elements now in v, or 0 if the resulting v would be larger than vmax
+ */
+extern size_t environ_merge (char const **v, size_t vmax, char const *const *envp, size_t envlen, char const *modifs, size_t modiflen) ;
+
 #endif
