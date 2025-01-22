@@ -7,7 +7,6 @@
 - Bugs Fix:
 
     - environ_substitute: ensure that all dollars from a same line are handled.
-    -
 
 - New functions:
     - environ_create_environ: create an environment array merging first a modified environment to the current one.
