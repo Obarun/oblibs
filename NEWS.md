@@ -2,6 +2,23 @@
 
 ---
 
+## In 0.3.2.0
+
+- Bugs Fix:
+
+    - environ_substitute: ensure that all dollars from a same line are handled.
+    -
+
+- New functions:
+    - environ_create_environ: create an environment array merging first a modified environment to the current one.
+    - environ_length, environ_make, environ_merge: a static copy of env_len and env_make, env_merge respectively from skalibs.
+    - io_xxx family: for handling flags for an fd.
+
+- API changes:
+    - graph_matrix_build: handle missing flag to avoid crashing on none existing vertex. This is a temporary workaround for 66. The actual graph functions will be drop in a near future.
+
+---
+
 ## In 0.3.1.1
 
 - Bugs fix:

@@ -5,8 +5,8 @@ Build Instructions
 
 - A POSIX-compliant C development environment
 - GNU make version 3.81 or later
-- skalibs version 2.14.3.0: http://skarnet.org/software/skalibs/
-- execline version 2.9.6.1: http://skarnet.org/software/execline/
+- skalibs version 2.14.3.0 or later: http://skarnet.org/software/skalibs/
+- execline version 2.9.6.1 or later: http://skarnet.org/software/execline/
 - If cross-compiling: the sysdeps for your target architecture (see the "Cross-compilation" section below)
 
 This software will install on any operating system that implements POSIX.1-2008, available at [opengroup](http://pubs.opengroup.org/onlinepubs/9699919799/)
