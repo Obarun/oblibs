@@ -10,7 +10,55 @@
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
  * except according to the terms contained in the LICENSE file./
+ *
+ * Implementation and API for managing a dynamic priority queue using a binary min-heap.
+ *
+ * General Design:
+ *  - Heap-based Priority Queue:
+ *    The queue is implemented as a binary min-heap, ensuring that the smallest element is always accessible at the root.
+ *    This structure supports efficient insertion, removal, and retrieval operations, making it ideal for scenarios requiring
+ *    prioritized task management or data processing.
+ *
+ *  - Memory Management:
+ *    The queue dynamically adjusts its allocated memory based on its size. When full, the queue automatically resizes
+ *    to accommodate more elements. Conversely, it shrinks when the size decreases significantly to optimize memory usage.
+ *    Functions like 'queue_free' ensure proper cleanup of allocated memory.
+ *
+ *  - Error Handling:
+ *    Functions return meaningful error codes ('EINVAL', 'ENOMEM', etc.) using 'errno' for diagnostics.
+ *    This allows developers to handle allocation failures, invalid inputs, and other exceptional cases robustly.
+ *
+ *  - Customization:
+ *    The queue supports custom comparison functions ('cmp' and 'rmcmp') to maintain heap properties and enable tailored
+ *    element removal strategies.
+ *
+ * Usage Scenarios:
+ *  This queue is suitable for applications requiring dynamic and efficient priority-based task or data management:
+ *  - Scheduling tasks or events based on priority.
+ *  - Managing a dynamic list of elements with frequent insertions and deletions.
+ *  - Implementing algorithms like Dijkstra's shortest path or A*.
+ *
+ * Core Structure:
+ *  The 'queue_t' structure represents the dynamic priority queue:
+ *
+ *  typedef struct queue_s {
+ *      void **data;         // Array of pointers to elements in the queue.
+ *      compare_func_t cmp;  // Comparison function for maintaining the heap property.
+ *      compare_func_t rmcmp;// Comparison function for element removal.
+ *      size_t size;         // Current number of elements in the queue.
+ *      uint32_t capacity;   // Maximum capacity of the queue before resizing.
+ *  } queue_t;
+ *
+ * Macros:
+ *  - FOREACH_QUEUE(q, c): Iterates through the elements of the queue.
+ *    Usage: `FOREACH_QUEUE(queue, element)` allows traversal of all elements in the queue.
+ *  - CLEAN_FREE(q): Safely frees memory and sets the pointer to NULL.
+ *    Ensures that double-free errors are avoided.
+ *  - QUEUE_PARENT(i): Computes the parent index of a given node.
+ *  - QUEUE_LEFT(i): Computes the left child index of a given node.
+ *  - QUEUE_RIGHT(i): Computes the right child index of a given node.
  */
+
 
 #ifndef SS_QUEUE_H
 #define SS_QUEUE_H
