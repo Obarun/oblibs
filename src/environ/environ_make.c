@@ -29,7 +29,7 @@ int environ_make(char const **v, size_t argc, char const *s, size_t len)
         *v++ = s ; s += n ; len -= n ;
     }
 
-    v[argc] = 0 ;
+    *v = 0 ;
 
     return 1 ;
 }
