@@ -2,6 +2,13 @@
 
 ---
 
+## In 0.3.2.1
+
+- Hot Fix:
+    - environ_make: close the array at the end of array.
+
+---
+
 ## In 0.3.2.0
 
 - Bugs Fix:
