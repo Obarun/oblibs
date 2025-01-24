@@ -3,7 +3,7 @@
 #
 
 src/include/oblibs/environ.h: src/include/oblibs/lexer.h src/include/oblibs/stack.h
-src/include/oblibs/graph2.h: src/include/oblibs/hash.h src/include/oblibs/queue.h
+src/include/oblibs/graph2.h: src/include/oblibs/hash.h src/include/oblibs/queue.h src/include/oblibs/stack.h
 src/include/oblibs/lexer.h: src/include/oblibs/stack.h
 src/include/oblibs/socket.h: src/include/oblibs/io.h
 src/directory/dir_beabsolute.o src/directory/dir_beabsolute.lo: src/directory/dir_beabsolute.c src/include/oblibs/directory.h src/include/oblibs/string.h
@@ -39,7 +39,7 @@ src/files/file_readputsa_g.o src/files/file_readputsa_g.lo: src/files/file_readp
 src/files/file_write_unsafe.o src/files/file_write_unsafe.lo: src/files/file_write_unsafe.c src/include/oblibs/string.h
 src/files/file_write_unsafe_g.o src/files/file_write_unsafe_g.lo: src/files/file_write_unsafe_g.c src/include/oblibs/string.h
 src/graph/graph.o src/graph/graph.lo: src/graph/graph.c src/include/oblibs/graph.h src/include/oblibs/log.h src/include/oblibs/sastr.h src/include/oblibs/types.h
-src/graph/graph2.o src/graph/graph2.lo: src/graph/graph2.c src/include/oblibs/graph2.h src/include/oblibs/log.h
+src/graph/graph2.o src/graph/graph2.lo: src/graph/graph2.c src/include/oblibs/graph2.h src/include/oblibs/log.h src/include/oblibs/stack.h
 src/io/io_coe.o src/io/io_coe.lo: src/io/io_coe.c src/include/oblibs/io.h
 src/io/io_open.o src/io/io_open.lo: src/io/io_open.c src/include/oblibs/io.h
 src/io/io_read.o src/io/io_read.lo: src/io/io_read.c src/include/oblibs/io.h
