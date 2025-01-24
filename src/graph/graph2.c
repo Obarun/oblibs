@@ -19,6 +19,7 @@
 
 #include <oblibs/log.h>
 #include <oblibs/graph2.h>
+#include <oblibs/stack.h>
 
 bitset_t bitset_create_empty(uint32_t len)
 {
@@ -64,20 +65,27 @@ int graph_queue_compare(const void *a, const void *b)
     return 0 ;
 }
 
-int graph_init(graph_t *g, uint32_t glen)
+int graph_init(graph *g, uint32_t glen)
 {
     g->len = glen ;
     g->vertexes = NULL ;
+    memset(g->sindex, 0, sizeof(vertex_t *) * glen) ;
     g->qindex = queue_init(glen, graph_queue_compare, graph_queue_compare) ;
     if (g->qindex == NULL)
         return 0 ;
-    memset(g->sindex, 0, sizeof(vertex_t *) * glen) ;
+
+    g->sort = malloc(sizeof(uint32_t) * glen) ;
+    if (!g->sort) {
+        queue_free(g->qindex) ;
+        return (errno = ENOMEM, 0) ;
+    }
+    g->nsort = 0 ;
     g->nvertexes = 0 ;
 
     return 1 ;
 }
 
-int graph_add_vertex(graph_t *g, const char *name)
+int graph_add_vertex(graph *g, const char *name)
 {
     vertex_t *s = NULL ;
     size_t len = strlen(name) ;
@@ -87,7 +95,7 @@ int graph_add_vertex(graph_t *g, const char *name)
         return (errno = EINVAL, 0) ;
 
     if ((g->nvertexes + 1) > g->len)
-        return (errno = ENOMEM, 0) ;
+        return (errno = EINVAL, 0) ;
 
     HASH_FIND_STR(g->vertexes, name, s) ;
     if (s != NULL)
@@ -135,9 +143,9 @@ int graph_add_vertex(graph_t *g, const char *name)
     return 1 ;
 }
 
-int graph_remove_vertex(graph_t *g, const char *name, bool cldepends, bool clrequired)
+int graph_remove_vertex(graph *g, const char *name, bool cldepends, bool clrequired)
 {
-    vertex_t *s ;
+    vertex_t *s = NULL ;
 
     HASH_FIND_STR(g->vertexes, name, s) ;
     if (!s)
@@ -178,18 +186,30 @@ int graph_remove_vertex(graph_t *g, const char *name, bool cldepends, bool clreq
     return 1 ; // Success
 }
 
-int graph_add_edge(graph_t *g, const char *vertex, const char *edge)
+int graph_add_edge(graph *g, const char *vertex, const char *edge, bool requiredby, bool addedge)
 {
-    vertex_t *src, *dst ;
+    vertex_t *src = NULL, *dst = NULL ;
 
     if (!vertex || !edge)
         return (errno = EINVAL, 0) ;
 
     HASH_FIND_STR(g->vertexes, vertex, src) ;
     HASH_FIND_STR(g->vertexes, edge, dst) ;
-    if (src == NULL || dst == NULL) {
-        log_warn("One or both services not found: '%s', '%s'.\n", vertex, edge) ;
+    if (!addedge && ((src == NULL) || (dst == NULL))) {
+        log_warn("service: ", src == NULL ? vertex : edge," not found") ;
         return 0 ;
+    }
+
+    if (src == NULL && requiredby) {
+        if (!graph_add_vertex(g, vertex))
+            log_warnusys("add edge: ", vertex,"to the graph selection") ;
+        HASH_FIND_STR(g->vertexes, vertex, src) ;
+    }
+
+    if (dst == NULL && !requiredby) {
+        if (!graph_add_vertex(g, edge))
+            log_warnusys("add edge: ", edge,"to the graph selection") ;
+        HASH_FIND_STR(g->vertexes, edge, dst) ;
     }
 
     if (!bitset_isvalid(&src->depends, dst->index)) {
@@ -205,9 +225,29 @@ int graph_add_edge(graph_t *g, const char *vertex, const char *edge)
     return 1 ;
 }
 
-int graph_remove_edge(graph_t *g, const char *vertex, const char *edge, bool cledge)
+int graph_add_nedge(graph *g, const char *vertex, stack *stk, bool requiredby, bool addedge)
 {
-    vertex_t *src, *dst ;
+    size_t pos = 0 ;
+
+    if (stk->len) {
+
+        FOREACH_STK(stk, pos) {
+            if (requiredby == false) {
+                if (!graph_add_edge(g, vertex, stk->s + pos, requiredby, addedge))
+                    return 0 ;
+            } else {
+                if (!graph_add_edge(g, stk->s + pos, vertex, requiredby, addedge))
+                    return 0 ;
+            }
+        }
+    }
+
+    return 1 ;
+}
+
+int graph_remove_edge(graph *g, const char *vertex, const char *edge, bool cledge)
+{
+    vertex_t *src= NULL, *dst = NULL ;
 
     if (!vertex || !edge)
         return (errno = EINVAL, 0) ;
@@ -227,7 +267,7 @@ int graph_remove_edge(graph_t *g, const char *vertex, const char *edge, bool cle
     return 1 ;
 }
 
-void graph_get_edge(graph_t *g, const vertex_t *vertex, vertex_t **list, bool requiredby)
+void graph_get_edge(graph *g, const vertex_t *vertex, vertex_t **list, bool requiredby)
 {
     uint32_t found = 0 ;
     const bitset_t *type = !requiredby ? &vertex->depends : &vertex->requiredby ;
@@ -252,9 +292,23 @@ void graph_get_edge(graph_t *g, const vertex_t *vertex, vertex_t **list, bool re
     }
 }
 
-void graph_cleanup(graph_t *g)
+uint32_t graph_get_id(graph *g, const char *name)
 {
-    vertex_t *s, *tmp ;
+    if (!g || !name)
+        return (errno = EINVAL, 0) ;
+
+    vertex_t *vertex = NULL ;
+    HASH_FIND_STR(g->vertexes, name, vertex) ;
+
+    if (vertex == NULL)
+        return 0 ;
+
+    return vertex->index;
+}
+
+void graph_free(graph *g)
+{
+    vertex_t *s = NULL, *tmp = NULL ;
     uint32_t i = 0 ;
 
     HASH_ITER(hh, g->vertexes, s, tmp) {
@@ -265,38 +319,11 @@ void graph_cleanup(graph_t *g)
     for (; i < g->len ; i++)
         g->sindex[i] = NULL ;
 
+    free(g->sort) ;
     queue_free(g->qindex) ;
 }
 
-static void graph_dfs_edges(graph_t *g, vertex_t *vertex, uint32_t *visited, uint32_t *store, uint32_t *len, bool reverse)
-{
-    uint32_t nedge = reverse ? vertex->nrequiredby : vertex->ndepends;
-
-    if (nedge > 0) {
-        vertex_t *edges[nedge];
-        graph_get_edge(g, vertex, edges, reverse);
-
-        for (uint32_t i = 0; i < nedge; i++) {
-            if (edges[i] && !visited[edges[i]->index]) {
-                graph_dfs(g, edges[i], visited, store, len, reverse);
-            }
-        }
-    }
-}
-
-void graph_dfs(graph_t *g, vertex_t *vertex, uint32_t *visited, uint32_t *store, uint32_t *len, bool requiredby)
-{
-    if (vertex == NULL || visited[vertex->index])
-        return;
-
-    graph_dfs_edges(g, vertex, visited, store, len, requiredby);
-
-    // Add the current vertex to the store
-    store[(*len)++] = vertex->index;
-    visited[vertex->index] = 1;
-}
-
-int check_cycle_recursive(graph_t *g, vertex_t *src, vertex_t *target, uint32_t *visited)
+int check_cycle_recursive(graph *g, vertex_t *src, vertex_t *target, uint32_t *visited)
 {
     uint32_t pos = 0 ;
     if (src->index == target->index)
@@ -318,7 +345,7 @@ int check_cycle_recursive(graph_t *g, vertex_t *src, vertex_t *target, uint32_t 
     return 1 ;
 }
 
-int graph_check_cycle(graph_t *g)
+int graph_check_cycle(graph *g)
 {
 
     uint32_t visited[g->len] ;
@@ -332,65 +359,92 @@ int graph_check_cycle(graph_t *g)
 
             for (uint32_t idx = 0 ; idx < g->sindex[pos]->ndepends ; idx++) {
                 if (!check_cycle_recursive(g, edge[idx], g->sindex[pos], visited)) {
-                    log_warn("Adding the dependency '%s' -> '%s' would create a cycle.\n", g->sindex[pos]->name, edge[idx]->name) ;
+                    log_warn("Adding the dependency: ", g->sindex[pos]->name, " depending on service: ", edge[idx]->name, " would create a cycle.\n") ;
                     return 0 ;
                 }
             }
-
         }
     }
 
     return 1 ;
 }
 
-int graph_sort(uint32_t *store, uint32_t *store_pos, graph_t *g, vertex_t **list, uint32_t len, bool requiredby)
+static void graph_dfs_edges(graph *g, uint32_t idx, uint32_t *visited, bool reverse)
 {
-    bool reverse = requiredby ;
-    uint32_t visited[len], pos = 0 ;
-    memset(store, 0, sizeof(uint32_t) * g->len) ;
+    vertex_t *vertex = g->sindex[idx] ;
+    uint32_t nedge = reverse ? vertex->nrequiredby : vertex->ndepends ;
+
+    if (nedge > 0) {
+        vertex_t *edges[nedge] ;
+        graph_get_edge(g, vertex, edges, reverse) ;
+
+        for (uint32_t i = 0; i < nedge; i++) {
+            if (edges[i] && !visited[edges[i]->index]) {
+                graph_dfs(g, edges[i]->index, visited, reverse) ;
+            }
+        }
+    }
+}
+
+void graph_dfs(graph *g, uint32_t idx, uint32_t *visited, bool reverse)
+{
+    vertex_t *vertex = g->sindex[idx] ;
+    if (vertex == NULL || visited[vertex->index])
+        return ;
+
+    graph_dfs_edges(g, idx, visited, reverse) ;
+
+    // Add the current vertex to the store
+    g->sort[g->nsort++] = vertex->index ;
+    visited[vertex->index] = 1 ;
+}
+
+int graph_sort(graph *g, bool reverse)
+{
+    uint32_t visited[g->len], pos = 0 ;
+    memset(g->sort, 0, sizeof(uint32_t) * g->len) ;
     memset(visited, 0, sizeof(uint32_t) * g->len) ;
+    g->nsort = 0 ;
 
     if (!graph_check_cycle(g))
         return 0 ;
 
-    for (; pos < len ; pos++) {
-        if (list[pos])
-            graph_dfs(g, list[pos], visited, store, store_pos, reverse) ;
+    // Process root vertices first
+    for (pos = 0; pos < g->nvertexes; pos++) {
+        uint32_t rev = reverse ? g->sindex[pos]->nrequiredby : g->sindex[pos]->ndepends ;
+        if (g->sindex[pos] && !rev)
+            graph_dfs(g, pos, visited, reverse);
+
     }
+
+    for (pos = 0 ; pos < g->nvertexes ; pos++) {
+        if (g->sindex[pos])
+            graph_dfs(g, pos, visited, reverse) ;
+    }
+
     return 1 ;
 }
 
-/*
-#include <stdio.h>
-void graph_show(graph_t *g, const char *msg)
+void graph_show(graph *g, const char *msg)
 {
-    vertex_t *s, *tmp ;
+    vertex_t *s = NULL, *tmp = NULL ;
     log_1_warn("[DEBUG]: ", msg) ;
     HASH_ITER(hh, g->vertexes, s, tmp) {
-        printf("%s -> ", s->name) ;
-        printf(" %i -> ", s->index) ;
+        printf("%s:%i -> ", s->name, s->index) ;
         if (s->ndepends) {
-
             vertex_t *list[s->ndepends] ;
             graph_get_edge(g, s, list, false) ;
-            for (uint32_t pos = 0 ; pos < s->ndepends ; pos++) {
-                printf("%s ", list[pos]->name) ;
-                printf(" index:%i ", list[pos]->index) ;
-            }
-
+            for (uint32_t pos = 0 ; pos < s->ndepends ; pos++)
+                printf("%s:%i ", list[pos]->name, list[pos]->index) ;
         }
 
-        printf("\n%s <- ", s->name) ;
+        printf("\n%s:%i <- ", s->name, s->index) ;
         if (s->nrequiredby) {
-
             vertex_t *list[s->nrequiredby] ;
             graph_get_edge(g, s, list, true) ;
-            for (uint32_t pos = 0 ; pos < s->nrequiredby ; pos++) {
-                printf("%s ", list[pos]->name) ;
-                printf(" index:%i", list[pos]->index) ;
-            }
-
+            for (uint32_t pos = 0 ; pos < s->nrequiredby ; pos++)
+                printf("%s:%i ", list[pos]->name, list[pos]->index) ;
         }
         printf("\n") ;
     }
-}*/
+}

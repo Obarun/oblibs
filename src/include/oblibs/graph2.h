@@ -1,5 +1,5 @@
 /*
- * graph.h
+ * graph2.h
  *
  * Copyright (c) 2025 Eric Vidal <eric@obarun.org>
  *
@@ -10,13 +10,75 @@
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
  * except according to the terms contained in the LICENSE file./
+ *
+ * Implementation and API for managing a dynamic graph structure with vertex relationships and edges.
+ *
+ * General Design:
+ *  - Graph Representation:
+ *    The graph is implemented using vertices (nodes) and directed edges, represented with bitsets and hash tables
+ *    for efficient storage and operations. It supports dynamic vertex and edge management, including addition,
+ *    removal, and traversal. Functions like 'graph_add_vertex' and 'graph_remove_vertex' ensure flexible handling
+ *    of relationships between vertices.
+ *
+ *  - Memory Management:
+ *    The graph dynamically allocates memory for its vertices and edges, resizing as necessary to accommodate
+ *    changes. Functions like 'graph_free' ensure that all dynamically allocated resources are properly released.
+ *    Bitsets are used for edge management to optimize memory usage while maintaining efficient traversal.
+ *
+ *  - Error Handling:
+ *    Functions return standardized error codes ('EINVAL', 'ENOMEM', etc.) using 'errno' for diagnostics.
+ *    This allows developers to handle invalid operations, memory allocation failures, and other edge cases robustly.
+ *
+ *  - Customization:
+ *    The graph supports flexible configurations, including custom comparison functions for priority queues and
+ *    edge relationship management. The integration with bitsets provides efficient ways to verify dependencies
+ *    and relationships.
+ *
+ * Usage Scenarios:
+ *  This graph structure is suitable for applications requiring dynamic management of nodes and their relationships:
+ *  - Representing dependency trees in build systems or task schedulers.
+ *  - Managing dynamic workflows or pipelines.
+ *  - Implementing algorithms like topological sort, cycle detection, and pathfinding.
+ *
+ * Core Structure:
+ *  The 'graph_t' structure represents the dynamic graph:
+ *
+ *  typedef struct graph_t {
+ *      size_t len;           // Maximum number of vertices in the graph.
+ *      vertex_t *vertexes;   // Hash table storing vertices by name.
+ *      vertex_t *sindex[];   // Direct access to vertices by index.
+ *      queue_t *qindex;      // Binary heap managing free indices.
+ *      uint32_t nvertexes;   // Current number of vertices in the graph.
+ *      uint32_t *sort;       // Sorting Array storing the topological order of sindex
+ *      uint32_t nsort;       // Number of vertices stored in sort.
+ *  } graph_t;
+ *
+ * Macros:
+ *  - BITSET_ZERO: Initializes an empty bitset.
+ *  - VERTEX_ZERO: Initializes a default vertex with no edges or dependencies.
+ *  - GRAPH_ZERO: Initializes an empty graph structure.
+ *
+ * Key Functions:
+ *  - 'graph_add_vertex': Adds a new vertex to the graph.
+ *  - 'graph_remove_vertex': Removes a vertex and optionally clears its dependencies.
+ *  - 'graph_add_edge': Creates a directed edge between two vertices.
+ *  - 'graph_remove_edge': Removes a directed edge between two vertices.
+ *  - 'graph_dfs': Performs depth-first search on the graph.
+ *  - 'graph_check_cycle': Detects cycles in the graph.
+ *
+ * These macros and functions enable efficient manipulation of the graph and its relationships.
  */
 
+#ifndef SS_GRAPH2_H
+#define SS_GRAPH2_H
+
+#include <stdio.h> // only for graph_show
 #include <stdint.h>
 #include <stdbool.h>
 
 #include <oblibs/hash.h>
 #include <oblibs/queue.h>
+#include <oblibs/stack.h>
 
 #ifndef GRAPH_MAX_VERTEX
 #define GRAPH_MAX_VERTEX 500
@@ -28,7 +90,6 @@
 
 #define UINT_NBITS 32
 
-
 /**
  * @struct bitset_t
  * @brief Represents a bitset used to indicate edges between vertexes.
@@ -36,10 +97,10 @@
  * This bitset is used to mark the edges of one vertex on other vertexes,
  * or the vertexes that depend on it.
  *
- * @var bitset_t::bits
+ * @param bits
  * A bit array representing the edges, where each bit corresponds to a specific vertex.
  *
- * @var bitset_t::size
+ * @param size
  * The size of the bitset, representing the number of vertexes tracked.
  */
 typedef struct bitset_s bitset_t ;
@@ -57,22 +118,22 @@ struct bitset_s {
  * Each vertex contains a unique index, a name, and bitsets indicating its edges
  * on other vertexes and the vertexes that depend on it.
  *
- * @var vertex_t::name
+ * @param name
  * The name of the vertex, stored in a fixed-size character array.
  *
- * @var vertex_t::index
+ * @param index
  * A unique index assigned to the vertex within the graph.
  *
- * @var vertex_t::depends
+ * @param depends
  * A bitset representing the vertexes this vertex depends on.
  *
- * @var vertex_t::requiredby
+ * @param requiredby
  * A bitset representing the vertexes that depend on this vertex.
  *
- * @var vertex_t::ndepends
+ * @param ndepends
  * The number of vertexes this vertex depends on.
  *
- * @var vertex_t::nrequiredby
+ * @param nrequiredby
  * The number of vertexes that depend on this vertex.
  */
 typedef struct vertex_s vertex_t ;
@@ -89,14 +150,14 @@ struct vertex_s {
 #define VERTEX_ZERO { {0}, 0, BITSET_ZERO, BITSET_ZERO, 0, 0, NULL }
 
 /**
- * @struct graph_t
+ * @struct graph
  * @brief Represents a graph containing vertexes and their edges.
  *
  * The graph manages a collection of vertexes, allowing efficient access to each
  * vertex by its index and tracking the available free indices using a heap.
  *
  * @param len
- * Maximum number of vertex for the graph.
+ * Maximum number of vertices in the graph.
  *
  * @param vertexes
  * A hash table used to store vertexes by name.
@@ -109,71 +170,104 @@ struct vertex_s {
  *
  * @param nvertexes
  * The actual number of vertexes in the graph.
+ *
+ * @param sort
+ * An array storing the topological sorting order of the graph vertices.
+ *
+ * @param nsort
+ * The number of vertices stored in the sort array.
  */
-typedef struct graph_s graph_t ;
-struct graph_s
+typedef struct graph_t graph ;
+struct graph_t
 {
     size_t len ;
     vertex_t *vertexes ;
     vertex_t *sindex[GRAPH_MAX_VERTEX] ;
     queue_t *qindex ;
     uint32_t nvertexes ;
+    uint32_t *sort ;
+    uint32_t nsort ;
 } ;
 
-#define GRAPH_ZERO { 0, NULL, {NULL}, NULL, 0 }
+#define GRAPH_ZERO { 0, NULL, {NULL}, NULL, 0, NULL, 0 }
 
 /**
- * @brief Utility function to create an empty bitset.
+ * @brief Creates an empty bitset of the specified length.
  *
- * Initializes a bitset to represent edges with all bits cleared (set to 0).
+ * This function initializes a bitset structure with all bits set to 0. The
+ * number of bits is determined by the input length, rounded up to the nearest
+ * multiple of the size of an unsigned integer.
  *
  * @param len
- * The number of bits (vertexes) the bitset needs to represent.
+ * The number of bits required in the bitset.
  *
  * @return
- * A bitset_t structure with all bits cleared.
+ * A `bitset_t` structure with all bits set to 0 and a valid size.
+ * If the required size exceeds the maximum allowed (`GRAPH_MAX_VERTEX / UINT_NBITS`),
+ * the size of the returned bitset is set to 0, indicating failure.
+ *
+ * @note
+ * - The function clears the `bits` array in the bitset structure to ensure all
+ *   bits are initialized to 0.
+ * - The size of the bitset is stored in `bitset_t::size`, representing the number
+ *   of valid entries in the `bits` array.
  */
 extern bitset_t bitset_create_empty(uint32_t len) ;
 
 /**
- * @brief Sets a bit in the bitset, corresponding to a vertex index.
+ * @brief Sets a specific bit in the bitset to 1.
  *
- * Marks a vertex as being dependent or required by setting the bit at the given index.
+ * This function modifies the bitset to mark a specific bit as active (set to 1),
+ * based on the provided index.
  *
  * @param bitset
- * A pointer to the bitset structure where the bit will be set.
+ * Pointer to the bitset to modify.
  *
  * @param index
- * The index of the vertex to set in the bitset.
+ * The index of the bit to set.
+ *
+ * @note
+ * - The function does not perform bounds checking on the `index`. Ensure that the
+ *   index is within the range of the bitset's size.
  */
 extern void bitset_set(bitset_t *bitset, uint32_t index) ;
 
 /**
- * @brief Clears a bit in the bitset, corresponding to a vertex index.
+ * @brief Clears a specific bit in the bitset, setting it to 0.
  *
- * Removes a dependency or "required by" relationship by clearing the bit at the given index.
+ * This function modifies the bitset to mark a specific bit as inactive (set to 0),
+ * based on the provided index.
  *
  * @param bitset
- * A pointer to the bitset structure where the bit will be cleared.
+ * Pointer to the bitset to modify.
  *
  * @param index
- * The index of the vertex to clear in the bitset.
+ * The index of the bit to clear.
+ *
+ * @note
+ * - The function does not perform bounds checking on the `index`. Ensure that the
+ *   index is within the range of the bitset's size.
  */
 extern void bitset_clear(bitset_t *bitset, uint32_t index) ;
 
 /**
- * @brief Checks if a bit is set in the bitset.
+ * @brief Checks if a specific bit in the bitset is set to 1.
  *
- * Determines whether a specific vertex (represented by the index) is marked in the bitset.
+ * This function checks whether the bit at the given index in the bitset is active
+ * (set to 1).
  *
  * @param bitset
- * A pointer to the bitset structure to check.
+ * Pointer to the bitset to check.
  *
  * @param index
- * The index of the vertex to check in the bitset.
+ * The index of the bit to check.
  *
  * @return
- * 1 if the bit is set, 0 otherwise.
+ * A non-zero value if the bit is set to 1, or 0 if the bit is 0.
+ *
+ * @note
+ * - The function does not perform bounds checking on the `index`. Ensure that the
+ *   index is within the range of the bitset's size.
  */
 extern int bitset_isvalid(const bitset_t *bitset, uint32_t index) ;
 
@@ -212,7 +306,7 @@ extern int graph_queue_compare(const void *a, const void *b) ;
  * Sets up a graph with a specified length, initializes its vertexes, and creates a binary heap for managing free indices.
  *
  * @param g
- * A pointer to the graph_t structure to be initialized.
+ * A pointer to the graph structure to be initialized.
  *
  * @param glen
  * The maximum number of vertexes that the graph can accommodate.
@@ -220,7 +314,7 @@ extern int graph_queue_compare(const void *a, const void *b) ;
  * @return
  * 1 if the initialization is successful, 0 otherwise.
  */
-extern int graph_init(graph_t *g, uint32_t glen) ;
+extern int graph_init(graph *g, uint32_t glen) ;
 
 /**
  * @brief Adds a vertex to the graph.
@@ -241,7 +335,7 @@ extern int graph_init(graph_t *g, uint32_t glen) ;
  *
  * @return 0
  * If the vertex could not be added due to an error. Possible errors include:
- * - `EINVAL` if the vertex name is too long.
+ * - `EINVAL` if the vertex name is too long or number or graph is full.
  * - `ENOMEM` if there is not enough memory to add the vertex or dependencies.
  *
  * @note
@@ -249,7 +343,7 @@ extern int graph_init(graph_t *g, uint32_t glen) ;
  * - Allocated memory for the vertex and its dependencies is automatically freed if an error occurs.
  * - The function maintains the integrity of the graph by updating all related data structures.
  */
-extern int graph_add_vertex(graph_t *g, const char *name) ;
+extern int graph_add_vertex(graph *g, const char *name) ;
 
 /**
  * @brief Removes a vertex from the graph with optional dependency clearing.
@@ -286,14 +380,15 @@ extern int graph_add_vertex(graph_t *g, const char *name) ;
  * - Memory allocated for the vertex is freed, and the total vertex count of the graph is decremented.
  * - If both `cldepends` and `clrequired` are false, the vertex is removed without altering other vertices.
  */
-extern int graph_remove_vertex(graph_t *g, const char *name, bool cldepens, bool clrequired) ;
+extern int graph_remove_vertex(graph *g, const char *name, bool cldepens, bool clrequired) ;
 
 /**
  * @brief Adds a directed edge between two vertices in the graph.
  *
  * This function connects two vertices in the graph by creating a directed edge
  * from the source vertex to the destination vertex. The dependencies and reverse
- * dependencies of the vertices are updated accordingly.
+ * dependencies of the vertices are updated accordingly. If the destination vertex
+ * does not exist and the 'addedge' flag is set to true, it will be automatically added.
  *
  * @param g
  * Pointer to the graph where the edge will be added.
@@ -304,17 +399,63 @@ extern int graph_remove_vertex(graph_t *g, const char *name, bool cldepens, bool
  * @param edge
  * Name of the destination vertex.
  *
+ * @param requiredby
+ * Boolean flag indicating whether the edge represents a required-by relationship.
+ *
+ * @param addedge
+ * Boolean flag indicating whether to add the missing vertices automatically.
+ *
  * @return 1
  * If the edge is successfully added.
  *
  * @return 0
- * If either vertex is not found or if an error occurs (`errno` is set to `EINVAL`).
+ * If either vertex is not found (and 'addedge' is false) or if an error occurs ('errno' is set to 'EINVAL').
  *
  * @note
  * - The function does nothing if the edge already exists.
  * - If either vertex is not found, a warning is logged.
+ * - If 'addedge' is set to true, missing destination vertices will be added automatically.
  */
-extern int graph_add_edge(graph_t *g, const char *vertex, const char *edge) ;
+extern int graph_add_edge(graph *g, const char *vertex, const char *edge, bool requiredby, bool addedge) ;
+
+/**
+ * @brief Adds multiple edges to or from a vertex in the graph.
+ *
+ * This function iterates over the elements in a stack and adds directed edges
+ * between the given vertex and each element in the stack. The direction of the edges
+ * depends on the 'requiredby' parameter:
+ * - If 'requiredby' is false, edges are added from the vertex to the elements in the stack.
+ * - If 'requiredby' is true, edges are added from the elements in the stack to the vertex.
+ *
+ * @param g
+ * Pointer to the graph where the edges will be added.
+ *
+ * @param vertex
+ * Name of the vertex involved in the edges.
+ *
+ * @param stk
+ * Pointer to the stack containing the names of the vertices to connect.
+ *
+ * @param requiredby
+ * A boolean flag indicating the direction of the edges:
+ * - 'false': Adds edges from 'vertex' to each element in 'stk'.
+ * - 'true': Adds edges from each element in 'stk' to 'vertex'.
+ *
+ * @param addedge
+ * Boolean flag indicating whether to add missing vertices when creating edges.
+ *
+ * @return 1
+ * If all edges are successfully added.
+ *
+ * @return 0
+ * If any edge addition fails, or if 'g', 'vertex', or 'stk' is invalid.
+ *
+ * @note
+ * - The function depends on 'graph_add_edge' for individual edge additions.
+ * - The stack 'stk' is assumed to be properly initialized and contain valid vertex names.
+ * - A failure in adding any edge will halt further additions and return 0.
+ */
+extern int graph_add_nedge(graph *g, const char *vertex, stack *stk, bool requiredby, bool addedge) ;
 
 /**
  * @brief Removes a directed edge between two vertices in the graph.
@@ -340,7 +481,7 @@ extern int graph_add_edge(graph_t *g, const char *vertex, const char *edge) ;
  * @return 0
  * If either vertex is not found or if an error occurs (`errno` is set to `EINVAL`).
  */
-extern int graph_remove_edge(graph_t *g, const char *vertex, const char *edge, bool cledge) ;
+extern int graph_remove_edge(graph *g, const char *vertex, const char *edge, bool cledge) ;
 
 /**
  * @brief Retrieves edges of a vertex in the graph.
@@ -360,10 +501,39 @@ extern int graph_remove_edge(graph_t *g, const char *vertex, const char *edge, b
  * @param requiredby
  * If true, retrieves reverse dependencies; otherwise, retrieves dependencies.
  */
-extern void graph_get_edge(graph_t *g, const vertex_t *vertex, vertex_t **list, bool requiredby) ;
+extern void graph_get_edge(graph *g, const vertex_t *vertex, vertex_t **list, bool requiredby) ;
 
 /**
- * @brief Cleans up the graph by freeing all allocated memory.
+ * @brief Retrieves the unique ID (index) of a vertex in the graph by its name.
+ *
+ * This function searches for a vertex in the graph using its name and returns
+ * its unique identifier (index). If the vertex is not found or the input is invalid,
+ * the function returns 0 and sets `errno` appropriately.
+ *
+ * @param g
+ * Pointer to the graph where the vertex resides.
+ *
+ * @param name
+ * Name of the vertex to search for.
+ *
+ * @return
+ * The unique ID (index) of the vertex if it is found.
+ *
+ * @return 0
+ * If the vertex is not found or if the input graph or name is invalid.
+ * In these cases, `errno` is set to:
+ * - `EINVAL` if `g` or `name` is `NULL`.
+ *
+ * @note
+ * - The returned ID is specific to the vertex and is used internally to manage
+ *   graph operations.
+ * - A return value of 0 may indicate an error or that the vertex with the given
+ *   name does not exist.
+ */
+extern uint32_t graph_get_id(graph *g, const char *name) ;
+
+/**
+ * @brief Freed up the graph by freeing all allocated memory.
  *
  * This function removes all vertices from the graph, resets its state, and frees
  * all dynamically allocated memory.
@@ -371,7 +541,7 @@ extern void graph_get_edge(graph_t *g, const vertex_t *vertex, vertex_t **list, 
  * @param g
  * Pointer to the graph to clean up.
  */
-extern void graph_cleanup(graph_t *g) ;
+extern void graph_free(graph *g) ;
 
 /**
  * @brief Performs a depth-first search (DFS) starting from a given vertex.
@@ -384,21 +554,19 @@ extern void graph_cleanup(graph_t *g) ;
  * Pointer to the graph.
  *
  * @param vertex
- * Pointer to the starting vertex for the traversal.
+ * Index of the starting vertex for the traversal.
  *
  * @param visited
  * Array to keep track of visited vertices.
  *
- * @param store
- * Array to store the traversal order of vertices.
+ * @param reverse
+ * If true, traverses required-by dependencies; otherwise, traverses normal dependencies.
  *
- * @param len
- * Pointer to a counter tracking the number of visited vertices.
- *
- * @param requiredby
- * If true, traverses reverse dependencies; otherwise, traverses normal dependencies.
+ * @note
+ * The function directly updates the graph's sort array with the traversal order.
+ * If the vertex index is invalid or already visited, the function returns immediately.
  */
-extern void graph_dfs(graph_t *g, vertex_t *vertex, uint32_t *visited, uint32_t *store, uint32_t *len, bool requiredby) ;
+extern void graph_dfs(graph *g, uint32_t vertex, uint32_t *visited, bool reverse) ;
 
 /**
  * @brief Recursively checks for cycles starting from a source vertex in the graph.
@@ -431,7 +599,7 @@ extern void graph_dfs(graph_t *g, vertex_t *vertex, uint32_t *visited, uint32_t 
  * - The `visited` array must be pre-allocated with a size equal to the number of vertices
  *   in the graph and initialized to zero before calling the function.
  */
-extern int check_cycle_recursive(graph_t *g, vertex_t *src, vertex_t *target, uint32_t *visited) ;
+extern int check_cycle_recursive(graph *g, vertex_t *src, vertex_t *target, uint32_t *visited) ;
 
 /**
  * @brief Checks the graph for cycles.
@@ -452,7 +620,7 @@ extern int check_cycle_recursive(graph_t *g, vertex_t *src, vertex_t *target, ui
  * - If a cycle is detected, the specific vertices forming the cycle are logged.
  * - This function relies on recursive traversal to check for cycles.
  */
-extern int graph_check_cycle(graph_t *g) ;
+extern int graph_check_cycle(graph *g) ;
 
 /**
  * @brief Sorts vertices in the graph topologically.
@@ -464,28 +632,25 @@ extern int graph_check_cycle(graph_t *g) ;
  * @param store
  * Array to store the sorted order of vertex indices.
  *
- * @param store_pos
+ * @param len
  * Pointer to the position counter in the store array.
  *
  * @param g
  * Pointer to the graph.
  *
- * @param list
- * Array of vertices to sort.
- *
- * @param len
- * Number of vertices in the list.
- *
- * @param requiredby
- * If true, sorts based on reverse dependencies; otherwise, sorts based on dependencies.
+ * @param reverse
+ * If true, sorts based on required-by dependencies; otherwise, sorts based on dependencies.
  *
  * @return 1
  * If the sort is successful.
  *
  * @return 0
  * If a cycle is detected or an error occurs.
+ *
+ * @note
+ * The function modifies the graph's internal sort array and resets sorting-related variables.
  */
-extern int graph_sort(uint32_t *store, uint32_t *store_pos, graph_t *g, vertex_t **list, uint32_t len, bool requiredby) ;
+extern int graph_sort(graph *g, bool reverse) ;
 
 /**
  * @brief Displays the current vertexes and their edges.
@@ -493,7 +658,8 @@ extern int graph_sort(uint32_t *store, uint32_t *store_pos, graph_t *g, vertex_t
  * This debug function prints out each vertex in the graph along with its direct
  * edges and the vertexes that depend on it.
  *
- * @param g A pointer to the graph_t structure to be displayed.
- * @param msg A message to display before displaying the graph.
-extern void graph_show(graph_t *g, const char *msg) ;
-*/
+ * @param g A pointer to the graph structure to be displayed.
+ * @param msg A message to display before displaying the graph.*/
+extern void graph_show(graph *g, const char *msg) ;
+
+#endif
