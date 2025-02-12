@@ -69,9 +69,10 @@
  * These macros and functions enable efficient manipulation of the graph and its relationships.
  */
 
-#ifndef SS_GRAPH2_H
-#define SS_GRAPH2_H
+#ifndef OB_GRAPH2_H
+#define OB_GRAPH2_H
 
+#include <stddef.h>
 #include <stdio.h> // only for graph_show
 #include <stdint.h>
 #include <stdbool.h>
@@ -177,8 +178,8 @@ struct vertex_s {
  * @param nsort
  * The number of vertices stored in the sort array.
  */
-typedef struct graph_t graph ;
-struct graph_t
+typedef struct graph_s graph ;
+struct graph_s
 {
     size_t len ;
     vertex_t *vertexes ;

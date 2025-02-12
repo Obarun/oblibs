@@ -200,13 +200,13 @@ int graph_add_edge(graph *g, const char *vertex, const char *edge, bool required
         return 0 ;
     }
 
-    if (src == NULL && requiredby) {
+    if (src == NULL) {
         if (!graph_add_vertex(g, vertex))
             log_warnusys("add edge: ", vertex,"to the graph selection") ;
         HASH_FIND_STR(g->vertexes, vertex, src) ;
     }
 
-    if (dst == NULL && !requiredby) {
+    if (dst == NULL) {
         if (!graph_add_vertex(g, edge))
             log_warnusys("add edge: ", edge,"to the graph selection") ;
         HASH_FIND_STR(g->vertexes, edge, dst) ;

@@ -60,8 +60,8 @@
  */
 
 
-#ifndef SS_QUEUE_H
-#define SS_QUEUE_H
+#ifndef OB_QUEUE_H
+#define OB_QUEUE_H
 
 #include <stddef.h>
 #include <stdint.h>
