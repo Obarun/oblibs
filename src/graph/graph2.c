@@ -26,7 +26,7 @@ bitset_t bitset_create_empty(uint32_t len)
     bitset_t bs ;
     uint32_t rsize = (len + (UINT_NBITS - 1)) / UINT_NBITS ;
 
-    if (rsize > (GRAPH_MAX_VERTEX / UINT_NBITS)) {
+    if (rsize > BITSET_ARRAY_SIZE) {
         bs.size = 0 ;
         memset(bs.bits, 0, sizeof(bs.bits)) ;
         return bs ;
@@ -308,18 +308,15 @@ uint32_t graph_get_id(graph *g, const char *name)
 
 void graph_free(graph *g)
 {
-    vertex_t *s = NULL, *tmp = NULL ;
     uint32_t i = 0 ;
 
-    HASH_ITER(hh, g->vertexes, s, tmp) {
-        HASH_DEL(g->vertexes, s) ;
-        free(s) ;
-    }
+    HASH_CLEAR(hh, g->vertexes) ;
 
     for (; i < g->len ; i++)
         g->sindex[i] = NULL ;
 
     free(g->sort) ;
+    g->sort = NULL ;
     queue_free(g->qindex) ;
 }
 

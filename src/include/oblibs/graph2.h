@@ -90,6 +90,8 @@
 #endif
 
 #define UINT_NBITS 32
+#define BITSET_ARRAY_SIZE ((GRAPH_MAX_VERTEX + 31) / UINT_NBITS)  // Round up to nearest multiple of 32
+
 
 /**
  * @struct bitset_t
@@ -106,7 +108,7 @@
  */
 typedef struct bitset_s bitset_t ;
 struct bitset_s {
-    uint32_t bits[GRAPH_MAX_VERTEX / (8 * sizeof(uint32_t))] ;
+    uint32_t bits[BITSET_ARRAY_SIZE] ;
     uint32_t size ;
 } ;
 
