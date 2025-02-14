@@ -52,6 +52,13 @@ int bitset_isvalid(const bitset_t *bitset, uint32_t index)
     return bitset->bits[index / (8 * sizeof(uint32_t))] & (1U << (index % (8 * sizeof(uint32_t)))) ;
 }
 
+void bitset_free(bitset_t *bitset) {
+    if (bitset && bitset->size > 0) {
+        memset(bitset->bits, 0, sizeof(bitset->bits));
+        bitset->size = 0;
+    }
+}
+
 int graph_queue_compare(const void *a, const void *b)
 {
     const uint32_t ua = (*(uint32_t *)a) ;
@@ -312,8 +319,14 @@ void graph_free(graph *g)
 
     HASH_CLEAR(hh, g->vertexes) ;
 
-    for (; i < g->len ; i++)
-        g->sindex[i] = NULL ;
+    for (; i < g->len ; i++) {
+       if (g->sindex[i]) {
+            bitset_free(&g->sindex[i]->depends);
+            bitset_free(&g->sindex[i]->requiredby);
+            free(g->sindex[i]);
+            g->sindex[i] = NULL;
+        }
+    }
 
     free(g->sort) ;
     g->sort = NULL ;

@@ -275,6 +275,20 @@ extern void bitset_clear(bitset_t *bitset, uint32_t index) ;
 extern int bitset_isvalid(const bitset_t *bitset, uint32_t index) ;
 
 /**
+ * @brief Frees a bitset structure.
+ *
+ * This function clears the contents of the bitset and resets its size.
+ *
+ * @param bitset
+ * Pointer to the bitset structure to be freed.
+ *
+ * @note
+ * - If the bitset is NULL or its size is 0, the function does nothing.
+ * - The memory for the bitset structure itself is not freed.
+ */
+extern void bitset_free(bitset_t *bitset) ;
+
+/**
  * @brief Compares two elements for ordering in a priority queue.
  *
  * This function compares two `uint32_t` values, which are assumed to be
