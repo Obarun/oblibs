@@ -133,7 +133,8 @@ int queue_remove(queue_t *q, void *data)
     size_t pos = 0 ;
     for (; pos < q->size; pos++) {
 
-        if (q->rmcmp(q->data[pos], data) == 0) {
+        if (q->rmcmp((void *)q->data[pos], (void *)data) == 0) {
+
             if (pos != q->size - 1)
                 queue_swap(&q->data[pos], &q->data[q->size - 1]) ;
 
@@ -144,7 +145,9 @@ int queue_remove(queue_t *q, void *data)
             if (pos < q->size)
                 queue_down(q, pos) ;
 
-            queue_shrink(q) ;
+            if (!queue_shrink(q))
+                return (errno = ENOMEM, 0) ;
+
             return 1 ;
         }
     }
@@ -231,11 +234,12 @@ void queue_free(queue_t *q)
 
     if (q->data != NULL) {
 
-        for (size_t i = 0; i < q->size; i++)
-            free(q->data[i]);
+        for (size_t i = 0 ; i < q->size ; i++) {
+            CLEAN_FREE(q->data[i]) ;
+        }
 
-        free(q->data) ;
+        CLEAN_FREE(q->data) ;
     }
 
-    free(q) ;
+    CLEAN_FREE(q) ;
 }
