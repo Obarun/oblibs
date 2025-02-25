@@ -416,9 +416,6 @@ extern int graph_remove_vertex(graph *g, const char *name, bool cldepens, bool c
  * @param edge
  * Name of the destination vertex.
  *
- * @param requiredby
- * Boolean flag indicating whether the edge represents a required-by relationship.
- *
  * @param addedge
  * Boolean flag indicating whether to add the missing vertices automatically.
  *
@@ -433,7 +430,7 @@ extern int graph_remove_vertex(graph *g, const char *name, bool cldepens, bool c
  * - If either vertex is not found, a warning is logged.
  * - If 'addedge' is set to true, missing destination vertices will be added automatically.
  */
-extern int graph_add_edge(graph *g, const char *vertex, const char *edge, bool requiredby, bool addedge) ;
+extern int graph_add_edge(graph *g, const char *vertex, const char *edge, bool addedge) ;
 
 /**
  * @brief Adds multiple edges to or from a vertex in the graph.
@@ -504,7 +501,8 @@ extern int graph_remove_edge(graph *g, const char *vertex, const char *edge, boo
  * @brief Retrieves edges of a vertex in the graph.
  *
  * This function retrieves all edges (dependencies or reverse dependencies) of
- * a given vertex and stores them in a provided list.
+ * a given vertex and stores them in a provided list. Optimized for sparse graphs
+ * using bitset traversal.
  *
  * @param g
  * Pointer to the graph.
@@ -513,7 +511,7 @@ extern int graph_remove_edge(graph *g, const char *vertex, const char *edge, boo
  * Pointer to the vertex whose edges will be retrieved.
  *
  * @param list
- * Array to store pointers to the connected vertices.
+ * Array to store pointers to the connected vertices (must be pre-allocated).
  *
  * @param requiredby
  * If true, retrieves reverse dependencies; otherwise, retrieves dependencies.
@@ -676,7 +674,7 @@ extern int graph_sort(graph *g, bool reverse) ;
  * edges and the vertexes that depend on it.
  *
  * @param g A pointer to the graph structure to be displayed.
- * @param msg A message to display before displaying the graph.*/
-extern void graph_show(graph *g, const char *msg) ;
+ */
+extern void graph_show(graph *g) ;
 
 #endif

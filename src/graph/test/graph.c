@@ -39,8 +39,8 @@ void test_graph_add_edge() {
     assert(graph_add_vertex(&g, "VertexA"));
     assert(graph_add_vertex(&g, "VertexB"));
     assert(graph_add_vertex(&g, "VertexC"));
-    assert(graph_add_edge(&g, "VertexA","VertexB",false,false));
-    assert(graph_add_edge(&g, "VertexA","VertexC",false,false));
+    assert(graph_add_edge(&g, "VertexA","VertexB",false));
+    assert(graph_add_edge(&g, "VertexA","VertexC",false));
     vertex_t *vertexA = g.sindex[0];
     vertex_t *vertexB = g.sindex[1];
     vertex_t *vertexC = g.sindex[2];
@@ -51,9 +51,9 @@ void test_graph_add_edge() {
     assert(vertexB->nrequiredby == 1);
     assert(bitset_isvalid(&vertexC->requiredby, vertexA->index));
     assert(vertexB->nrequiredby == 1);
-    assert(!graph_add_edge(&g, NULL, "VertexC",false, false));
-    assert(!graph_add_edge(&g, "VertexC", NULL,false, false));
-    assert(!graph_add_edge(&g, NULL, NULL,false,false));
+    assert(!graph_add_edge(&g, NULL, "VertexC", false));
+    assert(!graph_add_edge(&g, "VertexC", NULL, false));
+    assert(!graph_add_edge(&g, NULL, NULL,false));
     graph_free(&g);
 }
 
@@ -63,7 +63,7 @@ void test_graph_remove_edge() {
     assert(graph_init(&g, 5));
     assert(graph_add_vertex(&g, "VertexA"));
     assert(graph_add_vertex(&g, "VertexB"));
-    assert(graph_add_edge(&g, "VertexA", "VertexB", false, false));
+    assert(graph_add_edge(&g, "VertexA", "VertexB",false));
     assert(graph_remove_edge(&g, "VertexA", "VertexB", true));
     vertex_t *vertexA = g.sindex[0];
     vertex_t *vertexB = g.sindex[1];
@@ -71,7 +71,7 @@ void test_graph_remove_edge() {
     assert(vertexA->ndepends == 0);
     assert(!bitset_isvalid(&vertexB->requiredby, vertexA->index));
     assert(vertexB->nrequiredby == 0);
-    assert(graph_add_edge(&g, "VertexA", "VertexB",false,false));
+    assert(graph_add_edge(&g, "VertexA", "VertexB",false));
     assert(graph_remove_edge(&g, "VertexA", "VertexB",false));
     vertexA = g.sindex[0];
     vertexB = g.sindex[1];
@@ -89,7 +89,7 @@ void test_graph_remove_vertex() {
     assert(graph_add_vertex(&g, "VertexA"));
     assert(graph_add_vertex(&g, "VertexB"));
     assert(graph_add_vertex(&g, "VertexC"));
-    assert(graph_add_edge(&g, "VertexA", "VertexB",false,false));
+    assert(graph_add_edge(&g, "VertexA", "VertexB",false));
     assert(graph_remove_vertex(&g, "VertexB", true, true));
     vertex_t *vertexA = g.sindex[0];
     assert(vertexA != NULL);
@@ -97,7 +97,7 @@ void test_graph_remove_vertex() {
     assert(g.nvertexes == 2);
     assert(graph_add_vertex(&g, "VertexB"));
     assert(graph_add_vertex(&g, "VertexD"));
-    assert(graph_add_edge(&g, "VertexC", "VertexB",false,false));
+    assert(graph_add_edge(&g, "VertexC", "VertexB",false));
     assert(graph_remove_vertex(&g, "VertexC", true, true));
     assert(graph_add_vertex(&g, "VertexY"));
     graph_free(&g);
@@ -110,8 +110,8 @@ void test_graph_get_edge() {
     assert(graph_add_vertex(&g, "VertexA"));
     assert(graph_add_vertex(&g, "VertexB"));
     assert(graph_add_vertex(&g, "VertexC"));
-    assert(graph_add_edge(&g, "VertexA", "VertexB",false,false));
-    assert(graph_add_edge(&g, "VertexA", "VertexC",false,false));
+    assert(graph_add_edge(&g, "VertexA", "VertexB",false));
+    assert(graph_add_edge(&g, "VertexA", "VertexC",false));
     vertex_t *vertexA = g.sindex[0];
     vertex_t *vertexB = g.sindex[1];
     vertex_t *vertexC = g.sindex[2];
@@ -133,13 +133,13 @@ void test_check_cycle_recursive() {
     assert(graph_add_vertex(&g, "VertexA"));
     assert(graph_add_vertex(&g, "VertexB"));
     assert(graph_add_vertex(&g, "VertexC"));
-    assert(graph_add_edge(&g, "VertexA", "VertexB",false,false));
-    assert(graph_add_edge(&g, "VertexB", "VertexC",false,false));
+    assert(graph_add_edge(&g, "VertexA", "VertexB",false));
+    assert(graph_add_edge(&g, "VertexB", "VertexC",false));
     uint32_t visited[5] = {0};
     vertex_t *vertexA = g.sindex[0];
     vertex_t *vertexC = g.sindex[2];
     assert(check_cycle_recursive(&g, vertexA, vertexC, visited));
-    assert(graph_add_edge(&g, "VertexC", "VertexA",false,false)); // Create cycle
+    assert(graph_add_edge(&g, "VertexC", "VertexA",false)); // Create cycle
     memset(visited, 0, sizeof(visited));
     assert(!check_cycle_recursive(&g, vertexA, vertexA, visited));
     graph_free(&g);
@@ -151,9 +151,9 @@ void test_graph_check_cycle() {
     assert(graph_init(&g, 5));
     assert(graph_add_vertex(&g, "VertexA"));
     assert(graph_add_vertex(&g, "VertexB"));
-    assert(graph_add_edge(&g, "VertexA", "VertexB",false,false));
+    assert(graph_add_edge(&g, "VertexA", "VertexB",false));
     assert(graph_check_cycle(&g));
-    assert(graph_add_edge(&g, "VertexB", "VertexA",false,false)); // Create cycle
+    assert(graph_add_edge(&g, "VertexB", "VertexA",false)); // Create cycle
     assert(!graph_check_cycle(&g));
     graph_free(&g);
 }
@@ -166,9 +166,9 @@ void test_graph_dfs() {
     assert(graph_add_vertex(&g, "VertexB"));
     assert(graph_add_vertex(&g, "VertexC"));
     assert(graph_add_vertex(&g, "VertexD"));
-    assert(graph_add_edge(&g, "VertexA", "VertexB",false,false));
-    assert(graph_add_edge(&g, "VertexB", "VertexC",false,false));
-    assert(graph_add_edge(&g, "VertexB", "VertexD",false,false));
+    assert(graph_add_edge(&g, "VertexA", "VertexB",false));
+    assert(graph_add_edge(&g, "VertexB", "VertexC",false));
+    assert(graph_add_edge(&g, "VertexB", "VertexD",false));
     uint32_t visited[5] = {0};
     graph_dfs(&g, 0, visited, false);
     assert(g.sort[0] == 2); // VertexC
@@ -186,14 +186,14 @@ void test_graph_sort() {
     assert(graph_add_vertex(&g, "VertexB"));
     assert(graph_add_vertex(&g, "VertexC"));
     assert(graph_add_vertex(&g, "VertexD"));
-    assert(graph_add_edge(&g, "VertexA", "VertexB",false,false));
-    assert(graph_add_edge(&g, "VertexB", "VertexC",false,false));
+    assert(graph_add_edge(&g, "VertexA", "VertexB",false));
+    assert(graph_add_edge(&g, "VertexB", "VertexC",false));
     assert(graph_sort(&g, false));
     assert(g.sort[0] == 2); // VertexC
     assert(g.sort[1] == 3); // VertexD
     assert(g.sort[2] == 1); // VertexB
     assert(g.sort[3] == 0); // VertexA
-    assert(graph_add_edge(&g, "VertexC", "VertexA",false,false)); // Create cycle
+    assert(graph_add_edge(&g, "VertexC", "VertexA",false)); // Create cycle
     assert(!graph_sort(&g, false));
     graph_free(&g);
 }

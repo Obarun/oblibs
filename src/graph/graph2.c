@@ -193,7 +193,7 @@ int graph_remove_vertex(graph *g, const char *name, bool cldepends, bool clrequi
     return 1 ; // Success
 }
 
-int graph_add_edge(graph *g, const char *vertex, const char *edge, bool requiredby, bool addedge)
+int graph_add_edge(graph *g, const char *vertex, const char *edge, bool addedge)
 {
     vertex_t *src = NULL, *dst = NULL ;
 
@@ -209,13 +209,13 @@ int graph_add_edge(graph *g, const char *vertex, const char *edge, bool required
 
     if (src == NULL) {
         if (!graph_add_vertex(g, vertex))
-            log_warnusys("add edge: ", vertex,"to the graph selection") ;
+            log_warnusys("add edge: ", vertex, " to the graph selection") ;
         HASH_FIND_STR(g->vertexes, vertex, src) ;
     }
 
     if (dst == NULL) {
         if (!graph_add_vertex(g, edge))
-            log_warnusys("add edge: ", edge,"to the graph selection") ;
+            log_warnusys("add edge: ", edge, " to the graph selection") ;
         HASH_FIND_STR(g->vertexes, edge, dst) ;
     }
 
@@ -240,10 +240,10 @@ int graph_add_nedge(graph *g, const char *vertex, stack *stk, bool requiredby, b
 
         FOREACH_STK(stk, pos) {
             if (requiredby == false) {
-                if (!graph_add_edge(g, vertex, stk->s + pos, requiredby, addedge))
+                if (!graph_add_edge(g, vertex, stk->s + pos, addedge))
                     return 0 ;
             } else {
-                if (!graph_add_edge(g, stk->s + pos, vertex, requiredby, addedge))
+                if (!graph_add_edge(g, stk->s + pos, vertex, addedge))
                     return 0 ;
             }
         }
@@ -280,21 +280,25 @@ void graph_get_edge(graph *g, const vertex_t *vertex, vertex_t **list, bool requ
     const bitset_t *type = !requiredby ? &vertex->depends : &vertex->requiredby ;
     uint32_t nedge = !requiredby ? vertex->ndepends : vertex->nrequiredby ;
 
-    if (!nedge)
+    if (!nedge || type->size > BITSET_ARRAY_SIZE)
         return ;
 
     // Search for each element (uint32_t) of the bitset
-    for (uint32_t i = 0 ; i < type->size ; i++) {
+    for (uint32_t i = 0 ; i < type->size && found < nedge ; i++) {
         uint32_t bits = type->bits[i] ;
+        if (!bits)
+            continue ;
 
         // Search for each bit in that element
-        for (uint32_t j = 0 ; j < UINT_NBITS ; j++) {
-            if (bits & (1U << j)) {  // if bit == 1
+        for (uint32_t j = 0 ; j < UINT_NBITS && found < nedge ; j++) {
+            if (bits & 1U) {
                 uint32_t index = i * UINT_NBITS + j ;
-                list[found++] = g->sindex[index] ;
-                if (found == nedge)
+                if (index >= GRAPH_MAX_VERTEX)
                     return ;
+                list[found++] = g->sindex[index] ;
             }
+
+            bits >>= 1 ;
         }
     }
 }
@@ -421,10 +425,12 @@ int graph_sort(graph *g, bool reverse)
 
     // Process root vertices first
     for (pos = 0; pos < g->nvertexes; pos++) {
-        uint32_t rev = reverse ? g->sindex[pos]->nrequiredby : g->sindex[pos]->ndepends ;
-        if (g->sindex[pos] && !rev)
-            graph_dfs(g, pos, visited, reverse);
+        if (g->sindex[pos] == NULL)
+            continue ;
 
+        uint32_t rev = reverse ? g->sindex[pos]->nrequiredby : g->sindex[pos]->ndepends ;
+        if (!rev)
+            graph_dfs(g, pos, visited, reverse);
     }
 
     for (pos = 0 ; pos < g->nvertexes ; pos++) {
@@ -435,10 +441,10 @@ int graph_sort(graph *g, bool reverse)
     return 1 ;
 }
 
-void graph_show(graph *g, const char *msg)
+void graph_show(graph *g)
 {
     vertex_t *s = NULL, *tmp = NULL ;
-    log_1_warn("[DEBUG]: ", msg) ;
+    log_1_warn("[DEBUG]: ") ;
     HASH_ITER(hh, g->vertexes, s, tmp) {
         printf("%s:%i -> ", s->name, s->index) ;
         if (s->ndepends) {
