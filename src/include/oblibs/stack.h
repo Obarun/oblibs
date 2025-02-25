@@ -223,7 +223,7 @@ extern uint8_t stack_close(stack *stk) ;
 extern uint8_t stack_copy(stack *stk, char const *string, size_t len) ;
 
 #define stack_copy_g(stack, s) stack_copy(stack, (s), strlen(s))
-#define stack_copy_stack(dst, src) stack_copy_g(dst, (src)->s)
+#define stack_copy_stack(dst, src) stack_copy(dst, (src)->s, (src)->len)
 
 /**
  * @brief Counts the number of elements in the stack.
