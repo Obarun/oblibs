@@ -63,7 +63,6 @@ src/sastr/sastr_dir_get_recursive.o src/sastr/sastr_dir_get_recursive.lo: src/sa
 src/sastr/sastr_drop_same_element.o src/sastr/sastr_drop_same_element.lo: src/sastr/sastr_drop_same_element.c src/include/oblibs/sastr.h src/include/oblibs/string.h
 src/sastr/sastr_find.o src/sastr/sastr_find.lo: src/sastr/sastr_find.c src/include/oblibs/sastr.h
 src/sastr/sastr_find_element_byid.o src/sastr/sastr_find_element_byid.lo: src/sastr/sastr_find_element_byid.c src/include/oblibs/sastr.h
-src/sastr/sastr_find_element_byname.o src/sastr/sastr_find_element_byname.lo: src/sastr/sastr_find_element_byname.c src/include/oblibs/sastr.h
 src/sastr/sastr_len.o src/sastr/sastr_len.lo: src/sastr/sastr_len.c src/include/oblibs/sastr.h
 src/sastr/sastr_nelement.o src/sastr/sastr_nelement.lo: src/sastr/sastr_nelement.c src/include/oblibs/sastr.h
 src/sastr/sastr_rebuild_in_nline.o src/sastr/sastr_rebuild_in_nline.lo: src/sastr/sastr_rebuild_in_nline.c src/include/oblibs/sastr.h
