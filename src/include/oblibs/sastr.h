@@ -113,12 +113,6 @@ extern int sastr_reverse(stralloc *sa) ;
  * @Return -1 in other case */
 extern ssize_t sastr_find_element_byid(stralloc *sa,unsigned int el) ;
 
-/** Find a specific element by name @name
- * @Return the number of the start of the string of the element if found
- * and set @el to the number of the element
- * @Return -1 in other case */
-extern ssize_t sastr_find_element_byname(stralloc *sa,char const *name,unsigned int *el) ;
-
 /** Sort the chained @sa string by string comparaison
  * @Return 1 on success
  * @Return 0 on fail */
