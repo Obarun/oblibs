@@ -203,7 +203,7 @@ int graph_add_edge(graph *g, const char *vertex, const char *edge, bool addedge)
     HASH_FIND_STR(g->vertexes, vertex, src) ;
     HASH_FIND_STR(g->vertexes, edge, dst) ;
     if (!addedge && ((src == NULL) || (dst == NULL))) {
-        log_warn("service: ", src == NULL ? vertex : edge," not found") ;
+        log_warn("vertex: ", src == NULL ? vertex : edge," not found") ;
         return 0 ;
     }
 
@@ -362,10 +362,10 @@ int check_cycle_recursive(graph *g, vertex_t *src, vertex_t *target, uint32_t *v
 int graph_check_cycle(graph *g)
 {
 
-    uint32_t visited[g->len] ;
+    uint32_t visited[g->len], pos = 0 ;
     memset(visited, 0, sizeof(uint32_t) * g->len) ;
 
-    for (uint32_t pos = 0 ; pos < g->nvertexes ; pos++) {
+    for (; pos < g->nvertexes ; pos++) {
         if (g->sindex[pos] != NULL && g->sindex[pos]->ndepends) {
             vertex_t *edge[g->sindex[pos]->ndepends] ;
             memset(edge, 0, sizeof(vertex_t *) * g->sindex[pos]->ndepends) ;
@@ -415,7 +415,8 @@ void graph_dfs(graph *g, uint32_t idx, uint32_t *visited, bool reverse)
 
 int graph_sort(graph *g, bool reverse)
 {
-    uint32_t visited[g->len], pos = 0 ;
+    vertex_t *c, *t ;
+    uint32_t visited[g->len] ;
     memset(g->sort, 0, sizeof(uint32_t) * g->len) ;
     memset(visited, 0, sizeof(uint32_t) * g->len) ;
     g->nsort = 0 ;
@@ -424,18 +425,21 @@ int graph_sort(graph *g, bool reverse)
         return 0 ;
 
     // Process root vertices first
-    for (pos = 0; pos < g->nvertexes; pos++) {
-        if (g->sindex[pos] == NULL)
+    HASH_ITER(hh, g->vertexes, c, t) {
+
+        if (c == NULL)
             continue ;
 
-        uint32_t rev = reverse ? g->sindex[pos]->nrequiredby : g->sindex[pos]->ndepends ;
+        uint32_t rev = reverse ? c->nrequiredby : c->ndepends ;
         if (!rev)
-            graph_dfs(g, pos, visited, reverse);
+            graph_dfs(g, c->index, visited, reverse);
     }
 
-    for (pos = 0 ; pos < g->nvertexes ; pos++) {
-        if (g->sindex[pos])
-            graph_dfs(g, pos, visited, reverse) ;
+    HASH_ITER(hh, g->vertexes, c, t) {
+
+        if (c && !visited[c->index])
+            graph_dfs(g, c->index, visited, reverse) ;
+
     }
 
     return 1 ;
