@@ -19,7 +19,7 @@ int ob_basename(char *dst,char const *path)
     size_t slen = strlen(path) ;
     if (path[slen-1] == '/') slen-- ;
     ssize_t pathlen = get_rlen_until(path,'/',slen) ;
-    if (pathlen <= 0) return 0 ;
+    if (pathlen < 0) return 0 ;
     pathlen++ ;
     size_t namelen = slen - pathlen ;
     memcpy(dst,path+pathlen,namelen) ;
