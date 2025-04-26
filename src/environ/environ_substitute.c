@@ -84,6 +84,7 @@ static int dollar_recursive(stack *value, const char *key, const char *old, size
 
     return 1 ;
 }
+
 static int dollar_replace(stralloc *old, const char *line, const char *mkey, exlsn_t *info, elsubst_t *blah)
 {
 
