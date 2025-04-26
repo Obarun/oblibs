@@ -2,9 +2,28 @@
 
 ---
 
+# In 0.3.3.0
+
+- Bugs Fix:
+
+    - queue_remove: Properly cast variable type.
+    - graph_free: fix leak by freeing bitset_t structure.
+    - stack_copy_stack macro: be sure to use the correct length of the string to copy
+
+- API changes:
+
+    - graph structure: change name of the graph structure to graph_t structure.
+    - graph_add_edge: remove useless boolean parameter `requiredby`.
+    - ob_basename: allow root directory and set errno at crash.
+
+- Remove function sastr_find_element_byname function
+
+---
+
 ## In 0.3.2.1
 
 - Hot Fix:
+
     - environ_make: close the array at the end of array.
 
 ---
@@ -14,7 +33,6 @@
 - Bugs Fix:
 
     - environ_substitute: ensure that all dollars from a same line are handled.
-    -
 
 - New functions:
     - environ_create_environ: create an environment array merging first a modified environment to the current one.
