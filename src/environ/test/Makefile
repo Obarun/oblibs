@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS=-g -Wall -Wextra -std=c99 -D_XOPEN_SOURCE=700 -I../../include/66
+CFLAGS=-g -Wall -Wextra -std=c99 -D_XOPEN_SOURCE=700 -I../../include
 
 LIBS_PATH = -L/usr/lib/skalibs \
 			-L/usr/lib/execline

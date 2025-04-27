@@ -26,8 +26,8 @@ build:
   - ./build_toolchain.sh "commit"
   - ./configure --prefix=/usr
   - make
-  - make DESTDIR=gitlab-ci install
   - make check
+  - make DESTDIR=gitlab-ci install
 
   only:
     refs:
@@ -39,8 +39,8 @@ release:
   - ./build_toolchain.sh
   - ./configure --bindir=/usr/bin --shebangdir=/usr/bin --with-lib=/usr/lib/skalibs --with-lib=/usr/lib/execline --with-lib=/usr/lib/s6 --with-lib=/usr/lib/oblibs
   - make
-  - make DESTDIR=gitlab-ci install
   - make check
+  - make DESTDIR=gitlab-ci install
 
   only:
       refs:
