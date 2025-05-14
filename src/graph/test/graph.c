@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
-#include <oblibs/graph2.h>
+#include <oblibs/graph.h>
 
 void test_graph_init() {
     printf("Testing graph_init...\n");
