@@ -12,45 +12,39 @@
  * except according to the terms contained in the LICENSE file./
  */
 
- #include <stdint.h>
- #include <string.h>
+#include <stdint.h>
+#include <string.h>
+#include <oblibs/bits.h>
 
- #include <oblibs/bits.h>
+bitset_t bitset_create_empty(uint32_t len)
+{
+    bitset_t bs = BITSET_ZERO ;
+    uint32_t rsize = BITSET_WORDS_SIZE(len) ;
 
- bitset_t bitset_create_empty(uint32_t len)
- {
-     bitset_t bs = BITSET_ZERO ;
-     uint32_t rsize = BITSET_WORDS_SIZE(len) ;
+    if (rsize > BITSET_ARRAY_SIZE)
+        return bs ;
 
-     if (rsize > BITSET_ARRAY_SIZE)
-         return bs ;
+    bs.size = rsize ;
+    return bs ;
+}
 
-     bs.size = rsize ;
-     return bs ;
- }
+void bitset_set(bitset_t *bitset, uint32_t index)
+{
+    bitset->bits[index / UINT32_BITS] |= (1U << (index % UINT32_BITS)) ;
+}
 
- void bitset_set(bitset_t *bitset, uint32_t index)
- {
-     if (bitset && index < bitset->size)
-         bitset->bits[index / UINT32_BITS] |= (1U << (index % UINT32_BITS)) ;
- }
+void bitset_clear(bitset_t *bitset, uint32_t index)
+{
+    bitset->bits[index / UINT32_BITS] &= ~(1U << (index % UINT32_BITS)) ;
+}
 
- void bitset_clear(bitset_t *bitset, uint32_t index)
- {
-     if (bitset && index < bitset->size)
-         bitset->bits[index / UINT32_BITS] &= ~(1U << (index % UINT32_BITS)) ;
- }
+int bitset_isvalid(const bitset_t *bitset, uint32_t index)
+{
+    return bitset->bits[index / UINT32_BITS] & (1U << (index % UINT32_BITS)) ;
+}
 
- int bitset_isvalid(const bitset_t *bitset, uint32_t index)
- {
-     if (bitset && index < bitset->size)
-         return bitset->bits[index / UINT32_BITS] & (1U << (index % UINT32_BITS)) ;
-
-     return 0 ;
- }
-
- void bitset_free(bitset_t *bitset)
- {
-     if (bitset && bitset->size > 0)
-         bitset->size = 0 ;
- }
+void bitset_free(bitset_t *bitset)
+{
+    if (bitset && bitset->size > 0)
+        bitset->size = 0 ;
+}
