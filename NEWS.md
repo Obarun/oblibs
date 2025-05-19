@@ -2,6 +2,20 @@
 
 ---
 
+# In 0.3.4.0
+
+- Bugs Fix:
+
+    - Fix library path for check process
+
+- API changes:
+
+    - Remove all old graph function and header file graph.h.
+    - Remane graph2.h to graph.h
+    - Split bitset_t struct and associated function from graph to independent file bits.c and bits.h.
+
+---
+
 # In 0.3.3.0
 
 - Bugs Fix:
