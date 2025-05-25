@@ -59,7 +59,7 @@ int graph_add_vertex(graph *g, const char *name)
 {
     vertex_t *s = NULL ;
     size_t len = strlen(name) ;
-    uint32_t *index, i ;
+    uint32_t index = 0, *iptr = NULL ;
 
     if (len > GRAPH_MAX_VERTEX_NAME)
         return (errno = EINVAL, 0) ;
@@ -71,16 +71,16 @@ int graph_add_vertex(graph *g, const char *name)
     if (s != NULL)
         return 1 ;
 
-    index = (uint32_t *)queue_get_min(g->qindex) ;
-    if (!index) {
+    iptr = (uint32_t *)queue_get_min(g->qindex) ;
+    if (!iptr) {
         /** empty queue,
          * take it from the current count */
-        i = g->nvertexes ;
-        index = &i ;
+        index = g->nvertexes ;
 
     } else {
 
-        if (!queue_remove(g->qindex, index))
+        index = *iptr ;
+        if (!queue_remove(g->qindex, iptr))
             return 0 ;
     }
 
@@ -104,7 +104,7 @@ int graph_add_vertex(graph *g, const char *name)
 
     s->ndepends = 0 ;
     s->nrequiredby = 0 ;
-    s->index = *index ;
+    s->index = index ;
     g->sindex[s->index] = s ;
 
     HASH_ADD_STR(g->vertexes, name, s) ;
