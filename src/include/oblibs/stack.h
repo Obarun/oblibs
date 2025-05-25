@@ -74,7 +74,7 @@
 
 #define _cleanup_stk_ __attribute__((cleanup(stack_free)))
 
-#define _alloc_stk_(stk, len) _cleanup_stk_ stack stk = STACK_ZERO ; char stk##__store__[((len) + 3) < MAXENV ? ((len) + 3) : 0]  ; init_stack(&stk, (len) < MAXENV ? stk##__store__ : 0, (len))
+#define _alloc_stk_(stk, len) _cleanup_stk_ stack stk = STACK_ZERO ; char stk##__store__[((len) + 3) < MAXENV ? ((len) + 3) : 1]  ; init_stack(&stk, stk##__store__, (len))
 
 #define STACK_ZERO { .s = 0, .len = 0, .maxlen = 0, .count = 0, .allocated = 0 }
 
