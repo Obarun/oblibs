@@ -2,7 +2,7 @@ image: obarun/base:latest
 
 before_script:
   - pacman -Syu --noconfirm
-  - pacman -S autoconf automake binutils bison file flex gcc gettext groff libtool m4 make patch pkgconf texinfo which git grep --noconfirm
+  - pacman -S base-devel meson git --noconfirm
 
 stages:
   - build
@@ -13,9 +13,10 @@ request:
   stage: request
   script:
   - ./build_toolchain.sh "commit"
-  - ./configure --prefix=/usr
-  - make
-  - make DESTDIR=gitlab-ci install
+  - meson setup build -D test=true
+  - meson compile -C build
+  - DESTDIR=gitlab-ci meson install -C build
+
 
   only:
   - merge_requests
@@ -24,10 +25,10 @@ build:
   stage: build
   script:
   - ./build_toolchain.sh "commit"
-  - ./configure --prefix=/usr
-  - make
-  - make check
-  - make DESTDIR=gitlab-ci install
+  - meson setup build -D test=true
+  - meson compile -C build
+  - meson test -C build
+  - DESTDIR=gitlab-ci meson install -C build
 
   only:
     refs:
@@ -37,10 +38,10 @@ release:
   stage: release
   script:
   - ./build_toolchain.sh
-  - ./configure --bindir=/usr/bin --shebangdir=/usr/bin --with-lib=/usr/lib/skalibs --with-lib=/usr/lib/execline --with-lib=/usr/lib/s6 --with-lib=/usr/lib/oblibs
-  - make
-  - make check
-  - make DESTDIR=gitlab-ci install
+  - meson setup build -D test=true -D with-doc=true -D s6-log-user=s6log
+  - meson compile -C build
+  - meson test -C build
+  - DESTDIR=gitlab-ci meson install -C build
 
   only:
       refs:

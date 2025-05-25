@@ -1,0 +1,56 @@
+option('with-pkgconfig',
+type: 'boolean',
+value: false,
+description: 'Build and install a /usr/lib/pkgconfig/lib66.pc file')
+
+option('test',
+type: 'boolean',
+value: false,
+description: 'Build and run tests')
+
+option('with-include-dir',
+type: 'array',
+value: [],
+description: 'Additional include directories')
+
+option('with-staticlib-dir',
+type: 'array',
+value: [],
+description: 'Additional static library directories')
+
+option('with-dynamiclib-dir',
+type: 'array',
+value: [],
+description: 'Additional shared library directories')
+
+option('enable-shared',
+type: 'boolean',
+value: true,
+description: 'Build shared libraries for dynamic linking')
+
+option('enable-static',
+type: 'boolean',
+value: false,
+description: 'Build static libraries for static linking')
+
+option('enable-static-deps',
+type: 'boolean',
+value: false,
+description: 'Prefer static linking for all dependencies (e.g., skalibs, s6), reducing runtime dependencies (requires enable-static=true)')
+
+option('enable-static-executable',
+type: 'boolean',
+value: false,
+description: 'Build fully static executables, including static libc, for maximum portability')
+
+option('enable-all-pic',
+type: 'boolean',
+value: false,
+description: 'Compile static libraries with position-independent code (PIC) for use in shared libraries or PIE executables')
+
+option('enable-pie',
+type: 'boolean',
+value: false,
+description: 'Build executables as position-independent (PIE) for enhanced security via ASLR')
+
+
