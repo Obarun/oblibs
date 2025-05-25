@@ -39,5 +39,5 @@ int str_contain(char const *str, char const *search)
         if (found) break ;
     }
 
-    return found ? (i + slen) : -1 ;
+    return found ? (int)(i + slen) : -1 ;
 }

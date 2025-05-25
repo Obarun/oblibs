@@ -294,7 +294,7 @@ void log_out(char const *str[],...)
 
 void log_out_builder(log_dbg_info_t *db_info,int level, char const *msg[],char const *str[],...)
 {
-    if (level <= VERBOSITY)
+    if ((unsigned int)level <= VERBOSITY)
     {
         if (COLOR_ENABLED) log_color = &log_color_enable ;
         log_color_init() ;
