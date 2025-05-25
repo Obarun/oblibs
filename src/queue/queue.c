@@ -135,10 +135,10 @@ int queue_remove(queue_t *q, void *data)
 
         if (q->rmcmp((void *)q->data[pos], (void *)data) == 0) {
 
+            CLEAN_FREE(q->data[pos]) ;
+
             if (pos != q->size - 1)
                 queue_swap(&q->data[pos], &q->data[q->size - 1]) ;
-
-            free(q->data[q->size]) ;
 
             q->size-- ;
 
@@ -209,7 +209,7 @@ int queue_reverse(queue_t *q)
 
 int queue_shrink(queue_t *q)
 {
-    if (!q || !q->data || q->size < 0)
+    if (!q || !q->data)
        return (errno = EINVAL, 0) ;
 
     if (q->size >= q->capacity / 2)
