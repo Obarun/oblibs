@@ -58,14 +58,14 @@ meson install -C build
 
 ## Key options include:
 
-- `enable-shared`: Build shared libraries (e.g., `liboblibs.so`) for dynamic linking (default: true).
-- `enable-static`: Build static libraries (e.g., `liboblibs.a`) for static linking (default: false).
-- `enable-static-deps`: Prefer static linking for dependencies (e.g., `skalibs`, `s6`) to reduce runtime dependencies; requires `-D enable-static=true` (default: false).
-- `enable-static-executable`: Build fully static executables, including a static `libc`, for maximum portability; requires a static `libc` (e.g., `libc.a`) on the system (default: false).
-- `enable-all-pic`: Compile static libraries with position-independent code (`PIC`) for use in shared libraries or `PIE` executables (default: false).
-- `enable-pie`: Build executables as position-independent (`PIE`) for enhanced security via Address Space Layout Randomization (`ASLR`) (default: false).
-- `test`: Build and run tests (default: false).
-- `with-pkgconfig`: Build and install a `/usr/lib/pkgconfig/liboblibs.pc` file.
+- `with-pkgconfig`: Build and install a `/usr/lib/pkgconfig/liboblibs.pc` file(default: `false`).
+- `enable-shared`: Build shared libraries (e.g., `liboblibs.so`) for dynamic linking (default: `true`).
+- `enable-static`: Build static libraries (e.g., `liboblibs.a`) for static linking (default: `false`).
+- `enable-static-deps`: Prefer static linking for dependencies (e.g., `skalibs`, `s6`) to reduce runtime dependencies; requires `-D enable-static=true` (default: `false`).
+- `enable-static-executable`: Build fully static executables, including a static `libc`, for maximum portability; requires a static `libc` (e.g., `libc.a`) on the system (default: `false`).
+- `enable-all-pic`: Compile static libraries with position-independent code (`PIC`) for use in shared libraries or `PIE` executables (default: `false`).
+- `enable-pie`: Build executables as position-independent (`PIE`) for enhanced security via Address Space Layout Randomization (`ASLR`) (default: `false`).
+- `test`: Build and run tests (default: `false`).
 
 ## Option Combinations
 

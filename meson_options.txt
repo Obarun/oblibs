@@ -1,7 +1,7 @@
 option('with-pkgconfig',
 type: 'boolean',
 value: false,
-description: 'Build and install a /usr/lib/pkgconfig/lib66.pc file')
+description: 'Build and install a /usr/lib/pkgconfig/liboblibs.pc file')
 
 option('test',
 type: 'boolean',
