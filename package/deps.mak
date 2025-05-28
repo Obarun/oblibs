@@ -4,6 +4,7 @@
 
 src/include/oblibs/environ.h: src/include/oblibs/lexer.h src/include/oblibs/stack.h
 src/include/oblibs/graph.h: src/include/oblibs/bits.h src/include/oblibs/hash.h src/include/oblibs/queue.h src/include/oblibs/stack.h
+src/include/oblibs/graph2.h: src/include/oblibs/graph.h
 src/include/oblibs/lexer.h: src/include/oblibs/stack.h
 src/include/oblibs/socket.h: src/include/oblibs/io.h
 src/bits/bits.o src/bits/bits.lo: src/bits/bits.c src/include/oblibs/bits.h

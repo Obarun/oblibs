@@ -4,15 +4,19 @@
 
 # In 0.3.4.0
 
-- Bugs Fix:
+- Bug Fixes:
+  - Fixed incorrect casting to compare same value types (`f118e41`).
+  - Prevented invalid `table[0]` access (`e33bb3b`).
+  - Fixed memory management to avoid freeing bad addresses (`d492c0b`).
+  - Corrected type casting for reliability (`2ef0780`).
+  - Fixed library path for `check` (`993c1b6`).
+  - Ensured proper installation before `check` (`4e7263b`).
 
-    - Fix library path for check process
-
-- API changes:
-
-    - Remove all old graph function and header file graph.h.
-    - Remane graph2.h to graph.h
-    - Split bitset_t struct and associated function from graph to independent file bits.c and bits.h.
+- Enhancements:
+  - Switched to Meson build system for better cross-platform support and efficiency (`2760a05`). Traditional `configure` and `make` remain functional. See `INSTALL_MESON.md`.
+  - Made `bitset_t` struct and functions public, split from graph algorithm (`67b6bc6`).
+  - Removed outdated graph algorithm; renamed `graph2.h`/`graph2.c` to `graph.h`/`graph.c` (`b5f71c8`). A `graph2.h` is kept only for compatibility and will be removed in a future release.
+  - Minor code formatting improvements (`a4ec3cc`).
 
 ---
 
