@@ -12,129 +12,150 @@
  * except according to the terms contained in the LICENSE file./
  */
 
- #ifndef OB_BITS_H
- #define OB_BITS_H
+#ifndef OB_BITS_H
+#define OB_BITS_H
 
- #include <stdint.h>
+#include <stdint.h>
 
- #define UINT32_BITS 32
- #define UINT32_BITS_MAX 1024
- #define BITSET_WORDS_SIZE(n) ((n + 31) / 32)
- #define BITSET_ARRAY_SIZE ((UINT32_BITS_MAX + 31) / UINT32_BITS)  // Round up to nearest multiple of 32
+#define UINT32_BITS 32
+#define UINT32_BITS_MAX 1024
+#define BITSET32_WORDS_SIZE(n) ((n + (UINT32_BITS - 1)) / UINT32_BITS)
+#define BITSET32_ARRAY_SIZE ((UINT32_BITS_MAX + (UINT32_BITS - 1)) / UINT32_BITS)  // Round up to nearest multiple of 32
 
- /**
-  * @struct bitset_t
-  * @brief Represents a set of bits.
-  *
-  * This bitset is used to mark the edges of one vertex on other vertexes,
-  * or the vertexes that depend on it.
-  *
-  * @param bits
-  * A bits array.
-  *
-  * @param size
-  * The size of the bitset, representing the number of bits.
-  */
- typedef struct bitset_s bitset_t ;
- struct bitset_s {
-     uint32_t bits[BITSET_ARRAY_SIZE] ;
-     uint32_t size ;
- } ;
+/**
+ * @struct bitset32_t
+ * @brief Represents a set of uint32_t bits.
+ *
+ * This bitset is used to mark the edges of one vertex on other vertexes,
+ * or the vertexes that depend on it.
+ *
+ * @param bits
+ * A bits array.
+ *
+ * @param size
+ * The size of the bitset, representing the number of bits.
+ */
+typedef struct bitset32_s bitset32_t ;
+struct bitset32_s {
+    uint32_t bits[BITSET32_ARRAY_SIZE] ;
+    uint32_t size ;
+    uint32_t count ;
+} ;
 
- #define BITSET_ZERO { {0}, 0 }
+#define BITSET32_ZERO { {0}, 0, 0 }
 
- /**
-  * @brief Creates an empty bitset of the specified length.
-  *
-  * This function initializes a bitset structure with all bits set to 0. The
-  * number of bits is determined by the input length, rounded up to the nearest
-  * multiple of the size of an unsigned integer.
-  *
-  * @param len
-  * The number of bits required in the bitset.
-  *
-  * @return
-  * A `bitset_t` structure with all bits set to 0 and a valid size.
-  * If the required size exceeds the maximum allowed (`UINT32_BITS_MAX / UINT32_BITS`),
-  * the size of the returned bitset is set to 0, indicating failure.
-  *
-  * @note
-  * - The function clears the `bits` array in the bitset structure to ensure all
-  *   bits are initialized to 0.
-  * - The size of the bitset is stored in `bitset_t::size`, representing the number
-  *   of valid entries in the `bits` array.
-  */
- extern bitset_t bitset_create_empty(uint32_t len) ;
+/**
+ * @brief Creates an empty bitset of the specified length.
+ *
+ * This function initializes a bitset structure with all bits set to 0. The
+ * number of bits is determined by the input length, rounded up to the nearest
+ * multiple of the size of an unsigned integer.
+ *
+ * @param len
+ * The number of bits required in the bitset.
+ *
+ * @return
+ * A `bitset32_t` structure with all bits set to 0 and a valid size.
+ * If the required size exceeds the maximum allowed (`UINT32_BITS_MAX / UINT32_BITS`),
+ * the size of the returned bitset is set to 0, indicating failure.
+ *
+ * @note
+ * - The function clears the `bits` array in the bitset structure to ensure all
+ *   bits are initialized to 0.
+ * - The size of the bitset is stored in `bitset32_t::size`, representing the number
+ *   of valid entries in the `bits` array.
+ */
+extern bitset32_t bitset32_init(uint32_t len) ;
 
- /**
-  * @brief Sets a specific bit in the bitset to 1.
-  *
-  * This function modifies the bitset to mark a specific bit as active (set to 1),
-  * based on the provided index.
-  *
-  * @param bitset
-  * Pointer to the bitset to modify.
-  *
-  * @param index
-  * The index of the bit to set.
-  *
-  * @note
-  * - The function does not perform bounds checking on the `index`. Ensure that the
-  *   index is within the range of the bitset's size.
-  */
- extern void bitset_set(bitset_t *bitset, uint32_t index) ;
+/**
+ * @brief Sets a specific bit in the bitset to 1.
+ *
+ * This function modifies the bitset to mark a specific bit as active (set to 1),
+ * based on the provided index.
+ *
+ * @param bitset
+ * Pointer to the bitset to modify.
+ *
+ * @param index
+ * The index of the bit to set.
+ *
+ * @note
+ * - The function does not perform bounds checking on the `index`. Ensure that the
+ *   index is within the range of the bitset's size.
+ */
+extern void bitset32_set(bitset32_t *bitset, uint32_t index) ;
 
- /**
-  * @brief Clears a specific bit in the bitset, setting it to 0.
-  *
-  * This function modifies the bitset to mark a specific bit as inactive (set to 0),
-  * based on the provided index.
-  *
-  * @param bitset
-  * Pointer to the bitset to modify.
-  *
-  * @param index
-  * The index of the bit to clear.
-  *
-  * @note
-  * - The function does not perform bounds checking on the `index`. Ensure that the
-  *   index is within the range of the bitset's size.
-  */
- extern void bitset_clear(bitset_t *bitset, uint32_t index) ;
+/**
+ * @brief Clears a specific bit in the bitset, setting it to 0.
+ *
+ * This function modifies the bitset to mark a specific bit as inactive (set to 0),
+ * based on the provided index.
+ *
+ * @param bitset
+ * Pointer to the bitset to modify.
+ *
+ * @param index
+ * The index of the bit to clear.
+ *
+ * @note
+ * - The function does not perform bounds checking on the `index`. Ensure that the
+ *   index is within the range of the bitset's size.
+ */
+extern void bitset32_clear(bitset32_t *bitset, uint32_t index) ;
 
- /**
-  * @brief Checks if a specific bit in the bitset is set to 1.
-  *
-  * This function checks whether the bit at the given index in the bitset is active
-  * (set to 1).
-  *
-  * @param bitset
-  * Pointer to the bitset to check.
-  *
-  * @param index
-  * The index of the bit to check.
-  *
-  * @return
-  * A non-zero value if the bit is set to 1, or 0 if the bit is 0.
-  *
-  * @note
-  * - The function does not perform bounds checking on the `index`. Ensure that the
-  *   index is within the range of the bitset's size.
-  */
- extern int bitset_isvalid(const bitset_t *bitset, uint32_t index) ;
+/**
+ * @brief Checks if a specific bit in the bitset is set to 1.
+ *
+ * This function checks whether the bit at the given index in the bitset is active
+ * (set to 1).
+ *
+ * @param bitset
+ * Pointer to the bitset to check.
+ *
+ * @param index
+ * The index of the bit to check.
+ *
+ * @return
+ * A non-zero value if the bit is set to 1, or 0 if the bit is 0.
+ *
+ * @note
+ * - The function does not perform bounds checking on the `index`. Ensure that the
+ *   index is within the range of the bitset's size.
+ */
+extern int bitset32_isvalid(const bitset32_t *bitset, uint32_t index) ;
 
- /**
-  * @brief Frees a bitset structure.
-  *
-  * This function clears the contents of the bitset and resets its size.
-  *
-  * @param bitset
-  * Pointer to the bitset structure to be freed.
-  *
-  * @note
-  * - If the bitset is NULL or its size is 0, the function does nothing.
-  * - The memory for the bitset structure itself is not freed.
-  */
- extern void bitset_free(bitset_t *bitset) ;
+/**
+ * @brief Frees a bitset structure.
+ *
+ * This function clears the contents of the bitset and resets its size.
+ *
+ * @param bitset
+ * Pointer to the bitset structure to be freed.
+ *
+ * @note
+ * - If the bitset is NULL or its size is 0, the function does nothing.
+ * - The memory for the bitset structure itself is not freed.
+ */
+extern void bitset32_free(bitset32_t *bitset) ;
 
- #endif
+#define UINT8_BITS 8
+#define UINT8_BITS_MAX 256
+#define BITSET8_WORDS_SIZE(n) ((n + (UINT8_BITS - 1)) / UINT8_BITS)
+#define BITSET8_ARRAY_SIZE ((UINT8_BITS_MAX + (UINT8_BITS - 1)) / UINT8_BITS)  // Round up to nearest multiple of 8
+
+typedef struct bitset8_s bitset8_t ;
+struct bitset8_s {
+    uint8_t bits[BITSET8_ARRAY_SIZE] ;
+    uint8_t size ;
+    uint8_t count ;
+} ;
+
+#define BITSET8_ZERO { {0}, 0, 0 }
+
+extern bitset8_t bitset8_init(uint8_t len) ;
+extern void bitset8_set(bitset8_t *bitset, uint8_t index) ;
+extern void bitset8_clear(bitset8_t *bitset, uint8_t index) ;
+extern int bitset8_isvalid(const bitset8_t *bitset, uint8_t index) ;
+extern void bitset8_free(bitset8_t *bitset) ;
+
+#endif

@@ -44,12 +44,12 @@ void test_graph_add_edge() {
     vertex_t *vertexA = g.sindex[0];
     vertex_t *vertexB = g.sindex[1];
     vertex_t *vertexC = g.sindex[2];
-    assert(bitset_isvalid(&vertexA->depends, vertexB->index));
-    assert(bitset_isvalid(&vertexA->depends, vertexC->index));
+    assert(bitset32_isvalid(&vertexA->depends, vertexB->index));
+    assert(bitset32_isvalid(&vertexA->depends, vertexC->index));
     assert(vertexA->ndepends == 2);
-    assert(bitset_isvalid(&vertexB->requiredby, vertexA->index));
+    assert(bitset32_isvalid(&vertexB->requiredby, vertexA->index));
     assert(vertexB->nrequiredby == 1);
-    assert(bitset_isvalid(&vertexC->requiredby, vertexA->index));
+    assert(bitset32_isvalid(&vertexC->requiredby, vertexA->index));
     assert(vertexB->nrequiredby == 1);
     assert(!graph_add_edge(&g, NULL, "VertexC", false));
     assert(!graph_add_edge(&g, "VertexC", NULL, false));
@@ -67,17 +67,17 @@ void test_graph_remove_edge() {
     assert(graph_remove_edge(&g, "VertexA", "VertexB", true));
     vertex_t *vertexA = g.sindex[0];
     vertex_t *vertexB = g.sindex[1];
-    assert(!bitset_isvalid(&vertexA->depends, vertexB->index));
+    assert(!bitset32_isvalid(&vertexA->depends, vertexB->index));
     assert(vertexA->ndepends == 0);
-    assert(!bitset_isvalid(&vertexB->requiredby, vertexA->index));
+    assert(!bitset32_isvalid(&vertexB->requiredby, vertexA->index));
     assert(vertexB->nrequiredby == 0);
     assert(graph_add_edge(&g, "VertexA", "VertexB",false));
     assert(graph_remove_edge(&g, "VertexA", "VertexB",false));
     vertexA = g.sindex[0];
     vertexB = g.sindex[1];
-    assert(!bitset_isvalid(&vertexA->depends, vertexB->index));
+    assert(!bitset32_isvalid(&vertexA->depends, vertexB->index));
     assert(vertexA->ndepends == 0);
-    assert(bitset_isvalid(&vertexB->requiredby, vertexA->index));
+    assert(bitset32_isvalid(&vertexB->requiredby, vertexA->index));
     assert(vertexB->nrequiredby == 1);
     graph_free(&g);
 }

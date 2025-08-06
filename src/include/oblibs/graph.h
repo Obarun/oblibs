@@ -115,14 +115,14 @@ typedef struct vertex_s vertex_t ;
 struct vertex_s {
     char name[GRAPH_MAX_VERTEX_NAME + 1] ;
     uint32_t index ;
-    bitset_t depends ;
-    bitset_t requiredby ;
+    bitset32_t depends ;
+    bitset32_t requiredby ;
     uint32_t ndepends ;
     uint32_t nrequiredby ;
     UT_hash_handle hh ;
 } ;
 
-#define VERTEX_ZERO { {0}, 0, BITSET_ZERO, BITSET_ZERO, 0, 0, NULL }
+#define VERTEX_ZERO { {0}, 0, BITSET32_ZERO, BITSET32_ZERO, 0, 0, NULL }
 
 /**
  * @struct graph

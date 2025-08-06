@@ -90,13 +90,13 @@ int graph_add_vertex(graph *g, const char *name)
 
     memcpy(s->name, name, len) ;
     s->name[len] = 0 ;
-    s->depends = bitset_create_empty(g->len) ;
+    s->depends = bitset32_init(g->len) ;
     if (!s->depends.size) {
         free(s) ;
         return (errno = ENOMEM, 0) ;
     }
 
-    s->requiredby = bitset_create_empty(g->len) ;
+    s->requiredby = bitset32_init(g->len) ;
     if (!s->requiredby.size) {
         free(s) ;
         return (errno = ENOMEM, 0) ;
@@ -127,7 +127,7 @@ int graph_remove_vertex(graph *g, const char *name, bool cldepends, bool clrequi
         graph_get_edge(g, s, list, false) ;
 
         for (uint32_t idx = 0 ; idx < s->ndepends ; idx++) {
-            bitset_clear(&list[idx]->requiredby, s->index) ;
+            bitset32_clear(&list[idx]->requiredby, s->index) ;
             list[idx]->nrequiredby-- ;
         }
     }
@@ -138,7 +138,7 @@ int graph_remove_vertex(graph *g, const char *name, bool cldepends, bool clrequi
         graph_get_edge(g, s, list, true) ;
 
         for (uint32_t idx = 0 ; idx < s->nrequiredby ; idx++) {
-            bitset_clear(&list[idx]->depends, s->index) ;
+            bitset32_clear(&list[idx]->depends, s->index) ;
             list[idx]->ndepends-- ;
         }
     }
@@ -182,13 +182,13 @@ int graph_add_edge(graph *g, const char *vertex, const char *edge, bool addedge)
         HASH_FIND_STR(g->vertexes, edge, dst) ;
     }
 
-    if (!bitset_isvalid(&src->depends, dst->index)) {
-        bitset_set(&src->depends, dst->index) ;
+    if (!bitset32_isvalid(&src->depends, dst->index)) {
+        bitset32_set(&src->depends, dst->index) ;
         src->ndepends++ ;
     }
 
-    if (!bitset_isvalid(&dst->requiredby, src->index)) {
-        bitset_set(&dst->requiredby, src->index) ;
+    if (!bitset32_isvalid(&dst->requiredby, src->index)) {
+        bitset32_set(&dst->requiredby, src->index) ;
         dst->nrequiredby++ ;
     }
 
@@ -227,10 +227,10 @@ int graph_remove_edge(graph *g, const char *vertex, const char *edge, bool cledg
     if (src == NULL || dst == NULL)
         log_warn_return(LOG_EXIT_ZERO, "find service: ", vertex, " or ", edge, " -- please make a bug report.") ;
 
-    bitset_clear(&src->depends, dst->index) ;
+    bitset32_clear(&src->depends, dst->index) ;
     src->ndepends-- ;
     if (cledge) {
-        bitset_clear(&dst->requiredby, src->index) ;
+        bitset32_clear(&dst->requiredby, src->index) ;
         dst->nrequiredby-- ;
     }
 
@@ -240,10 +240,10 @@ int graph_remove_edge(graph *g, const char *vertex, const char *edge, bool cledg
 void graph_get_edge(graph *g, const vertex_t *vertex, vertex_t **list, bool requiredby)
 {
     uint32_t found = 0 ;
-    const bitset_t *type = !requiredby ? &vertex->depends : &vertex->requiredby ;
+    const bitset32_t *type = !requiredby ? &vertex->depends : &vertex->requiredby ;
     uint32_t nedge = !requiredby ? vertex->ndepends : vertex->nrequiredby ;
 
-    if (!nedge || type->size > BITSET_ARRAY_SIZE)
+    if (!nedge || type->size > BITSET32_ARRAY_SIZE)
         return ;
 
     // Search for each element (uint32_t) of the bitset
@@ -288,8 +288,8 @@ void graph_free(graph *g)
 
     for (; i < g->len ; i++) {
        if (g->sindex[i]) {
-            bitset_free(&g->sindex[i]->depends);
-            bitset_free(&g->sindex[i]->requiredby);
+            bitset32_free(&g->sindex[i]->depends);
+            bitset32_free(&g->sindex[i]->requiredby);
             free(g->sindex[i]);
             g->sindex[i] = NULL;
         }

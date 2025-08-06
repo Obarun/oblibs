@@ -16,34 +16,73 @@
 #include <string.h>
 #include <oblibs/bits.h>
 
-bitset_t bitset_create_empty(uint32_t len)
+bitset32_t bitset32_init(uint32_t len)
 {
-    bitset_t bs = BITSET_ZERO ;
-    uint32_t rsize = BITSET_WORDS_SIZE(len) ;
+    bitset32_t bs = BITSET32_ZERO ;
+    uint32_t rsize = BITSET32_WORDS_SIZE(len) ;
 
-    if (rsize > BITSET_ARRAY_SIZE)
+    if (rsize > BITSET32_ARRAY_SIZE)
         return bs ;
 
     bs.size = rsize ;
     return bs ;
 }
 
-void bitset_set(bitset_t *bitset, uint32_t index)
+void bitset32_set(bitset32_t *bitset, uint32_t index)
 {
     bitset->bits[index / UINT32_BITS] |= (1U << (index % UINT32_BITS)) ;
+    bitset->count++ ;
 }
 
-void bitset_clear(bitset_t *bitset, uint32_t index)
+void bitset32_clear(bitset32_t *bitset, uint32_t index)
 {
     bitset->bits[index / UINT32_BITS] &= ~(1U << (index % UINT32_BITS)) ;
+    if (bitset->count)
+        bitset->count-- ;
 }
 
-int bitset_isvalid(const bitset_t *bitset, uint32_t index)
+int bitset32_isvalid(const bitset32_t *bitset, uint32_t index)
 {
     return bitset->bits[index / UINT32_BITS] & (1U << (index % UINT32_BITS)) ;
 }
 
-void bitset_free(bitset_t *bitset)
+void bitset32_free(bitset32_t *bitset)
+{
+    if (bitset && bitset->size > 0)
+        bitset->size = 0 ;
+}
+
+bitset8_t bitset8_create_empty(uint8_t len)
+{
+    bitset8_t bs = BITSET8_ZERO ;
+    uint8_t rsize = BITSET8_WORDS_SIZE(len) ;
+
+    if (rsize > BITSET8_ARRAY_SIZE)
+        return bs ;
+
+    bs.size = rsize ;
+    return bs ;
+}
+
+void bitset8_set(bitset8_t *bitset, uint8_t index)
+{
+    bitset->bits[index / UINT8_BITS] |= (1U << (index % UINT8_BITS)) ;
+    bitset->count++ ;
+}
+
+void bitset8_clear(bitset8_t *bitset, uint8_t index)
+{
+    bitset->bits[index / UINT8_BITS] &= ~(1U << (index % UINT8_BITS)) ;
+    if (bitset->count)
+        bitset->count-- ;
+}
+
+int bitset8_isvalid(const bitset8_t *bitset, uint8_t index)
+{
+    return bitset->bits[index / UINT8_BITS] & (1U << (index % UINT8_BITS)) ;
+}
+
+void bitset8_free(bitset8_t *bitset)
 {
     if (bitset && bitset->size > 0)
         bitset->size = 0 ;
