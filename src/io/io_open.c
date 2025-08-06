@@ -16,8 +16,6 @@
 #include <fcntl.h>
 #include <sys/types.h>
 
-#include <oblibs/io.h>
-
 ssize_t io_open(const char *path, unsigned int flags)
 {
     ssize_t r ;

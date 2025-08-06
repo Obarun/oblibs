@@ -12,12 +12,9 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <stddef.h>
-#include <errno.h>
 #include <sys/types.h>
+#include <errno.h>
 #include <unistd.h>
-
-#include <oblibs/io.h>
 
 ssize_t io_read(char *store, int fd, size_t len)
 {

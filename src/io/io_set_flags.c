@@ -13,7 +13,6 @@
  */
 
 #include <fcntl.h>
-#include <oblibs/io.h>
 
 int io_set_flags(int fd, int flags)
 {

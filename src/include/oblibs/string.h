@@ -19,7 +19,6 @@
 #include <stdarg.h>
 #include <stdint.h>
 
-#include <skalibs/genalloc.h>
 #include <skalibs/stralloc.h>
 #include <skalibs/buffer.h>
 #include <skalibs/gccattributes.h>

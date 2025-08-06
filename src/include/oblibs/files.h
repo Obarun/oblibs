@@ -17,7 +17,7 @@
 
 #include <sys/types.h>
 
-#include <skalibs/genalloc.h>
+#include <skalibs/stralloc.h>
 
 /** @Return the size of @filename
  * @Return -1 on failure and set errno*/
