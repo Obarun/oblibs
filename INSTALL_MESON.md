@@ -12,7 +12,7 @@ To build and install the oblibs project, you need:
 
 - `skalibs` version `2.14.3.0` or later: [skarnet.org/software/skalibs](https://skarnet.org/software/skalibs/).
 
-- `execline` version `2.9.6.`1 or later: [skarnet.org/software/execline](https://skarnet.org/software/execline).
+- `execline` version `2.9.6.1` or later: [skarnet.org/software/execline](https://skarnet.org/software/execline).
 
 - Linux API headers version 5.8 or later (required for Linux systems): [gnu.org/software/libc](https://gnu.org/software/libc).
 
@@ -86,7 +86,7 @@ Meson supports a few environment variables for build customization, but passing 
 
 ## Build Variables
 
-You can pass variables to meson compile or meson install for fine-grained control, though this should be used sparingly:
+You can pass variables to meson compile or meson install for fine-grained control:
 
 - `CC`, `CFLAGS`, `CPPFLAGS`, `LDFLAGS`, `LDLIBS`: Override compiler, flags, or libraries.
 - `AR`, `RANLIB`, `STRIP`, `INSTALL`: Customize archiver, ranlib, strip, or install tools.

@@ -103,27 +103,24 @@ if get_option('test')
         error('Failed to run find command for test files in ' + test_dir + ': ' + find_test_files_cmd.stderr())
       endif
 
-      test_files = []
-      foreach file : find_test_files_cmd.stdout().strip().split('\n')
-        if file != '' and fs.is_file(file)
-          test_files += files(file)
+      test_files = find_test_files_cmd.stdout().strip().split('\n')
+      foreach test_file : test_files
+        if test_file != '' and fs.is_file(test_file)
+          # Extract test file name without extension for executable and test name
+          test_name = fs.stem(test_file)  # e.g., 'io_inotify' from 'io_inotify.c'
+          subdir_name = test_dir.split('/').get(-2)  # e.g., 'io' from 'src/io/test'
+          test_exe = executable('test_@0@_@1@'.format(subdir_name, test_name),
+            sources: [test_file],
+            include_directories: incdir,
+            dependencies: [libob_dep],
+            build_by_default: false,
+            c_args: exe_c_args,
+            link_args: get_option('enable-static-executable') ? static_link_args : exe_link_args,
+            pie: get_option('enable-pie')
+          )
+          test('@0@_@1@_test'.format(subdir_name, test_name), test_exe, env: {'LD_LIBRARY_PATH': meson.current_build_dir()})
         endif
       endforeach
-
-      if test_files.length() > 0
-        # Extract subdirectory name for test executable
-        subdir_name = test_dir.split('/').get(-2)  # Get parent directory of test/
-        test_exe = executable('test_@0@'.format(subdir_name),
-          sources: test_files,
-          include_directories: incdir,
-          dependencies: [libob_dep],
-          build_by_default: false,
-          c_args: exe_c_args,
-          link_args: get_option('enable-static-executable') ? static_link_args : exe_link_args,
-          pie: get_option('enable-pie')
-        )
-        test('@0@_test'.format(subdir_name), test_exe, env: {'LD_LIBRARY_PATH': meson.current_build_dir()})
-      endif
     endif
   endforeach
 endif
