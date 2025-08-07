@@ -12,10 +12,14 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <fcntl.h>
-#include <oblibs/io.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/types.h>
 
-ssize_t io_write(const char *s)
+ssize_t io_write(char *store, int fd, size_t len)
 {
-    return io_open(s, O_WRONLY | O_NONBLOCK) ;
+    ssize_t r ;
+    do r = write(fd, store, len) ;
+    while ((r < 0) && (errno == EINTR)) ;
+    return r ;
 }
