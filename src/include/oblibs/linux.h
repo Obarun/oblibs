@@ -26,6 +26,7 @@ extern int lx_signalfd_init(void) ;
 extern int lx_signalfd_read(void) ;
 extern int lx_signalfd_add(int sig) ;
 extern int lx_signalfd_del(int sig) ;
+extern int lx_signalfd_ignore(int sig) ;
 extern void lx_signalfd_end(void) ;
 extern int lx_signalfd_get_fd(void) ;
 extern sigset_t lx_signalfd_get_mask(void) ;

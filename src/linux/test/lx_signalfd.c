@@ -128,6 +128,30 @@ void test_lx_signalfd_del(void) {
     lx_signalfd_end();
 }
 
+// Test lx_signalfd_ignore
+void test_lx_signalfd_ignore(void) {
+    printf("Testing lx_signalfd_ignore...\n");
+
+    // Test ignoring a catchable signal (SIGUSR1)
+    assert(lx_signalfd_ignore(SIGUSR1) == 1 && "Failed to ignore SIGUSR1");
+
+    // Verify SIGUSR1 is ignored by sending it
+    pid_t pid = getpid();
+    if (kill(pid, SIGUSR1) < 0)
+        assert(0 && "Failed to send SIGUSR1");
+
+    // No assertion on signal receipt, as it’s ignored (no-op handler)
+
+    // Test ignoring a non-catchable signal (SIGKILL)
+    errno = 0;
+    assert(lx_signalfd_ignore(SIGKILL) == 1 && "Expected success for non-catchable SIGKILL");
+    assert(errno == EINVAL || errno == 0 && "Expected EINVAL or unchanged errno for SIGKILL");
+
+    // Test invalid signal number
+    errno = 0;
+    assert(lx_signalfd_ignore(-1) == 0 && errno == EINVAL && "Expected EINVAL for invalid signal");
+}
+
 // Test lx_signalfd_read
 void test_lx_signalfd_read(void) {
     printf("Testing lx_signalfd_read...\n");
@@ -180,6 +204,7 @@ int main(void) {
     test_lx_signalfd_get_fd();
     test_lx_signalfd_get_mask();
     test_lx_signalfd_add();
+    test_lx_signalfd_ignore();
     test_lx_signalfd_del();
     test_lx_signalfd_read();
     test_lx_signalfd_end();

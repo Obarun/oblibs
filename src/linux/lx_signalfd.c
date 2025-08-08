@@ -29,6 +29,11 @@ struct lx_signalfd_s
 
 static struct lx_signalfd_s sfd = { .fd = -1 } ;
 
+static void lx_signalfd_nop(int sig)
+{
+    (void)sig;
+}
+
 int lx_signalfd_init(void)
 {
     if (sfd.fd >= 0)
@@ -113,6 +118,24 @@ int lx_signalfd_del(int sig)
 
     sfd.mask = cmask ;
     return 1 ;
+}
+
+int lx_signalfd_ignore(int sig)
+{
+    struct sigaction action = {
+        .sa_handler = lx_signalfd_nop,
+        .sa_flags = SA_RESTART | SA_NOCLDSTOP
+    } ;
+    sigfillset(&action.sa_mask) ;
+
+    int ret = sigaction(sig, &action, NULL) ;
+    if (ret >= 0)
+        return 1 ;
+
+    if (errno == EINVAL && sig >= 1 && sig < NSIG)
+        return 1 ; // Non-catchable signal (e.g., SIGKILL, SIGSTOP)
+
+    return 0 ;
 }
 
 void lx_signalfd_end(void)
