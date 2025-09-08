@@ -155,6 +155,7 @@ void test_lx_signalfd_ignore(void) {
 // Test lx_signalfd_read
 void test_lx_signalfd_read(void) {
     printf("Testing lx_signalfd_read...\n");
+    struct signalfd_siginfo si ;
     int fd = lx_signalfd_init();
     assert(fd >= 0 && "Failed to initialize signalfd for read test");
 
@@ -165,17 +166,17 @@ void test_lx_signalfd_read(void) {
     send_signal(SIGUSR1);
 
     // Read signal
-    int signo = lx_signalfd_read();
-    assert(signo == SIGUSR1 && "Expected SIGUSR1 from lx_signalfd_read");
+    assert(lx_signalfd_read(&si));
+    assert(si.ssi_signo == SIGUSR1 && "Expected SIGUSR1 from lx_signalfd_read");
 
     // Test non-blocking behavior (no pending signals)
     errno = 0;
-    assert(lx_signalfd_read() == 0 && errno == 0 && "Expected 0 for no pending signals (EAGAIN)");
+    assert(lx_signalfd_read(&si) == 0 && errno == 0 && "Expected 0 for no pending signals (EAGAIN)");
 
     // Test with uninitialized fd
     lx_signalfd_end();
     errno = 0;
-    assert(lx_signalfd_read() < 0 && errno == EBADF && "Expected EBADF with uninitialized fd");
+    assert(lx_signalfd_read(&si) < 0 && errno == EBADF && "Expected EBADF with uninitialized fd");
 }
 
 // Test lx_signalfd_end

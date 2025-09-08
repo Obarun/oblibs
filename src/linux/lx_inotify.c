@@ -142,7 +142,7 @@ int lx_inotify_add(const char *what, uint32_t imask)
         return (errno = ENOMEM, 0) ;
     }
 
-    HASH_ADD_KEYPTR(hh_path, iwd, what, strlen(wd->path), wd) ; // Path-based hash table, uses hh
+    HASH_ADD_KEYPTR(hh_path, iwd, what, strlen(wd->path), wd) ; // Path-based hash table, uses hh_path
     HASH_ADD(hh_wd, iwd_by_wd, wd, sizeof(int), wd) ; // wd-based hash table, uses hh_wd
 
     return w ;
@@ -174,22 +174,34 @@ int lx_inotify_update(const char *what, uint32_t imask)
     return w ;
 }
 
-int lx_inotify_del(int wd)
+int lx_inotify_del(const char *what)
 {
     if (ei.fd < 0)
         return (errno = EBADF, 0) ;
 
-    struct lx_inotify_wd_s *w = lx_inotify_get_wd(wd) ;
-    if (w == NULL)
+    struct lx_inotify_wd_s *wd  ;
+    if (!lx_inotify_search(&wd, what))
         return 1 ;
 
-    if (inotify_rm_watch(ei.fd, w->wd) < 0)
+    if (inotify_rm_watch(ei.fd, wd->wd) < 0)
         return 0 ;
 
-    HASH_DELETE(hh_path, iwd, w) ;
-    HASH_DELETE(hh_wd, iwd_by_wd, w) ;
-    free(w->path) ;
-    free(w) ;
+    HASH_DELETE(hh_path, iwd, wd) ;
+    HASH_DELETE(hh_wd, iwd_by_wd, wd) ;
+    free(wd->path) ;
+    free(wd) ;
+
+    return 1 ;
+}
+
+int lx_inotify_search(struct lx_inotify_wd_s **wd, const char *what)
+{
+    if (ei.fd < 0)
+        return (errno = EBADF, 0) ;
+
+    HASH_FIND(hh_path, iwd, what, strlen(what), *wd) ;
+    if ((*wd) == NULL)
+        return (errno = ENOENT, 0) ;
 
     return 1 ;
 }

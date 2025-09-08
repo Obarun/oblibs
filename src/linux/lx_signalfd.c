@@ -40,18 +40,21 @@ int lx_signalfd_init(void)
         return sfd.fd ;
 
     sigemptyset(&sfd.mask) ;
-    sfd.fd = signalfd(-1, &sfd.mask, SFD_NONBLOCK| SFD_CLOEXEC) ;
+    sfd.fd = signalfd(-1, &sfd.mask, SFD_NONBLOCK | SFD_CLOEXEC) ;
 
     return sfd.fd ;
 }
 
-/** return 0 when no more pending signal */
-int lx_signalfd_read(void)
+/**
+ * @return 1 if a signal was read
+ *         0 if no signal is pending (EAGAIN/EWOULDBLOCK)
+ *        -1 on fatal error (e.g., EBADF)
+ */
+ssize_t lx_signalfd_read(struct signalfd_siginfo *si)
 {
-    struct signalfd_siginfo siginfo ;
-    ssize_t fr = io_read((char *)&siginfo, sfd.fd, sizeof(struct signalfd_siginfo)) ;
+    ssize_t fr = io_read((char *)si, sfd.fd, sizeof(*si)) ;
     ssize_t r = io_read_exit(fr) ;
-    return (r <= 0) ? r : siginfo.ssi_signo ;
+    return (r <= 0) ? r : 1 ;
 }
 
 int lx_signalfd_add(int sig)

@@ -19,11 +19,12 @@
 #include <sys/inotify.h>
 #include <oblibs/hash.h>
 #include <signal.h>
+#include <sys/signalfd.h>
 #include <limits.h> // NAME_MAX
 #include <stdbool.h>
 
 extern int lx_signalfd_init(void) ;
-extern int lx_signalfd_read(void) ;
+extern ssize_t lx_signalfd_read(struct signalfd_siginfo *si) ;
 extern int lx_signalfd_add(int sig) ;
 extern int lx_signalfd_del(int sig) ;
 extern int lx_signalfd_ignore(int sig) ;
@@ -63,8 +64,9 @@ extern int lx_inotify_init(void) ;
 extern int lx_inotify_read(void) ;
 extern int lx_inotify_add(const char *what, uint32_t imask) ;
 extern int lx_inotify_update(const char *what, uint32_t imask) ;
-extern int lx_inotify_del(int wd) ;
+extern int lx_inotify_del(const char *what) ;
 extern void lx_inotify_end(void) ;
+extern int lx_inotify_search(struct lx_inotify_wd_s **wd, const char *what) ;
 extern int lx_inotify_get_fd(void) ;
 extern char *lx_inotify_get_buffer(void) ;
 extern int lx_inotify_get_blength(void) ;
