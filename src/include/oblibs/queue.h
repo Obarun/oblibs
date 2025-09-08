@@ -267,6 +267,11 @@ extern int queue_resize(queue_t *q) ;
 extern int queue_insert(queue_t *q, void *data, size_t dsize) ;
 
 /**
+ * @brief Same as queue_insert but store the pointer instead of making a copy
+ */
+extern int queue_insert_ptr(queue_t *q, void *data) ;
+
+/**
  * @brief Removes a specific element from the queue.
  *
  * This function searches for the specified element in the queue using the removal
@@ -292,6 +297,11 @@ extern int queue_insert(queue_t *q, void *data, size_t dsize) ;
  * - Memory for the removed element is freed, and the queue may shrink if appropriate.
  */
 extern int queue_remove(queue_t *q, void *data) ;
+
+/**
+ * @brief Same as queue_remove but deal with pointer directly
+ */
+extern int queue_remove_ptr(queue_t *q, void *data) ;
 
 /**
  * @brief Retrieves the smallest element in the queue.
@@ -394,5 +404,12 @@ extern int queue_shrink(queue_t *q) ;
  * - Each element in the internal array is freed before freeing the array itself.
  */
 extern void queue_free(queue_t *q) ;
+
+/**
+ * @brief Same as queue_free but do not try to freed
+ * individual element. This function is used in conjuction
+ * with queue_insert_ptr.
+ */
+extern void queue_free_ptr(queue_t *q) ;
 
 #endif

@@ -243,3 +243,58 @@ void queue_free(queue_t *q)
 
     CLEAN_FREE(q) ;
 }
+
+int queue_insert_ptr(queue_t *q, void *data)
+{
+    if (!q || !data)
+        return (errno = EINVAL, 0);
+
+    if (q->size >= q->capacity)
+        if (!queue_resize(q))
+            return 0;
+
+    q->data[q->size] = data;
+    queue_up(q, q->size);
+    q->size++;
+
+    return 1;
+}
+
+int queue_remove_ptr(queue_t *q, void *data)
+{
+    if (!q || q->size == 0)
+        return (errno = EINVAL, 0);
+
+    size_t pos = 0;
+    for (; pos < q->size; pos++) {
+        if (q->data[pos] == data) {
+
+            if (pos != q->size - 1)
+                queue_swap(&q->data[pos], &q->data[q->size - 1]);
+
+            q->size--;
+
+            if (pos < q->size)
+                queue_down(q, pos);
+
+            if (!queue_shrink(q))
+                return (errno = ENOMEM, 0);
+
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+void queue_free_ptr(queue_t *q)
+{
+    if (!q)
+        return;
+
+    if (q->data != NULL) {
+        CLEAN_FREE(q->data);
+    }
+
+    CLEAN_FREE(q);
+}

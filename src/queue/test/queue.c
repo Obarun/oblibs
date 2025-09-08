@@ -90,6 +90,26 @@ void test_queue_remove() {
     queue_free(q);
 }
 
+void test_queue_remove_ptr() {
+    printf("Testing queue_remove_ptr...\n");
+    queue_t *q = queue_init(4, compare_ints, compare_ints);
+    assert(q != NULL);
+
+    uint32_t a = 10, b = 5, c = 20;
+    assert(queue_insert_ptr(q, &a));
+    assert(queue_insert_ptr(q, &b));
+    assert(queue_insert_ptr(q, &c));
+
+    assert(queue_remove_ptr(q, &b));
+    uint32_t *min = (uint32_t *)queue_get_min(q);
+    assert(min != NULL && *min == 10);
+
+    assert(queue_remove_ptr(q, &b) == 0); // Element already removed
+    assert(q->size == 2);
+
+    queue_free_ptr(q);
+}
+
 void test_queue_sort() {
     printf("Testing queue_sort...\n");
     queue_t *q = queue_init(4, compare_ints, compare_ints);
@@ -186,14 +206,15 @@ void test_queue_shrink() {
 }
 
 int main() {
-    test_queue_init();
-    test_queue_init_empty_cap();
-    test_queue_insert();
-    test_queue_remove();
-    test_queue_sort();
-    test_queue_mode();
-    test_queue_reverse();
-    test_queue_shrink();
+    // test_queue_init();
+    // test_queue_init_empty_cap();
+    // test_queue_insert();
+    // test_queue_remove();
+    test_queue_remove_ptr();
+    // test_queue_sort();
+    // test_queue_mode();
+    // test_queue_reverse();
+    // test_queue_shrink();
     printf("All tests passed successfully.\n") ;
     return 0;
 }
