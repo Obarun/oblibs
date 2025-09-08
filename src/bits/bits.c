@@ -52,7 +52,7 @@ void bitset32_free(bitset32_t *bitset)
         bitset->size = 0 ;
 }
 
-bitset8_t bitset8_create_empty(uint8_t len)
+bitset8_t bitset8_init(uint8_t len)
 {
     bitset8_t bs = BITSET8_ZERO ;
     uint8_t rsize = BITSET8_WORDS_SIZE(len) ;

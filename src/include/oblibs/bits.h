@@ -35,12 +35,13 @@
  * @param size
  * The size of the bitset, representing the number of bits.
  */
-typedef struct bitset32_s bitset32_t ;
-struct bitset32_s {
+struct bitset32_s
+{
     uint32_t bits[BITSET32_ARRAY_SIZE] ;
     uint32_t size ;
     uint32_t count ;
 } ;
+typedef struct bitset32_s bitset32_t ;
 
 #define BITSET32_ZERO { {0}, 0, 0 }
 
@@ -143,12 +144,13 @@ extern void bitset32_free(bitset32_t *bitset) ;
 #define BITSET8_WORDS_SIZE(n) ((n + (UINT8_BITS - 1)) / UINT8_BITS)
 #define BITSET8_ARRAY_SIZE ((UINT8_BITS_MAX + (UINT8_BITS - 1)) / UINT8_BITS)  // Round up to nearest multiple of 8
 
-typedef struct bitset8_s bitset8_t ;
-struct bitset8_s {
+struct bitset8_s
+{
     uint8_t bits[BITSET8_ARRAY_SIZE] ;
     uint8_t size ;
     uint8_t count ;
 } ;
+typedef struct bitset8_s bitset8_t ;
 
 #define BITSET8_ZERO { {0}, 0, 0 }
 
