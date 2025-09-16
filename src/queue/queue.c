@@ -165,8 +165,11 @@ void *queue_get_min(queue_t *q)
 
 int queue_sort(queue_t *q)
 {
-    if (!q || q->size <= 1)
+    if (!q || q->size < 1)
         return (errno = EINVAL, 0) ;
+
+    if (q->size == 1)
+        return 1 ;
 
     size_t original_size = q->size, pos = q->size - 1, left = 0 ;
     for (; pos > 0; pos--) {
