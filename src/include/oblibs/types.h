@@ -33,11 +33,6 @@
  * Also warm the user if stat fail*/
 extern ssize_t scan_mode(char const *str,mode_t mode) ;
 
-/** Check if @s is an uint32_t type
- * @s mustn't contain space
- * @Return 1 on success else 0*/
-extern int scan_uint32(char const *s) ;
-
 /** get the uid of user's @name
  * and store the result in @uid
  * @Return 1 on success
@@ -68,24 +63,9 @@ extern int get_groupbygid(gid_t gid,stralloc *name) ;
  * @Return 0 on fail and set errno */
 extern int get_gidbygroup(char const *name,gid_t *gid) ;
 
-/** Check if @str is an uint32_t type
- * store the result in @array at index @row
- * @Return 1 on success
- * @Return -1 if @str is not an uint32 type
- * @Return 0 if array[row] is already set
- * This function assume that @str is different than 0 */
-extern int scan_timeout(char const *str, uint32_t *array, int row) ;
-
-/** Check if @str is valid user
- * and store it in @uid
- * @Display warning if the user is not on the system
- * then @Return 0
- * @Return 1 on success*/
-extern int scan_uid(char const *str,uid_t *uid) ;
-
 /** Check if @str is a list of valid user
- * and store the uid of the user in @array
- * the first elements of the array is reserved
+ * and store the uid of the user in @array.
+ * The first elements of the array is reserved
  * to set the number of elements scanned
  * e.g if @str contain root obarun the array[0] will
  * contain 2.
@@ -93,10 +73,6 @@ extern int scan_uid(char const *str,uid_t *uid) ;
  * then @Return 0
  * @Return 1 on success*/
 extern int scan_uidlist(char const *str, uid_t *array) ;
-
-/** same as scan_uid but parse first @str
- * and replace all occurence of @delim in @str by ' '*/
-extern int scan_uidlist_wdelim(char const *str, uid_t *array,int delim) ;
 
 /** compare @mode with @stmode
  * @Return @stmode if @mode == @stmode

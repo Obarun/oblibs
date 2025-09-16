@@ -61,18 +61,6 @@ extern ssize_t get_rstrlen_until(char const *str,char const *search) ;
  * @Return length on success*/
 extern ssize_t get_sep_before (char const *line, char const sepstart, char const sepend) ;
 
-/** @Return the number of line into @str */
-extern unsigned int get_nbline(char const *str, size_t len) ;
-
-/** Check if the line is : empty,only contain \n,begin by # even
- * if the line contain space before it,line only containing space
- * @Return 0 on all this case else @Return 1 */
-extern int get_wasted_line(char const *line) ;
-
-/** Scan for space at the begin of @line
- * @Return n bytes space*/
-extern unsigned int scan_isspace(char const *line) ;
-
 /** Appends the basename of filename @path to @dst
  * @Return 1 on success
  * @Return 0 on fail and set errno */
@@ -100,24 +88,6 @@ extern int auto_stra_builder(stralloc *sa,char const *str[],...) ;
  * @Return 1 on success
  * @Return 0 on fail */
 extern int auto_buf_builder(buffer *b, char const *str[], ...) ;
-
-/** Scan @str for digit between dot where @ndot is the number
- * of dot expected e.g ndot = 2 -> 0.1.0, ndot = 3 > 1.0.1.0,...
- * append @sa with the result.
- * @Return 1 on success
- * @Return 0 on fail
- * @Return -1 system failure */
-extern int version_scan(stralloc *sa, char const *str,uint8_t ndot) ;
-
-/** This function assume that @one and @two only contain numeric
- * value and it's on the form digit.digit.digit....
- * @ndot is the number of dot on the format e.g 1.0.1
- * Follow strcmp format return here:
- * @Return 1 if one > two
- * @Return 0 if one == two
- * @Return -1 if one < two
- * @Return -2 on system error */
-extern int version_cmp(char const  *a, char const *b, uint8_t ndot) ;
 
 /** Search string @search in string @str
  * @Return the count of the lenght corresponding
