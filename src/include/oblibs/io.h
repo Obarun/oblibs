@@ -15,6 +15,7 @@
 #ifndef OB_IO_H
 #define OB_IO_H
 
+#include <stddef.h>
 #include <sys/types.h>
 
 #ifndef O_CLOEXEC
@@ -28,7 +29,8 @@ extern int io_unset_flags(int fd, int flags) ;
 extern int io_set_block(int fd) ; // ndelay_off
 extern int io_set_nonblock(int fd) ; // ndelay_on
 extern ssize_t io_open(const char *path, unsigned int flags) ;
-extern ssize_t io_read(char *store, int fd, size_t len) ;
+extern ssize_t io_open_mode(const char *path, unsigned int flags, mode_t mode) ;
+extern ssize_t io_read(int fd, char *store, size_t len) ;
 
 /**
  * @brief Normalizes the result of a non-blocking read operation.
@@ -48,6 +50,6 @@ extern ssize_t io_read(char *store, int fd, size_t len) ;
  *   - `-1`  Error or EOF; `errno` is set appropriately.
  */
 extern ssize_t io_read_exit (ssize_t r) ;
-extern ssize_t io_write(char *store, int fd, size_t len) ;
+extern ssize_t io_write(int fd, char *store, size_t len) ;
 
 #endif

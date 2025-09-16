@@ -104,7 +104,7 @@ int lx_inotify_init(void)
 
 int lx_inotify_read(void)
 {
-    ei.blen = io_read(ei.buf, ei.fd, sizeof(ei.buf) - 1) ;
+    ei.blen = io_read(ei.fd, ei.buf, sizeof(ei.buf) - 1) ;
     if (ei.blen < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             ei.blen = 0 ;

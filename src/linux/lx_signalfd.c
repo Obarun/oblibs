@@ -52,7 +52,7 @@ int lx_signalfd_init(void)
  */
 ssize_t lx_signalfd_read(struct signalfd_siginfo *si)
 {
-    ssize_t fr = io_read((char *)si, sfd.fd, sizeof(*si)) ;
+    ssize_t fr = io_read(sfd.fd, (char *)si, sizeof(*si)) ;
     ssize_t r = io_read_exit(fr) ;
     return (r <= 0) ? r : 1 ;
 }

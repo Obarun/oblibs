@@ -16,7 +16,7 @@
 #include <errno.h>
 #include <sys/types.h>
 
-ssize_t io_write(char *store, int fd, size_t len)
+ssize_t io_write(int fd, char *store, size_t len)
 {
     ssize_t r ;
     do r = write(fd, store, len) ;

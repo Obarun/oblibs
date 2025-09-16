@@ -16,7 +16,7 @@
 #include <errno.h>
 #include <unistd.h>
 
-ssize_t io_read(char *store, int fd, size_t len)
+ssize_t io_read(int fd, char *store, size_t len)
 {
     ssize_t r ;
     do r = read(fd, store, len) ;

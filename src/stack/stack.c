@@ -209,7 +209,7 @@ int stack_read_file(stack *stk, const char *path)
         goto err ;
     }
 
-    r = io_read(stk->s, fd, (size_t)st.st_size) ;
+    r = io_read(fd, stk->s, (size_t)st.st_size) ;
 
     if (r <= 0 || r != st.st_size) {
         e = errno ;

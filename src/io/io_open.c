@@ -23,3 +23,11 @@ ssize_t io_open(const char *path, unsigned int flags)
     while ((r < 0) && (errno == EINTR)) ;
     return r ;
 }
+
+ssize_t io_open_mode(const char *path, unsigned int flags, mode_t mode)
+{
+    ssize_t r ;
+    do r = open(path, flags, mode) ;
+    while ((r < 0) && (errno == EINTR)) ;
+    return r ;
+}
