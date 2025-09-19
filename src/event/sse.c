@@ -481,6 +481,9 @@ int sse_new(sse_epoll_t *p, uint32_t maxevents)
         log_warnusys_return(LOG_EXIT_ZERO, "create epoll") ;
 
     errno = e ;
+
+    p->running = true ;
+
     return 1 ;
 }
 

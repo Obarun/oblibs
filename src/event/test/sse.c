@@ -60,7 +60,7 @@ int main(void)
     assert(epoll.maxevents == 10);
     assert(epoll.pending != NULL);
     assert(epoll.file != NULL);
-    assert(!epoll.running);
+    assert(epoll.running);
 
     /* Create a pipe for controlled input */
     fprintf(stderr,"Creating pipe for input\n");
