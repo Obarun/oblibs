@@ -17,5 +17,5 @@
 
 int io_uncoe(int fd)
 {
-    return io_unset_flags(fd, FD_CLOEXEC) ;
+    return io_unsetfl(fd, O_CLOEXEC) ;
 }

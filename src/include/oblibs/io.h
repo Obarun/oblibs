@@ -22,12 +22,24 @@
 #define O_CLOEXEC 0x40000000
 #endif
 
+/**
+ * @brief Checks if an error code represents a non-blocking I/O retry condition.
+ *
+ * This macro evaluates whether the given error code corresponds to `EAGAIN`
+ * or `EWOULDBLOCK`, which both indicate that a non-blocking read or write
+ * operation would block and should be retried later.
+ *
+ * @param e The error code to check (typically `errno`).
+ * @return Non-zero (true) if the error is EAGAIN or EWOULDBLOCK, 0 otherwise.
+ */
+#define error_isagain(e) (((e) == EAGAIN) || ((e) == EWOULDBLOCK))
+
 extern int io_coe(int fd) ;
 extern int io_uncoe(int fd) ;
-extern int io_set_flags(int fd, int flags) ;
-extern int io_unset_flags(int fd, int flags) ;
-extern int io_set_block(int fd) ; // ndelay_off
-extern int io_set_nonblock(int fd) ; // ndelay_on
+extern int io_setfl(int fd, int flags) ;
+extern int io_unsetfl(int fd, int flags) ;
+extern int io_set_block(int fd) ;
+extern int io_set_nonblock(int fd) ;
 extern ssize_t io_open(const char *path, unsigned int flags) ;
 extern ssize_t io_open_mode(const char *path, unsigned int flags, mode_t mode) ;
 extern ssize_t io_read(int fd, char *store, size_t len) ;
@@ -49,7 +61,37 @@ extern ssize_t io_read(int fd, char *store, size_t len) ;
  *   - `0`   No data available yet (non-blocking mode).
  *   - `-1`  Error or EOF; `errno` is set appropriately.
  */
-extern ssize_t io_read_exit (ssize_t r) ;
+extern ssize_t io_read_result (ssize_t r) ;
 extern ssize_t io_write(int fd, char *store, size_t len) ;
+
+/**
+ * @brief Normalizes the result of a non-blocking write operation.
+ *
+ * This function processes the return value of a write-like system call to
+ * provide consistent semantics for non-blocking I/O:
+ *
+ * - If the write failed with `EAGAIN` or `EWOULDBLOCK`, returns 0 and clears `errno`.
+ *   This indicates the operation would block and should be retried later.
+ *
+ * - If the write succeeded (including 0 bytes written), returns the number of bytes sent.
+ *   Note: A return of 0 is valid and means no data was queued (e.g., empty buffer),
+ *   not an error or disconnection.
+ *
+ * - For all other errors (including `EPIPE`, `ECONNRESET`, etc.), returns -1
+ *   and preserves `errno`.
+ *
+ * This function does NOT treat zero-byte writes as connection closure — unlike reads,
+ * where 0 means EOF. In contrast, `send()` or `write()` returning 0 is legitimate.
+ *
+ * @param r The return value from a `write()`-like function (e.g., `write()`, `send()`, `sendmsg()`).
+ * @return
+ *   - `>0`  Number of bytes successfully queued for transmission.
+ *   - `0`   No data queued yet (would block); retry when fd becomes writable.
+ *   - `-1`  Fatal error occurred; `errno` is set appropriately.
+ *
+ * @note Callers should use a mechanism like `poll()`, `epoll()`, or `kqueue()` to wait
+ *       for writability before retrying when 0 is returned.
+ */
+extern ssize_t io_write_result(ssize_t r) ;
 
 #endif

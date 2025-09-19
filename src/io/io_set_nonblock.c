@@ -17,5 +17,5 @@
 
 int io_set_nonblock(int fd)
 {
-    return io_set_flags(fd, O_NONBLOCK) ;
+    return io_setfl(fd, O_NONBLOCK) ;
 }

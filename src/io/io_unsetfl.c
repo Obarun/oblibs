@@ -1,5 +1,5 @@
 /*
- * io_unset_flags.c
+ * io_unsetfl.c
  *
  * Copyright (c) 2024-2025 Eric Vidal <eric@obarun.org>
  *
@@ -14,7 +14,7 @@
 
 #include <fcntl.h>
 
-int io_unset_flags(int fd, int flags)
+int io_unsetfl(int fd, int flags)
 {
     int f ;
     f = fcntl(fd, F_GETFL) ;

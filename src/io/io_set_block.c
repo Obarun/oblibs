@@ -17,5 +17,5 @@
 
 int io_set_block(int fd)
 {
-    return io_unset_flags(fd, O_NONBLOCK) ;
+    return io_unsetfl(fd, O_NONBLOCK) ;
 }

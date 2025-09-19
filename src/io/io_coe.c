@@ -17,5 +17,5 @@
 
 int io_coe(int fd)
 {
-    return io_set_flags(fd, FD_CLOEXEC) ;
+    return io_setfl(fd, O_CLOEXEC) ;
 }

@@ -1,5 +1,5 @@
 /*
- * io_set_flags.c
+ * io_setfl.c
  *
  * Copyright (c) 2024-2025 Eric Vidal <eric@obarun.org>
  *
@@ -14,7 +14,7 @@
 
 #include <fcntl.h>
 
-int io_set_flags(int fd, int flags)
+int io_setfl(int fd, int flags)
 {
     int f ;
     f = fcntl(fd, F_GETFL) ;
