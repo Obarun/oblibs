@@ -1,5 +1,5 @@
 /*
- * socket_bind.c
+ * socketunix_bind.c
  *
  * Copyright (c) 2024-2025 Eric Vidal <eric@obarun.org>
  *
@@ -13,15 +13,20 @@
  */
 
 #include <string.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <sys/un.h> // socket in Unix
 #include <sys/socket.h>
+#include <oblibs/socket.h>
 
-/** Return 0 on success else -1 */
-int socket_bind(int fd, const char *path)
+int socketunix_bind(int fd, const char *path)
 {
+    if (!path)
+        return (errno = EINVAL, -1) ;
     struct sockaddr_un addr ;
     size_t len = strlen(path) ;
+    if (len > SOCKETUNIX_PATH_MAX)
+        return (errno = EPROTO, -1) ;
     memset(&addr, 0, sizeof(addr)) ;
     addr.sun_family = AF_UNIX ;
     memcpy(addr.sun_path, path, len + 1) ;

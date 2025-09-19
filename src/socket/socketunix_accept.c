@@ -1,5 +1,5 @@
 /*
- * socket_accept.c
+ * socketunix_accept.c
  *
  * Copyright (c) 2024-2025 Eric Vidal <eric@obarun.org>
  *
@@ -17,27 +17,23 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 
 #include <oblibs/log.h>
 #include <oblibs/socket.h>
 
-int socket_accept(int socket)
+int socketunix_accept(int s, unsigned int flags)
 {
+    struct sockaddr_un sa ;
+    socklen_t dummy = sizeof sa ;
     int fd ;
-
+    unsigned int opt = ((flags & O_NONBLOCK) ? SOCK_NONBLOCK : 0) | ((flags & O_CLOEXEC) ? SOCK_CLOEXEC : 0) ;
     do {
-        fd = accept(socket, NULL, NULL) ;
+        fd = accept4(s, (struct sockaddr *)&sa, &dummy, opt) ;
     } while ((fd < 0) && (errno == EINTR)) ;
 
-    if (fd < 0) {
-        log_warnusys("accept socket connection") ;
+    if (fd < 0)
         return -1 ;
-    }
-
-    if (!socket_set_coe(fd) || !socket_set_nonblock(fd)) {
-        log_warnusys("set O_NONBLOCK | FD_CLOEXEC on socket") ;
-        return -1 ;
-    }
 
     return fd ;
 }

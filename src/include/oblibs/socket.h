@@ -16,16 +16,24 @@
 #define OB_SOCKET_H
 
 #include <fcntl.h>
+#include <sys/socket.h>
 #include <oblibs/io.h>
 
-#define SOCK_BACKLOG SOMAXCONN
-#define socket_listen(socket, backlog) listen(socket, backlog)
-#define socket_open(flags) socket(AF_UNIX, SOCK_STREAM | flags, 0)
+#define SOCKETUNIX_BACKLOG SOMAXCONN
+#define SOCKETUNIX_PATH_MAX 107 // 108 - 1
 
-#define socket_set_coe(fd) io_set_flags(fd, FD_CLOEXEC)
-#define socket_set_nonblock(fd) io_set_flags(fd, O_NONBLOCK)
+extern int socket_private(int domain, int type, int protocol, unsigned int flags) ;
+extern int socket_setfd(int fd, int flags) ;
+extern int socket_unsetfd(int fd, int flags) ;
+#define socket_set_coe(fd) socket_setfd(fd, FD_CLOEXEC)
+#define socket_set_nonblock(fd) io_setfl(fd, O_NONBLOCK)
 
-extern int socket_bind(int fd, const char *path) ;
-extern int socket_accept(int fd) ;
+#define socketunix_create(flags) socket_private(AF_UNIX, SOCK_STREAM, 0, flags)
+#define socketunix_listen(socket, backlog) listen(socket, backlog)
+
+extern int socketunix_bind(int fd, const char *path) ;
+extern int socketunix_accept(int s, unsigned int flags) ;
+extern int socketunix_connect(int fd, const char *path) ;
+extern int socketunix_getucred(int fd, struct ucred *cred) ;
 
 #endif
