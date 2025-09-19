@@ -262,12 +262,12 @@ void test_lx_inotify_read_iterator(void) {
 
     assert(found_event && "No valid events found");
 
-    // Test io_read_exit with EAGAIN
+    // Test io_read_result with EAGAIN
     errno = EAGAIN;
-    assert(io_read_exit(-1) == 0 && errno == 0 && "io_read_exit failed for EAGAIN");
+    assert(io_read_result(-1) == 0 && errno == 0 && "io_read_result failed for EAGAIN");
 
-    // Test io_read_exit with EPIPE
-    assert(io_read_exit(0) == -1 && errno == EPIPE && "io_read_exit failed for EPIPE");
+    // Test io_read_result with EPIPE
+    assert(io_read_result(0) == -1 && errno == EPIPE && "io_read_result failed for EPIPE");
 
     unlink(path);
     free((void *)path);
@@ -324,12 +324,12 @@ void test_lx_inotify_read_iterator_dir(void) {
     }
     assert(found_event && "No valid events found");
 
-    // Test io_read_exit with EAGAIN
+    // Test io_read_result with EAGAIN
     errno = EAGAIN;
-    assert(io_read_exit(-1) == 0 && errno == 0 && "io_read_exit failed for EAGAIN");
+    assert(io_read_result(-1) == 0 && errno == 0 && "io_read_result failed for EAGAIN");
 
-    // Test io_read_exit with EPIPE
-    assert(io_read_exit(0) == -1 && errno == EPIPE && "io_read_exit failed for EPIPE");
+    // Test io_read_result with EPIPE
+    assert(io_read_result(0) == -1 && errno == EPIPE && "io_read_result failed for EPIPE");
 
     // Cleanup
     unlink(file_path);
