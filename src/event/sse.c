@@ -51,7 +51,7 @@ int sse_hash_add(sse_watcher_t *w)
 
     struct sse_watcher_hash_s *h = sse_hash_search(w->p, w) ;
     if (h != NULL) {
-        log_warn("watcher already added to hash table") ;
+        log_warn_return(LOG_EXIT_ONE, "watcher already added to hash table") ;
     }
 
     h = (struct sse_watcher_hash_s *)malloc(sizeof(*h)) ;

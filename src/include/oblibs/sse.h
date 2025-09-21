@@ -112,6 +112,7 @@ struct sse_epoll_s
     bool rerun_file ;
 } ;
 typedef struct sse_epoll_s sse_epoll_t ;
+#define SSE_EPOLL_ZERO { -1, 0, {0}, false, NULL, NULL, NULL, false }
 
 /**
  * @struct sse_time_s
@@ -149,6 +150,7 @@ struct sse_watcher_s
     sse_time_t time ; // stats of the event
 } ;
 typedef struct sse_watcher_s sse_watcher_t ;
+#define SSE_WATCHER_ZERO { SSE_EPOLL_ZERO, 0, -1, 0, 0, 0, false, false, NULL, NULL, NULL, 0, 0 }
 
 struct sse_watcher_hash_s
 {
