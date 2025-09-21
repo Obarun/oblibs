@@ -159,24 +159,30 @@ extern void sse_stream_close(sse_stream_t *stream) ;
 /**
  * @brief Read available data from peer into internal buffer.
  *
- * Uses recvmsg() with MSG_DONTWAIT. Handles EAGAIN/EWOULDBLOCK by returning 0.
- * On EOF (recv returns 0), sets errno=EPIPE and returns -1.
+ * Uses recvmsg() with MSG_DONTWAIT. Handles EAGAIN/EWOULDBLOCK by returning 0
+ * with errno unchanged (typically EAGAIN or EWOULDBLOCK).
+ * On graceful EOF (recvmsg returns 0), sets errno = 0 and returns 0.
  *
  * @param stream Stream to read from
  *
- * @return Number of bytes received (>0), 0 if would block, -1 on error/EOF
- * @retval >0 Successfully queued data
- * @retval 0  No data now — retry later (errno unchanged)
- * @retval -1 Fatal error or EOF occurred (see errno)
+ * @return Number of bytes received, 0 for transient/EOF, -1 on error
+ * @retval >0  Successfully read and queued @c n bytes of data
+ * @retval 0   Either:
+ *             - No data available now (EAGAIN/EWOULDBLOCK, errno preserved), OR
+ *             - Peer performed orderly shutdown (EOF, errno explicitly set to 0)
+ * @retval -1  Fatal error occurred (inspect errno)
  *
- * @errno EPIPE if peer closed connection (recv returned 0)
- * @errno EBADF if stream is NULL or closed
- * @errno EOVERFLOW if input buffer is full
+ * @errno EBADF      if stream is NULL or already closed
+ * @errno EOVERFLOW  if input buffer is full
+ * @errno (various)  if recvmsg() or ancillary data processing failed (e.g., ECONNRESET, EIO, EOVERFLOW from decode_cmsg)
  *
- * @note Only reads when buffer has space. Does not invoke read_cb.
- *       Returns actual recv() result, normalized via io_read_result().
+ * @note
+ * - Caller must distinguish EOF from EAGAIN by checking errno == 0 after return value 0.
+ * - Does not invoke callbacks — purely a data pump.
+ * - Ancillary FDs are extracted and stored in fdin buffer even on EOF.
+ * - Buffer space is required — returns EOVERFLOW if full.
  */
-extern ssize_t sse_stream_read(sse_stream_t *stream) ;
+extern ssize_t sse_stream_read(sse_stream_t *stream);
 
 /**
  * @brief Flush pending output to socket.

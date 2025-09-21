@@ -36,7 +36,16 @@ static void close_fd_from_buffer(rbuffer_t *buf)
     while (rbuffer_used(buf) >= sizeof(int)) {
         if (rbuffer_read(buf, &fd, sizeof(int)) == sizeof(int)) {
             if (fd >= 0) {
+                /** Valgrind will complain if the fd was
+                 * already closed. If we try to check the validity
+                 * of the fd by using if (fcntl(fd, F_GETFD) == -1),
+                 * it will be worse because valgring will also
+                 * complain about this syscall, so twice errors.
+                 * But we don't care at all, we are safe here because
+                 * close() is idempotent in practice calling it twice is harmless.
+                 */
                 close(fd) ;
+                fd = -1 ;
             }
         }
     }
@@ -247,7 +256,7 @@ ssize_t sse_stream_read(sse_stream_t *stream)
     // Get writable regions from ring buffer
     struct iovec iov[2] ;
     unsigned iov_count = rbuffer_wiovec(&stream->in.buf, iov) ;
-    ssize_t len, rr ;
+    ssize_t len ;
 
     if (iov_count == 0)
         return (errno = EOVERFLOW, -1) ;
@@ -268,10 +277,11 @@ ssize_t sse_stream_read(sse_stream_t *stream)
         len = recvmsg(stream->fd, &msg, MSG_DONTWAIT | MSG_CMSG_CLOEXEC) ;
     } while (len < 0 && errno == EINTR) ;
 
-    rr = io_read_result(len) ;
-
-    if (rr <= 0)
-        return rr ;
+    if (len < 0) {
+        if (error_isagain(errno))
+            return 0 ;
+        return -1 ;
+    } ;
 
     // Process received file descriptors
     if (decode_cmsg(&stream->fdin.buf, &msg) != 0)
@@ -279,6 +289,8 @@ ssize_t sse_stream_read(sse_stream_t *stream)
 
     // Advance write pointer in input buffer
     rbuffer_wadvance(&stream->in.buf, len) ;
+
+    errno = 0 ;
 
     return len ;
 }
@@ -500,15 +512,21 @@ static void sse_stream_io_callback(sse_watcher_t *w, void *data, int revents)
             if (stream->error_cb) {
                 stream->error_cb(stream, stream->error, stream->data) ;
             }
-            // Check if it's actually EOF
-            if (errno == EPIPE) {
+
+            stream->closed = true;
+            if (stream->close_cb) {
+                stream->close_cb(stream, stream->data);
+            }
+
+        } else if (result == 0) {
+
+            if (!error_isagain(errno)) {
                 stream->closed = true;
                 if (stream->close_cb) {
                     stream->close_cb(stream, stream->data);
                 }
             }
-        } else if (result == 0) {
-            // Only reached if EAGAIN/EWOULDBLOCK, nothing to read now
+
         } else {
             // Data received
             if (stream->read_cb) {
@@ -524,6 +542,11 @@ static void sse_stream_io_callback(sse_watcher_t *w, void *data, int revents)
             stream->error = errno ;
             if (stream->error_cb) {
                 stream->error_cb(stream, stream->error, stream->data) ;
+            }
+
+            stream->closed = true;
+            if (stream->close_cb) {
+                stream->close_cb(stream, stream->data);
             }
         } else if (result > 0) {
             // Data sent
