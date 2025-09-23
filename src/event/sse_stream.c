@@ -350,9 +350,8 @@ ssize_t sse_stream_flush(sse_stream_t *stream)
         total_sent += len ;
     }
 
-    if (rbuffer_isempty(&stream->out.buf)) {
+    if (rbuffer_isempty(&stream->out.buf))
         stream->want_flush = false ;
-    }
 
     return total_sent ;
 }
@@ -383,6 +382,39 @@ int sse_stream_put(sse_stream_t *stream, const void *data, size_t count)
     return 0 ;
 }
 
+int sse_stream_putv(sse_stream_t *stream, const struct iovec *iov, int iovcnt)
+{
+    if (!stream || !iov || iovcnt <= 0 || stream->closed)
+        return (errno = EINVAL, -1) ;
+
+    size_t total_size = sse_stream_iovec_len(iov, iovcnt) ;
+    if (total_size == 0)
+        return 0 ; // Nothing to write
+
+    if (total_size > rbuffer_capacity(&stream->out.buf))
+        return (errno = EOVERFLOW, -1) ;
+
+    if (rbuffer_available(&stream->out.buf) < total_size) {
+        stream->want_flush = true ;
+        if (sse_stream_flush(stream) < 0)
+            return -1 ;
+
+        // Verify we have sufficient space after flush
+        if (rbuffer_available(&stream->out.buf) < total_size)
+            return (errno = EAGAIN, -1) ;
+    }
+
+    // Write all iovec entries atomically
+    size_t written = rbuffer_writev(&stream->out.buf, iov, iovcnt) ;
+
+    if (written < total_size)
+        return (errno = EOVERFLOW, -1) ; // This should not happen but be defensive
+
+    stream->want_flush = true ;
+
+    return 0 ;
+}
+
 ssize_t sse_stream_get(sse_stream_t *stream, void *dst, size_t count)
 {
     if (!stream || !dst || stream->closed)
@@ -401,10 +433,77 @@ int sse_stream_put_fd(sse_stream_t *stream, int fd)
         return (errno = EINVAL, -1) ;
 
     if (rbuffer_available(&stream->fdout.buf) < sizeof(int))
-    return (errno = EOVERFLOW, -1) ;
+        return (errno = EOVERFLOW, -1) ;
 
     size_t written = rbuffer_write(&stream->fdout.buf, &fd, sizeof(int)) ;
-    return written == sizeof(int) ? 0 : -1 ;
+
+    if (written < sizeof(int))
+        return (errno = EOVERFLOW, -1) ;
+
+    stream->want_flush = true ;
+
+    return 0 ;
+}
+
+int sse_stream_putv_fd(sse_stream_t *stream, const struct iovec *iov, int iovcnt, const int *fds, int fdcnt)
+{
+    if (!stream || !iov || iovcnt <= 0 || fdcnt < 0 || stream->closed)
+        return (errno = EINVAL, -1) ;
+
+    if (fdcnt > 0 && !fds)
+        return (errno = EINVAL, -1) ;
+
+    size_t total_data_size = sse_stream_iovec_len(iov, iovcnt) ;
+    size_t total_fd_size = fdcnt * sizeof(int) ;
+
+    if (total_data_size > rbuffer_capacity(&stream->out.buf))
+        return (errno = EOVERFLOW, -1) ;
+
+    if (total_fd_size > rbuffer_capacity(&stream->fdout.buf))
+        return (errno = EOVERFLOW, -1) ;
+
+    bool need_flush = false ;
+    if (total_data_size > 0 && rbuffer_available(&stream->out.buf) < total_data_size)
+        need_flush = true ;
+    if (total_fd_size > 0 && rbuffer_available(&stream->fdout.buf) < total_fd_size)
+        need_flush = true ;
+
+    if (need_flush) {
+
+        stream->want_flush = true ;
+        if (sse_stream_flush(stream) < 0)
+            return -1   ;
+
+        // Verify we have sufficient space after flush
+        if (total_data_size > 0 && rbuffer_available(&stream->out.buf) < total_data_size)
+            return (errno = EAGAIN, -1) ;
+        if (total_fd_size > 0 && rbuffer_available(&stream->fdout.buf) < total_fd_size)
+            return (errno = EAGAIN, -1) ;
+    }
+
+    if (total_data_size > 0) {
+        size_t written = rbuffer_writev(&stream->out.buf, iov, iovcnt) ;
+        if (written < total_data_size)
+            return (errno = EOVERFLOW, -1) ; // This should not happen
+    }
+
+    if (fdcnt > 0) {
+
+        size_t fd_written = rbuffer_write(&stream->fdout.buf, fds, total_fd_size) ;
+        if (fd_written < total_fd_size) {
+            /** This should not happen, but if it does, we need to rollback
+             * the data write to maintain atomicity */
+            if (total_data_size > 0)
+                rbuffer_wrewind(&stream->out.buf, total_data_size) ;
+
+            return (errno = EOVERFLOW, -1) ;
+        }
+    }
+
+    if (total_data_size > 0 || fdcnt > 0)
+        stream->want_flush = true ;
+
+    return 0 ;
 }
 
 ssize_t sse_stream_get_fd(sse_stream_t *stream, int *fd)
@@ -456,6 +555,15 @@ bool sse_stream_is_closed(const sse_stream_t *stream)
 int sse_stream_get_error(const sse_stream_t *stream)
 {
     return stream ? stream->error : EINVAL ;
+}
+
+size_t sse_stream_iovec_len(const struct iovec *iov, int iovcnt)
+{
+    size_t total = 0 ;
+    for (int i = 0 ; i < iovcnt ; i++) {
+        total += iov[i].iov_len ;
+    }
+    return total ;
 }
 
 void sse_stream_restore(sse_stream_t *stream, size_t count)

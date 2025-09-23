@@ -227,6 +227,29 @@ extern ssize_t sse_stream_flush(sse_stream_t *stream) ;
 extern int sse_stream_put(sse_stream_t *stream, const void *data, size_t count) ;
 
 /**
+ * @brief Queue vectored data for transmission.
+ *
+ * Writes data from multiple buffers atomically. Attempts partial flush if
+ * insufficient space. May fail with EAGAIN even after flush if still no room.
+ *
+ * @param stream Stream to write to
+ * @param iov    Array of iovec structures containing data to send
+ * @param iovcnt Number of iovec entries (must be > 0)
+ *
+ * @return 0 on success, -1 on error
+ * @retval -1 errno is set
+ *
+ * @errno EINVAL if stream, iov invalid, closed, or iovcnt <= 0
+ * @errno EAGAIN if insufficient buffer space after attempted flush
+ * @errno EOVERFLOW if total write size exceeds buffer capacity
+ *
+ * @note Does NOT guarantee delivery – only queuing. Call flush manually or wait
+ *       for write event. Increments want_flush automatically.
+ *       Either all data is queued or none (atomic operation).
+ */
+extern int sse_stream_putv(sse_stream_t *stream, const struct iovec *iov, int iovcnt) ;
+
+/**
  * @brief Read data from input buffer.
  *
  * Extracts exactly `count` bytes. Fails immediately if less than `count` bytes
@@ -267,6 +290,30 @@ extern ssize_t sse_stream_get(sse_stream_t *stream, void *dst, size_t count) ;
  *       Sent during next sse_stream_flush().
  */
 extern int sse_stream_put_fd(sse_stream_t *stream, int fd) ;
+
+/**
+ * @brief Queue vectored data and file descriptors for transmission.
+ *
+ * Atomically queues both data from multiple buffers and file descriptors.
+ * If either data or FDs cannot be fully queued, the entire operation fails.
+ *
+ * @param stream Stream to write to
+ * @param iov    Array of iovec structures containing data to send
+ * @param iovcnt Number of iovec entries (must be > 0)
+ * @param fds    Array of file descriptors to send (can be NULL if fdcnt == 0)
+ * @param fdcnt  Number of file descriptors (must be >= 0)
+ *
+ * @return 0 on success, -1 on error
+ * @retval -1 errno is set
+ *
+ * @errno EINVAL if stream, iov invalid, closed, iovcnt <= 0, or fdcnt < 0
+ * @errno EAGAIN if insufficient buffer space after attempted flush
+ * @errno EOVERFLOW if total write size or FD count exceeds buffer capacity
+ *
+ * @note Either all data and FDs are queued or none (atomic operation).
+ *       FDs are consumed on successful put – caller loses ownership.
+ */
+extern int sse_stream_putv_fd(sse_stream_t *stream, const struct iovec *iov, int iovcnt, const int *fds, int fdcnt);
 
 /**
  * @brief Receive one queued file descriptor.
@@ -361,6 +408,21 @@ extern bool sse_stream_is_closed(const sse_stream_t *stream) ;
  * @note Returns ECANCELED if closed via sse_stream_close().
  */
 extern int sse_stream_get_error(const sse_stream_t *stream) ;
+
+/**
+ * @brief Calculate total length of data in an array of I/O vectors.
+ *
+ * Sums the iov_len fields of all iovec structures in the given array.
+ * Useful for determining the total byte count before performing I/O operations.
+ *
+ * @param iov Pointer to the first element of an array of struct iovec
+ * @param iovcnt Number of elements in the iovec array
+ *
+ * @return Total number of bytes across all vectors
+ *
+ * @note Returns 0 if iovcnt is 0 or iov is NULL (though passing NULL is undefined behavior per POSIX)
+ */
+extern size_t sse_stream_iovec_len(const struct iovec *iov, int iovcnt) ;
 
 // Buffer control
 /**
