@@ -117,6 +117,7 @@ int sse_epoll_add(sse_watcher_t *w)
 
             if (errno == EEXIST) {
                 log_warnsys("watcher already added to epoll") ;
+                w->active = true ;
                 return 1 ;
             }
 
@@ -130,8 +131,9 @@ int sse_epoll_add(sse_watcher_t *w)
                 log_warnusys("add watcher to file list") ;
                 sse_err_return(w, errno) ;
             }
+        } else {
+            w->active = true ;
         }
-        w->active = true ;
     }
 
     return 1 ;
@@ -144,10 +146,9 @@ int sse_epoll_del(sse_watcher_t *w)
         log_warnsys_return(LOG_EXIT_ZERO, "watcher is NULL") ;
     }
 
+    w->active = false ;
     sse_err_zero(w) ;
     if (w->p->fd > 0) {
-
-        w->active = false ;
         // signalfd and inotify watcher may have already closed the fd
         if (w->fd >= 0) {
             if (epoll_ctl(w->p->fd, EPOLL_CTL_DEL, w->fd, NULL) < 0) {
@@ -468,7 +469,6 @@ int sse_init(sse_epoll_t *p, uint32_t maxevents)
     return 1 ;
 }
 
-/** Public API */
 int sse_new(sse_epoll_t *p, uint32_t maxevents)
 {
     if (!sse_init(p, !maxevents ? SSE_MAX_EVENTS : maxevents))
@@ -499,7 +499,6 @@ int sse_wait(sse_epoll_t *p, int timeout)
         if (errno == EINTR)
             continue ;
 
-        sse_free(p) ;
         log_warnusys_return(LOG_EXIT_LESSONE, "epoll_wait") ;
     }
 
@@ -511,8 +510,10 @@ int sse_wait(sse_epoll_t *p, int timeout)
     }
 
     // ordering by priority
-    if (!queue_sort(p->pending))
-        log_warnusys("sort pending list") ;
+    if (p->pending->size) {
+        if (!queue_sort(p->pending))
+            log_warnusys("sort pending list") ;
+    }
 
     return nfds ;
 }
@@ -579,7 +580,7 @@ static void sse_dispatch_io(sse_watcher_t *w)
         return ;
     }
 
-    if (w->revents & (SSE_ERROR | SSE_HUP | SSE_SHUT)) {
+    if (w->revents & (SSE_ERROR)) {
         sse_stop_io(w) ;
         sse_err_zero(w) ;
     }
@@ -860,6 +861,9 @@ int sse_run(sse_epoll_t *p, int timeout)
     if (nfds < 0)
         return 0 ;
 
+    if (!nfds)
+        return 1 ;
+
     sse_dispatch(p) ;
 
     return 1 ;
@@ -883,8 +887,6 @@ int sse_poll(sse_epoll_t *p)
     }
 
     p->running = false ;
-
-    sse_free(p) ;
 
     return e ;
 }

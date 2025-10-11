@@ -10,6 +10,8 @@
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
  * except according to the terms contained in the LICENSE file./
+ *
+ * Simple System Events
  */
 
 #ifndef OB_SSE_H
@@ -48,6 +50,8 @@ struct cron_s
     char tz[256] ; // store timezone, 256 should be sufficient
 } ;
 typedef struct cron_s cron_t ;
+
+struct sse_watcher_hash_s ;
 
 /* Missing defines in GLIBC <= 2.24 */
 #ifndef TFD_TIMER_CANCEL_ON_SET
@@ -150,7 +154,7 @@ struct sse_watcher_s
     sse_time_t time ; // stats of the event
 } ;
 typedef struct sse_watcher_s sse_watcher_t ;
-#define SSE_WATCHER_ZERO { SSE_EPOLL_ZERO, 0, -1, 0, 0, 0, false, false, NULL, NULL, NULL, 0, 0 }
+#define SSE_WATCHER_ZERO { NULL, 0, -1, 0, 0, 0, false, false, NULL, NULL, NULL, 0, 0 }
 
 struct sse_watcher_hash_s
 {
@@ -193,7 +197,8 @@ int sse_watcher_init( \
     void *cbdata, \
     int fd, int event, int priority) ;
 
-/** inner helper */
+/** Internal Helper Functions */
+
 extern struct sse_watcher_hash_s *sse_hash_search(sse_epoll_t *p, sse_watcher_t *w) ;
 extern int sse_watcher_cmp(const void *a, const void *b) ;
 extern int sse_watcher_rmcmp(const void *a, const void *b) ;
@@ -207,14 +212,298 @@ extern int sse_watcher_stop(sse_watcher_t *w) ;
 extern int sse_watcher_free(sse_watcher_t *w) ;
 
 /** Public API */
+
+/**
+ * @brief Create and initialize a new SSE event loop.
+ *
+ * Allocates resources and creates an epoll instance for event monitoring.
+ * Initializes internal queues for pending events and file watchers.
+ *
+ * @param[out] p Pointer to sse_epoll_t structure to initialize
+ * @param[in] maxevents Maximum number of events to process per iteration
+ *                      (clamped to SSE_MAX_EVENTS if > SSE_MAX_EVENTS or 0)
+ *
+ * @return
+ *   - 1 on success
+ *   - 0 on failure; errno is set to indicate error
+ *
+ * @retval 0 errno is set to:
+ *   - EINVAL: if `p` is NULL or `maxevents` is 0
+ *   - EMFILE/ENFILE: if epoll_create1() fails (too many open files)
+ *   - ENOMEM: if queue allocation fails
+ *
+ * @note After successful initialization, `p->running` is set to `true`.
+ * @note The caller must call sse_free() to release resources.
+ */
 extern int sse_new(sse_epoll_t *p, uint32_t maxevents) ;
+
+/**
+ * @brief Sanitize event loop state between iterations.
+ *
+ * Performs two critical maintenance tasks:
+ *   1. **Priority decay**: Decrements priority of all pending events by 1
+ *      (but never below 0) to prevent event starvation. High-priority events
+ *      gradually lose priority if they keep getting requeued.
+ *   2. **File event processing**: Handles special case for stdin/file descriptors
+ *      (watchers with fd=0) by:
+ *        - Checking if data is still available using select() + FIONREAD
+ *        - Removing watchers that have reached EOF
+ *        - Invoking callbacks for available data
+ *        - Setting p->rerun_file if more data might be available
+ *
+ * @param[in] p Initialized SSE event loop
+ *
+ * @return void
+ *
+ * @note Called automatically by sse_run() before waiting for new events.
+ * @note The priority decay mechanism ensures fair event processing over time.
+ * @note File event handling is a workaround for epoll's inability to monitor
+ *       regular files (which always appear "ready" for I/O).
+ */
 extern void sse_sanitize(sse_epoll_t *p) ;
+
+/**
+ * @brief Prepare watchers for event processing.
+ *
+ * Performs pre-processing on active watchers before waiting for events.
+ * Currently only handles SSE_TYPE_SCHEDULE watchers:
+ *   - Reads from timerfd to detect expirations
+ *   - If read returns 0 (timer canceled due to clock change),
+ *     recalculates next fire time using cron_next() and updates the timer
+ *
+ * @param[in] p Initialized SSE event loop
+ *
+ * @return
+ *   - 1 on success (including when no schedule watchers exist)
+ *   - 0 on failure; errno is set
+ *
+ * @retval 0 errno is set to:
+ *   - EINVAL: if `p` is NULL
+ *   - Any error from sse_modify_schedule() during clock change recovery
+ *
+ * @note This function is called automatically by sse_run().
+ * @note Only schedule watchers are processed; other types are ignored.
+ */
 extern int sse_prepare(sse_epoll_t *p) ;
+
+/**
+ * @brief Wait for events on the epoll instance.
+ *
+ * Blocks until events are available or timeout expires. Events are stored
+ * in the internal pending queue ordered by priority and creation time.
+ *
+ * @param[in] p Initialized SSE event loop
+ * @param[in] timeout Timeout in milliseconds:
+ *   - SSE_TIMEOUT_INFINITE (-1): wait indefinitely
+ *   - SSE_TIMEOUT_NOEVENT (0): return immediately
+ *   - Positive value: wait up to N milliseconds
+ *
+ * @return
+ *   - >=0: number of events ready (may be 0 on timeout)
+ *   - -1: on error; errno is set
+ *
+ * @retval -1 errno is set to:
+ *   - EINVAL: if `p` is NULL or `p->fd` is invalid
+ *   - EINTR: if interrupted by signal (not an error - retry is automatic in sse_run)
+ *   - Other epoll_wait() errors (e.g., EBADF if epoll fd closed)
+ *
+ * @note On success, events are queued in `p->pending` but not yet dispatched.
+ * @note This function handles EINTR internally by retrying (unless `p->running` is false).
+ */
 extern int sse_wait(sse_epoll_t *p, int timeout) ;
+
+/**
+ * @brief Dispatch pending events to their callbacks.
+ *
+ * Processes all events in the pending queue by:
+ *   1. Calling type-specific dispatch handlers (e.g., sse_dispatch_io)
+ *   2. Invoking user callback with event flags
+ *   3. Removing events from pending queue
+ *
+ * Type-specific dispatch behavior:
+ *   - SSE_TYPE_IO: Stops watcher on SSE_ERROR
+ *   - SSE_TYPE_SIGNAL: Reads all pending signals, keeps last in sdata
+ *   - SSE_TYPE_CHILD: Calls waitpid(WNOHANG) to check status
+ *   - SSE_TYPE_TIMER/SCHEDULE: Reads timerfd expirations
+ *   - SSE_TYPE_EVENTFD/INOTIFY: Reads available data
+ *
+ * @param[in] p Initialized SSE event loop
+ *
+ * @return void
+ *
+ * @note Callbacks are invoked even for inactive watchers (e.g., after stop).
+ *       The callback must check `w->api_errno` and `w->active` state.
+ * @note Event timing (`w->time.dispatched`) is updated before callback invocation.
+ * @note All pending events are cleared after dispatch, even if `p->running` becomes false.
+ */
 extern void sse_dispatch(sse_epoll_t *p) ;
+
+/**
+ * @brief Run one iteration of the event loop.
+ *
+ * Executes a complete event loop cycle:
+ *   1. Calls sse_sanitize() repeatedly while `p->rerun_file` is true
+ *   2. Calls sse_prepare() for pre-processing
+ *   3. Calls sse_wait() to get events
+ *   4. Calls sse_dispatch() if events are available
+ *
+ * @param[in] p Initialized SSE event loop
+ * @param[in] timeout Timeout for sse_wait() (see sse_wait() documentation)
+ *
+ * @return
+ *   - 1 on success (including timeout with no events)
+ *   - 0 on failure; errno is set
+ *
+ * @retval 0 errno is set to:
+ *   - EINVAL: if `p` is NULL or `p->fd` is invalid
+ *   - Any error from sse_prepare() or sse_wait()
+ *
+ * @note This is the recommended function for manual event loop control.
+ * @note Handles EINTR automatically during sse_wait().
+ */
 extern int sse_run(sse_epoll_t *p, int timeout) ;
+
+/**
+ * @brief Run event loop continuously until stopped.
+ *
+ * Repeatedly calls sse_run() with infinite timeout until:
+ *   - `p->running` is set to false (e.g., by a callback)
+ *   - An unrecoverable error occurs
+ *
+ * @param[in] p Initialized SSE event loop
+ *
+ * @return
+ *   - 1 if loop exited cleanly (p->running = false)
+ *   - 0 on failure; errno is set
+ *
+ * @retval 0 errno is set to:
+ *   - EINVAL: if `p` is NULL or `p->fd` is invalid
+ *   - Any error that causes sse_run() to fail
+ *
+ * @note Sets `p->running = true` before starting and `false` on exit.
+ * @note To stop the loop from a callback, set `w->p->running = false`.
+ */
 extern int sse_poll(sse_epoll_t *p) ;
+
+/**
+ * @brief Clean up and free all event loop resources.
+ *
+ * Performs comprehensive cleanup:
+ *   1. Stops and frees all active watchers (calls type-specific free functions)
+ *   2. Frees pending and file queues
+ *   3. Destroys watcher hash table
+ *   4. Closes epoll file descriptor
+ *   5. Resets all fields to zero/NULL
+ *
+ * @param[in] p SSE event loop to free
+ *
+ * @return void
+ *
+ * @note Safe to call on partially initialized structures.
+ * @note Does NOT free the `p` pointer itself (caller allocated it).
+ * @note After calling, `p` should not be used unless reinitialized with sse_new().
+ */
 extern void sse_free(sse_epoll_t *p) ;
+
+/**
+ * @defgroup sse_type_apis Type-Specific Watcher APIs
+ * @brief Consistent lifecycle management for all SSE event types.
+ *
+ * All event types follow a standardized 3-phase lifecycle. The naming convention
+ * makes purpose self-evident—documentation focuses on usage context and constraints.
+ *
+ *
+ * @name Start Functions: sse_start_<type>()
+ *
+ * @brief Initialize and register a watcher for a specific event type.
+ *
+ * Allocates type-specific resources (file descriptors, data structures) and
+ * registers the watcher with the event loop.
+ *
+ * @param p Event loop to register with
+ * @param w Watcher structure to initialize (must be zero-initialized)
+ * @param cb User callback function
+ * @param cbdata User context passed to callback
+ * @param ... Type-specific parameters (fd, signals, paths, timeouts, etc.)
+ * @param priority Event processing priority
+ *
+ * @return 1 on success, 0 on failure (errno set)
+ *
+ * @retval 0 errno is set to:
+ *   - EINVAL: invalid parameters
+ *   - ENOMEM: allocation failure
+ *   - Type-specific errors (e.g., ENOSYS for unsupported syscalls)
+ *
+ * @note Must be called on a zero-initialized or freed watcher.
+ * @note After success, watcher is active and monitoring events.
+ * @note Do NOT call on an already-active watcher.
+ *
+ *
+ * @name Modify Functions: sse_attach_<type>(), sse_modify_<type>(), etc.
+ *
+ * @brief Adjust configuration of an active watcher.
+ *
+ * Modifies watcher behavior without reallocating resources or changing identity.
+ * Examples: adding signals, changing timer intervals, updating inotify masks.
+ *
+ * @param w Active watcher to modify
+ * @param ... Type-specific modification parameters
+ *
+ * @return 1 on success, 0 on failure (errno set)
+ *
+ * @retval 0 errno is set to type-specific errors
+ *
+ * @note Only valid on watchers started with sse_start_<type>().
+ * @note More efficient than stop + start cycle.
+ * @note Preserves callback context and watcher identity.
+ *
+ *
+ * @name Control Functions
+ *
+ * @brief Restart a stopped watcher.
+ *
+ * Re-enables monitoring for a watcher previously stopped with sse_stop_<type>().
+ * Does not reallocate resources—reuses existing file descriptors and data.
+ *
+ * @param w Watcher to restart
+ * @return 1 on success, 0 on failure
+ *
+ * @note Only valid after sse_stop_<type>() (not after sse_free_<type>()).
+ * @note No-op if watcher is already active.
+ *
+ * extern int sse_restart_io(sse_watcher_t *w);
+ * // ... (other sse_restart_<type> declarations follow same pattern)
+ *
+ * @brief Temporarily disable a watcher.
+ *
+ * Removes watcher from event monitoring but preserves all resources.
+ * Callbacks will not be invoked until restarted.
+ *
+ * @param w Watcher to stop
+ * @return 1 on success, 0 on failure
+ *
+ * @note Resources remain allocated—use sse_free_<type>() to release.
+ * @note Safe to call on already-stopped watchers.
+ *
+ * extern int sse_stop_io(sse_watcher_t *w);
+ * // ... (other sse_stop_<type> declarations follow same pattern)
+ *
+ *
+ * @brief Permanently free a watcher.
+ *
+ * Stops monitoring, closes file descriptors, frees type-specific data,
+ * and removes from all internal structures.
+ *
+ * @param w Watcher to free
+ * @return 1 on success, 0 on failure
+ *
+ * @note After this, watcher is invalid—must call sse_start_<type>() to reuse.
+ * @note Safe to call on stopped or active watchers.
+ * @note Does NOT free the watcher structure itself (caller allocated it).
+ *
+ * extern int sse_free_io(sse_watcher_t *w);
+ * // ... (other sse_free_<type> declarations follow same pattern)
+ */
 
 extern int sse_start_signal(sse_epoll_t *p, sse_watcher_t *w, sse_callback_t *cb, void *cbdata, int priority) ;
 extern int sse_attach_signal(sse_watcher_t *w, int signal) ;
