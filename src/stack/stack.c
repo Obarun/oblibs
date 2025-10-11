@@ -35,7 +35,7 @@ uint8_t init_stack(stack *stk,char *store, size_t len)
     if (len >= MAXENV) {
         if (stk->allocated)
             return (errno = EINVAL, 0) ;
-        stk->s = (char *)malloc(sizeof(char) * (len + 3))  ;
+        stk->s = malloc(sizeof(char) * (len + 3))  ;
         if (!stk->s)
             return (errno = ERANGE, 0) ;
         stk->len = 0 ; stk->maxlen = len + 2 ;
