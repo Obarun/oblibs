@@ -648,11 +648,15 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
  *
  */
 
-#ifndef LOG_FMTBUF_SIZE
-#define LOG_FMTBUF_SIZE 256
-#endif
-
 #include <stdio.h>
+
+#define LOG_FMTBUF_SIZE 1024
+
+/**
+ * non-reentrant, non-thread-safe!
+ */
+static char flog_buf[LOG_FMTBUF_SIZE];
+static char *pflog __attribute__((unused)) = flog_buf ;
 
 /**
  *
@@ -660,19 +664,17 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
  *
  * **/
 
- #define flog_info(fmt, ...) do { \
+#define flog_info(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_INFO, LOG_INFO_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_infosys(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_INFO, LOG_INFO_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
@@ -689,8 +691,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_info_nclean_return(ret, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_warn_nclean_builder(cleaner, &dbg_info, LOG_LEVEL_INFO, LOG_INFO_MSG, (char const *[]){ flog_buf, NULL }); \
     return ret; \
 } while (0)
@@ -704,32 +705,28 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_warn(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_WARN, LOG_WARN_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_warnsys(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_WARN, LOG_WARN_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_warnu(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_WARN, LOG_WARN_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_warnusys(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_WARN, LOG_WARN_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
@@ -756,8 +753,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_warn_nclean_return(ret, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_warn_nclean_builder(cleaner, &dbg_info, LOG_LEVEL_WARN, LOG_WARN_MSG, (char const *[]){ flog_buf, NULL }); \
     return ret; \
 } while (0)
@@ -765,8 +761,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_warnsys_nclean_return(ret, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_warn_nclean_builder(cleaner, &dbg_info, LOG_LEVEL_WARN, LOG_WARN_MSG, (char const *[]){ flog_buf, NULL }); \
     return ret; \
 } while (0)
@@ -774,8 +769,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_warnu_nclean_return(ret, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_warn_nclean_builder(cleaner, &dbg_info, LOG_LEVEL_WARN, LOG_WARN_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
     return ret; \
 } while (0)
@@ -783,8 +777,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_warnusys_nclean_return(ret, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_warn_nclean_builder(cleaner, &dbg_info, LOG_LEVEL_WARN, LOG_WARN_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
     return ret; \
 } while (0)
@@ -798,16 +791,14 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
  #define flog_trace(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_TRACE, LOG_TRACE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_tracesys(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_TRACE, LOG_TRACE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
@@ -824,16 +815,14 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_1_trace(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_INFO, LOG_TRACE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_1_tracesys(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_INFO, LOG_TRACE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
@@ -856,32 +845,28 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_warn(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_WARN, LOG_WARN_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_warnsys(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_WARN, LOG_WARN_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_warnu(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_WARN, LOG_WARN_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_warnusys(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_WARN, LOG_WARN_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
@@ -908,8 +893,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_warn_nclean_return(ret, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_warn_nclean_builder(cleaner, &dbg_info, LOG_LEVEL_WARN, LOG_WARN_MSG, (char const *[]){ flog_buf, NULL }); \
     return ret; \
 } while (0)
@@ -917,8 +901,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_warnsys_nclean_return(ret, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_warn_nclean_builder(cleaner, &dbg_info, LOG_LEVEL_WARN, LOG_WARN_MSG, (char const *[]){ flog_buf, NULL }); \
     return ret; \
 } while (0)
@@ -926,8 +909,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_warnu_nclean_return(ret, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_warn_nclean_builder(cleaner, &dbg_info, LOG_LEVEL_WARN, LOG_WARN_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
     return ret; \
 } while (0)
@@ -935,8 +917,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_warnusys_nclean_return(ret, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_warn_nclean_builder(cleaner, &dbg_info, LOG_LEVEL_WARN, LOG_WARN_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
     return ret; \
 } while (0)
@@ -950,32 +931,28 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_1_warn(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_INFO, LOG_WARN_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_1_warnsys(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_INFO, LOG_WARN_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_1_warnu(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_INFO, LOG_WARN_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_1_warnusys(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_INFO, LOG_WARN_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
@@ -1002,8 +979,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_1_warn_nclean_return(ret, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_warn_nclean_builder(cleaner, &dbg_info, LOG_LEVEL_INFO, LOG_WARN_MSG, (char const *[]){ flog_buf, NULL }); \
     return ret; \
 } while (0)
@@ -1011,8 +987,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_1_warnsys_nclean_return(ret, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_warn_nclean_builder(cleaner, &dbg_info, LOG_LEVEL_INFO, LOG_WARN_MSG, (char const *[]){ flog_buf, NULL }); \
     return ret; \
 } while (0)
@@ -1020,8 +995,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_1_warnu_nclean_return(ret, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_warn_nclean_builder(cleaner, &dbg_info, LOG_LEVEL_INFO, LOG_WARN_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
     return ret; \
 } while (0)
@@ -1029,8 +1003,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_1_warnusys_nclean_return(ret, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_warn_nclean_builder(cleaner, &dbg_info, LOG_LEVEL_INFO, LOG_WARN_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
     return ret; \
 } while (0)
@@ -1044,72 +1017,63 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_die(err, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_die_builder(err, &dbg_info, LOG_LEVEL_ERROR, LOG_ERROR_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_diesys(err, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_die_builder(err, &dbg_info, LOG_LEVEL_ERROR, LOG_ERROR_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_dieu(err, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_die_builder(err, &dbg_info, LOG_LEVEL_ERROR, LOG_ERROR_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_dieusys(err, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_die_builder(err, &dbg_info, LOG_LEVEL_ERROR, LOG_ERROR_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_die_nclean(err, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_die_nclean_builder(err, cleaner, &dbg_info, LOG_LEVEL_ERROR, LOG_ERROR_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_diesys_nclean(err, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_die_nclean_builder(err, cleaner, &dbg_info, LOG_LEVEL_ERROR, LOG_ERROR_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_dieu_nclean(err, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_die_nclean_builder(err, cleaner, &dbg_info, LOG_LEVEL_ERROR, LOG_ERROR_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_dieusys_nclean(err, cleaner, fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_die_nclean_builder(err, cleaner, &dbg_info, LOG_LEVEL_ERROR, LOG_ERROR_UNABLE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
 #define flog_fatal(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_out_builder(&dbg_info, LOG_LEVEL_ERROR, LOG_ERROR_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
@@ -1122,8 +1086,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
 #define flog_usage(fmt, ...) do { \
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_NO ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_die_builder(LOG_EXIT_USER, &dbg_info, LOG_LEVEL_ERROR, LOG_USAGE_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
@@ -1137,8 +1100,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
     VERBOSITY = LOG_LEVEL_DEBUG ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_die_builder(LOG_EXIT_SYS, &dbg_info, LOG_LEVEL_DEBUG, LOG_NOMEM_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
@@ -1146,8 +1108,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
     log_dbg_info_t dbg_info = log_dbg_init ; \
     LOG_SYS = (size_t *)LOG_SYS_YES ; \
     VERBOSITY = LOG_LEVEL_DEBUG ; \
-    char flog_buf[LOG_FMTBUF_SIZE]; \
-    snprintf(flog_buf, sizeof(flog_buf), fmt, __VA_ARGS__); \
+    snprintf(pflog, sizeof(flog_buf), fmt, __VA_ARGS__); \
     log_die_nclean_builder(LOG_EXIT_SYS, cleaner, &dbg_info, LOG_LEVEL_DEBUG, LOG_NOMEM_MSG, (char const *[]){ flog_buf, NULL }); \
 } while (0)
 
