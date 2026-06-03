@@ -12,17 +12,17 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/files.h>
+#include <oblibs/io.h>
 
 #include <string.h>
+#include <errno.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h>
 
-#include <skalibs/djbunix.h>
-
 int file_create_empty (char const *dst, char const *name,mode_t mode)
 {
-    int fd, end = 0 ;
+    int end = 0 ;
     size_t dstlen = strlen(dst) ;
     size_t namelen = strlen(name) ;
     char file[dstlen + 1 + namelen + 1] ;
@@ -33,11 +33,11 @@ int file_create_empty (char const *dst, char const *name,mode_t mode)
         file[dstlen] = '/' ;
     memcpy(file + dstlen + end,name,namelen) ;
     file[dstlen + end + namelen] = 0 ;
-    fd = open3 (file, O_WRONLY | O_NONBLOCK | O_CREAT | O_EXCL, mode) ;
-    if (fd == -1){
-        fd_close(fd) ;
-        return 0;
-    }
-    fd_close(fd) ;
+
+    int e = errno ;
+    int fd = io_open_mode(file, O_WRONLY | O_NONBLOCK | O_CREAT | O_EXCL, mode) ;
+    if (fd < 0) return 0 ;       /* errno = open error */
+    close(fd) ;
+    errno = e ;                  /* restore entry errno on success */
     return 1 ;
 }
