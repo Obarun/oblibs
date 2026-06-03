@@ -13,16 +13,17 @@
  */
 
 
-#include <oblibs/string.h>
-#include <oblibs/files.h>
 
 #include <errno.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <sys/stat.h>
 
-#include <oblibs/directory.h>
+#include <oblibs/io.h>
+#include <oblibs/string.h>
+#include <oblibs/files.h>
 
-#include <skalibs/djbunix.h>
 #include <skalibs/stralloc.h>
 
 int file_readputsa(stralloc *sa,char const *src,char const *file)
@@ -36,15 +37,37 @@ int file_readputsa(stralloc *sa,char const *src,char const *file)
 
     char tmp[srclen + 1 + filen + 1] ;
 
-    auto_strings(tmp,src,"/",file) ;
+    auto_strings(tmp, src, "/", file) ;
 
     r = scan_mode(tmp,S_IFREG) ;
-    if (r)
-    {
-        size_t filesize=file_get_size(tmp) ;
-        r = openreadfileclose(tmp,sa,filesize) ;
-        if(!r) { errno = ENOENT ; goto err ; }
-        if (!stralloc_0(sa)) goto err ;
+    if (r) {
+        int fd = io_open(tmp, O_RDONLY | O_CLOEXEC) ;
+        if (fd < 0) { errno = ENOENT ; goto err ; }
+
+        struct stat st ;
+        if (fstat(fd, &st) < 0) {
+            close(fd) ;
+            errno = ENOENT ;
+            goto err ;
+        }
+        size_t n = st.st_size ;
+
+        if (!stralloc_ready_tuned(sa, sa->len + n, 0, 0, 1)) {
+            close(fd) ;
+            goto err ;
+        }
+
+        size_t got = io_allread(fd, sa->s + sa->len, n) ;
+        sa->len += got ;
+        close(fd) ;
+        if (got < n) {
+            errno = ENOENT ;
+            goto err ;
+        }
+
+        if (!stralloc_0(sa))
+            goto err ;
+
         sa->len-- ;
         return 1 ;
     }
