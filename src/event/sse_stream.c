@@ -275,7 +275,12 @@ static void sse_stream_io_callback(sse_watcher_t *w, void *data, int revents)
 {
     sse_stream_t *stream = (sse_stream_t *)data;
 
-    if (!stream)
+    /* Ignore a stream already closed: when a callback closes a *sibling* stream,
+     * that stream's watcher is removed from epoll but stays in sse's pending
+     * queue for this cycle, so the dispatch loop re-enters here. Without this
+     * guard we would ref/unref it again, re-run cleanup, and double-defer its
+     * free. The stream memory is still valid (its free is deferred). */
+    if (!stream || stream->closed)
         return;
 
     sse_stream_ref(stream);
@@ -380,6 +385,7 @@ static void sse_stream_cleanup_internal(sse_stream_t *stream)
     if (!stream)
         return ;
     int fd  = stream->fd ;
+    sse_epoll_t *p = stream->watcher.p ; // capture before sse_free_io
 
     sse_free_io(&stream->watcher) ;
 
@@ -396,8 +402,13 @@ static void sse_stream_cleanup_internal(sse_stream_t *stream)
     stream->error_cb = NULL ;
     stream->data = NULL ;
     stream->fd = -1 ;
-    free(stream) ;
-    stream = NULL ;
+
+    /* Defer the free until the current dispatch has fully returned: closing a
+     * stream from another stream's callback (sibling-free) would otherwise free
+     * a watcher still sitting in sse's pending queue. Fall back to an immediate
+     * free if the loop is unknown or the deferral cannot be registered (OOM). */
+    if (!p || !sse_defer(p, free, stream))
+        free(stream) ;
 
     if (fd >= 0)
         close(fd) ;
