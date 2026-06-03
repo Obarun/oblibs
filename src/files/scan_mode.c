@@ -1,5 +1,5 @@
 /*
- * get_gidbyname.c
+ * scan_mode.c
  *
  * Copyright (c) 2018-2025 Eric Vidal <eric@obarun.org>
  *
@@ -12,25 +12,17 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <errno.h>
+#include <sys/stat.h>
+
+#include <oblibs/files.h>
 #include <oblibs/types.h>
 
-#include <sys/types.h>
-#include <pwd.h>
-#include <errno.h>
-
-int get_gidbyname(char const *name,gid_t *gid)
+ssize_t scan_mode (char const *str,mode_t mode)
 {
-    int e = errno ;
-    errno = 0 ;
-    struct passwd *pw = getpwnam(name) ;
-    if (!pw)
-    {
-        if (!errno) errno = ESRCH ;
-        return -1 ;
-    }
-    *gid = pw->pw_gid ;
-    errno = e ;
-    return 1 ;
+    struct stat st ;
+    if (stat(str,&st) == -1) return 0 ;
+    mode_t r = get_flags(mode,st.st_mode) ;
+    if (!r) { errno = EINVAL ; return -1 ; }
+    else return  1 ;
 }
-
-

@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include <skalibs/stralloc.h>
-#include <skalibs/types.h>
 #include <skalibs/direntry.h>
 #include <skalibs/unix-transactional.h>
 

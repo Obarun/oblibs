@@ -1,5 +1,5 @@
 /*
- * get_namebyuid.c
+ * get_gidbyname.c
  *
  * Copyright (c) 2018-2025 Eric Vidal <eric@obarun.org>
  *
@@ -12,29 +12,25 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/types.h>
+#include <oblibs/account.h>
 
 #include <sys/types.h>
 #include <pwd.h>
 #include <errno.h>
 
-#include <skalibs/stralloc.h>
-
-int get_namebyuid(uid_t uid,stralloc *name)
+int get_gidbyname(char const *name,gid_t *gid)
 {
     int e = errno ;
     errno = 0 ;
-    struct passwd *pw = getpwuid(uid);
+    struct passwd *pw = getpwnam(name) ;
     if (!pw)
     {
         if (!errno) errno = ESRCH ;
-        return 0 ;
+        return -1 ;
     }
-    stralloc_cats(name,pw->pw_name) ;
+    *gid = pw->pw_gid ;
     errno = e ;
     return 1 ;
 }
-
-
 
 

@@ -19,6 +19,13 @@
 
 #include <skalibs/stralloc.h>
 
+/** Scan if @str has the corresponding @mode
+ * @Return 1 on success
+ * @Return 0 if @str doesn't exist or stat fail
+ * @Return -1 if @str haven't the corresponding @mode
+ * Also warm the user if stat fail*/
+extern ssize_t scan_mode(char const *str, mode_t mode) ;
+
 /** @Return the size of @filename
  * @Return -1 on failure and set errno*/
 extern ssize_t file_get_size(const char* filename) ;

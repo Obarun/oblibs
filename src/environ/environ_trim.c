@@ -13,14 +13,14 @@
  */
 
 #include <string.h>
+#include <stdint.h>
 
 #include <skalibs/stralloc.h>
-#include <skalibs/types.h>
 #include <skalibs/bytestr.h>
-#include <skalibs/fmtscan.h>
 
 #include <oblibs/log.h>
 #include <oblibs/environ.h>
+#include <oblibs/types.h>
 
 
 /** this following function (environ_scanoct, environ_cclass, environ_next, environ_parse_files) come from:
@@ -31,10 +31,10 @@
 
 static void environ_scanoct (stack *stk, size_t pos)
 {
-    unsigned int u ;
+    uint32_t u ;
     if (!stack_add(stk, "", 1))
         log_die_nomem("stack") ;
-    uint_oscan(stk->s + pos, &u) ;
+    u32_oscan(stk->s + pos, &u) ;
     stk->s[pos] = u ;
     stk->len = pos+1 ;
 }
@@ -131,14 +131,14 @@ int environ_trim (stack *stk, char const *file)
         if (what & 0x0040) if (!stack_add(stk,"",1)) log_die_nomem("stack") ;
         if (what & 0x0200)
         {
-        stk->s[stk->len-2] = (fmtscan_num(stk->s[stk->len-2], 16) << 4) + fmtscan_num(stk->s[stk->len-1], 16) ;
+        stk->s[stk->len-2] = (scan_digit(stk->s[stk->len-2], 16) << 4) + scan_digit(stk->s[stk->len-1], 16) ;
         stk->len-- ;
         }
         if (what & 0x0800) environ_scanoct(stk, mark) ;
     }
     if (state > 14) {
-        char fmt[UINT_FMT] ;
-        fmt[uint_fmt(fmt, line)] = 0 ;
+        char fmt[U32_FMT] ;
+        fmt[u32_fmt(fmt, line)] = 0 ;
         log_warn_return(LOG_EXIT_ZERO, "syntax error at line: ", fmt, " in file: ", file) ;
     }
 

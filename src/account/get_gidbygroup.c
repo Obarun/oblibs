@@ -1,5 +1,5 @@
 /*
- * get_uidbyname.c
+ * get_gidbygroup.c
  *
  * Copyright (c) 2018-2025 Eric Vidal <eric@obarun.org>
  *
@@ -12,25 +12,29 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/types.h>
+#include <oblibs/account.h>
 
 #include <sys/types.h>
-#include <pwd.h>
+#include <grp.h>
 #include <errno.h>
 
-int get_uidbyname(char const *name,uid_t *uid)
+#include <skalibs/stralloc.h>
+
+int get_gidbygroup(char const *name,gid_t *gid)
 {
     int e = errno ;
     errno = 0 ;
-    struct passwd *pw = getpwnam(name) ;
-    if (!pw)
+    struct group *gr = getgrnam(name) ;
+    if (!gr)
     {
         if (!errno) errno = ESRCH ;
         return -1 ;
     }
-    *uid = pw->pw_uid ;
+    *gid = gr->gr_gid ;
     errno = e ;
     return 1 ;
 }
+
+
 
 

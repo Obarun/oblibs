@@ -21,9 +21,9 @@
 
 #include <oblibs/log.h>
 #include <oblibs/environ.h>
+#include <oblibs/types.h>
 
 #include <skalibs/buffer.h>
-#include <skalibs/types.h>
 #include <skalibs/tai.h>
 #include <skalibs/djbtime.h>
 #include <skalibs/djbunix.h>
@@ -215,10 +215,10 @@ void redir_fd(int fd,char const *file)
     }
     if (fd_move(fd, fdmodif) == -1)
     {
-        char fmt[UINT_FMT] ;
-        fmt[uint_fmt(fmt, fdmodif)] = 0 ;
-        char fdmt[UINT_FMT] ;
-        fdmt[uint_fmt(fdmt, fd)] = 0 ;
+        char fmt[U32_FMT] ;
+        fmt[u32_fmt(fmt, fdmodif)] = 0 ;
+        char fdmt[U32_FMT] ;
+        fdmt[u32_fmt(fdmt, fd)] = 0 ;
         REDIRFD_1 = REDIRFD_2 = 0 ;
         log_dieusys(LOG_EXIT_SYS, "move fd ", fmt, " to fd: ",fdmt) ;
     }
@@ -304,8 +304,8 @@ void log_out_builder(log_dbg_info_t *db_info,int level, char const *msg[],char c
         if (VERBOSITY >= LOG_LEVEL_DEBUG)
             len += 7 ;
 
-        char line[UINT32_FMT] ;
-        line[uint32_fmt(line,db_info->line)] = 0 ;
+        char line[U32_FMT] ;
+        line[u32_fmt(line,db_info->line)] = 0 ;
 
         char const *ap[len] ;
         uint8_t i = 0 ;

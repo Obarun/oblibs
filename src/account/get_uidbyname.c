@@ -1,5 +1,5 @@
 /*
- * scan_mode.c
+ * get_uidbyname.c
  *
  * Copyright (c) 2018-2025 Eric Vidal <eric@obarun.org>
  *
@@ -12,17 +12,25 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <oblibs/account.h>
+
+#include <sys/types.h>
+#include <pwd.h>
 #include <errno.h>
 
-#include <oblibs/types.h>
-
-#include <sys/stat.h>
-
-ssize_t scan_mode (char const *str,mode_t mode)
+int get_uidbyname(char const *name,uid_t *uid)
 {
-    struct stat st ;
-    if (stat(str,&st) == -1) return 0 ;
-    mode_t r = get_flags(mode,st.st_mode) ;
-    if (!r) { errno = EINVAL ; return -1 ; }
-    else return  1 ;
+    int e = errno ;
+    errno = 0 ;
+    struct passwd *pw = getpwnam(name) ;
+    if (!pw)
+    {
+        if (!errno) errno = ESRCH ;
+        return -1 ;
+    }
+    *uid = pw->pw_uid ;
+    errno = e ;
+    return 1 ;
 }
+
+

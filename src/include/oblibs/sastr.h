@@ -16,7 +16,7 @@
 #define OB_SASTR_H
 
 #include <sys/stat.h>
-#include <skalibs/types.h>
+#include <stdint.h>
 #include <skalibs/stralloc.h>
 
 #define FOREACH_SASTR(sa,pos) \
