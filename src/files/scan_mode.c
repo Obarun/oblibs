@@ -18,11 +18,12 @@
 #include <oblibs/files.h>
 #include <oblibs/types.h>
 
-ssize_t scan_mode (char const *str,mode_t mode)
+ssize_t scan_mode (char const *str, mode_t mode)
 {
     struct stat st ;
     if (stat(str,&st) == -1) return 0 ;
     mode_t r = get_flags(mode,st.st_mode) ;
-    if (!r) { errno = EINVAL ; return -1 ; }
+    if (!r)
+        return (errno = EINVAL, -1) ;
     else return  1 ;
 }
