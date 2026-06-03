@@ -295,25 +295,28 @@ static bool test_mixed_watcher_cleanup(void) {
     TEST_ASSERT(sse_new(&loop, 30), "Failed to create loop for cleanup test");
     loop.running = true ;
 
+    /* The watchers and their callback data are registered in the loop and used
+     * by sse_run() below, so they must outlive each iteration: keep them in
+     * frame-scoped arrays, not inside the for-body (which would leave the loop
+     * referencing stack memory that is out of scope -> use-after-scope). */
+    sse_watcher_t io_w[5], timer_w[5], eventfd_w[5];
+    struct test_callback_data io_data[5], timer_data[5], eventfd_data[5];
+
     /* Create many watchers of different types */
     for (int i = 0; i < 5; i++) {
-        sse_watcher_t io_w, timer_w, eventfd_w;
-        struct test_callback_data io_data, timer_data, eventfd_data;
-
-        test_callback_init(&io_data);
-        test_callback_init(&timer_data);
-        test_callback_init(&eventfd_data);
+        test_callback_init(&io_data[i]);
+        test_callback_init(&timer_data[i]);
+        test_callback_init(&eventfd_data[i]);
 
         int pipefd[2];
         if (pipe(pipefd) == 0) {
-            sse_start_io(&loop, &io_w, test_mixed_callback, &io_data, pipefd[0], SSE_READ, i + 1);
+            sse_start_io(&loop, &io_w[i], test_mixed_callback, &io_data[i], pipefd[0], SSE_READ, i + 1);
         }
 
-        sse_start_timer(&loop, &timer_w, test_mixed_callback, &timer_data, 50 + i * 10, 0, i + 10);
-        sse_start_eventfd(&loop, &eventfd_w, test_mixed_callback, &eventfd_data, i + 20);
+        sse_start_timer(&loop, &timer_w[i], test_mixed_callback, &timer_data[i], 50 + i * 10, 0, i + 10);
+        sse_start_eventfd(&loop, &eventfd_w[i], test_mixed_callback, &eventfd_data[i], i + 20);
 
-        /* Note: In a real scenario, you'd track these pointers for proper cleanup */
-        /* For this test, we rely on sse_free() to handle cleanup */
+        /* For this test, we rely on sse_free() to handle watcher cleanup. */
     }
 
     /* Run a few iterations */
