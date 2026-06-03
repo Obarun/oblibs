@@ -463,6 +463,12 @@ int sse_init(sse_epoll_t *p, uint32_t maxevents)
     if (p->file == NULL)
         log_warnusys_return(LOG_EXIT_ZERO, "init file queue") ;
 
+    p->deferred = malloc(p->maxevents * sizeof(sse_deferred_t)) ;
+    if (p->deferred == NULL)
+        log_warnusys_return(LOG_EXIT_ZERO, "init deferred list") ;
+    p->deferred_cap = p->maxevents ;
+    p->ndeferred = 0 ;
+
     p->rerun_file = false ;
     p->running = false ;
     p->fd = -1 ;
@@ -773,6 +779,39 @@ static void sse_dispatch_eventfd(sse_watcher_t *w)
     }
 }
 
+int sse_defer(sse_epoll_t *p, void (*fn)(void *), void *arg)
+{
+    if (!p || !fn)
+        return (errno = EINVAL, 0) ;
+
+    if (p->ndeferred >= p->deferred_cap) {
+        size_t cap = p->deferred_cap ? p->deferred_cap * 2 : NPLUS ;
+        sse_deferred_t *d = realloc(p->deferred, cap * sizeof(sse_deferred_t)) ;
+        if (!d)
+            return (errno = ENOMEM, 0) ;
+        p->deferred = d ;
+        p->deferred_cap = cap ;
+    }
+
+    p->deferred[p->ndeferred].fn = fn ;
+    p->deferred[p->ndeferred].arg = arg ;
+    p->ndeferred++ ;
+
+    return 1 ;
+}
+
+/* Run every deferred action then clear the list. Called once the dispatch (or
+ * sse_free) no longer touches any watcher. The loop re-reads p->deferred each
+ * step, so a deferred fn that itself calls sse_defer (and triggers a realloc)
+ * stays safe; such re-deferred actions run within this same drain. */
+static void sse_drain_deferred(sse_epoll_t *p)
+{
+    for (size_t i = 0 ; i < p->ndeferred ; i++)
+        p->deferred[i].fn(p->deferred[i].arg) ;
+
+    p->ndeferred = 0 ;
+}
+
 void sse_dispatch(sse_epoll_t *p)
 {
     if (!p->pending->size)
@@ -826,21 +865,30 @@ void sse_dispatch(sse_epoll_t *p)
         /** Always call the callback even for an inactive event.
          * The callback is responsible to check error and freeing
          * the watchers if its needed.
-         * */
+         *
+         * Everything that touches w must happen BEFORE the callback: a
+         * callback may free the memory holding w (self-free), so the loop
+         * must not read or write w once w->cb has returned. The post-loop
+         * queue_remove_ptr only compares pointers, so it stays safe. */
+        remove[n++] = w ;
+        int rev = w->revents & SSE_MASK ;
+        w->revents = 0 ;
         if (w->cb) {
             if (clock_gettime(CLOCK_MONOTONIC, &w->time.dispatched) < 0)
                 log_warnusys("get time to set event dispatched time") ;
 
-            w->cb(w, w->cbdata, w->revents & SSE_MASK) ;
+            w->cb(w, w->cbdata, rev) ;
         }
-        remove[n++] = w ;
-        w->revents = 0 ;
     }
 
     for (size_t i = 0; i < n ; i++) {
         if (!queue_remove_ptr(p->pending, remove[i]))
             log_warnusys("remove watcher pointer from pending queue") ;
     }
+
+    /* Safe point: no watcher of the pending queue is touched anymore. Run the
+     * frees/actions a callback deferred during this dispatch. */
+    sse_drain_deferred(p) ;
 }
 
 int sse_run(sse_epoll_t *p, int timeout)
@@ -896,6 +944,11 @@ void sse_free(sse_epoll_t *p)
     if (!p)
        return ;
 
+    /* Run any still-pending deferred action first, while the loop state is
+     * coherent, so a deferred free (e.g. a stream closed just before shutdown)
+     * is not leaked. */
+    sse_drain_deferred(p) ;
+
     struct sse_watcher_hash_s *w, *tmp ;
     HASH_ITER(hh, p->watchers, w, tmp) {
 
@@ -941,6 +994,10 @@ void sse_free(sse_epoll_t *p)
     p->watchers = NULL ;
     queue_free_ptr(p->file) ;
     p->file = NULL ;
+    free(p->deferred) ;
+    p->deferred = NULL ;
+    p->ndeferred = 0 ;
+    p->deferred_cap = 0 ;
     p->maxevents = 0 ;
     p->rerun_file = false ;
     if (p->fd >= 0)

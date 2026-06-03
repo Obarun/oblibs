@@ -104,6 +104,14 @@ enum sse_type_e
 } ;
 typedef enum sse_type_e sse_type_t ;
 
+// A deferred action: run fn(arg) once the current dispatch has fully returned.
+struct sse_deferred_s
+{
+    void (*fn)(void *) ;
+    void *arg ;
+} ;
+typedef struct sse_deferred_s sse_deferred_t ;
+
 struct sse_epoll_s
 {
     int fd ; // epoll_fd
@@ -114,9 +122,12 @@ struct sse_epoll_s
     struct sse_watcher_hash_s *watchers ; // hash table of watchers
     queue_t *file ; // watchers reading stdin from file
     bool rerun_file ;
+    sse_deferred_t *deferred ; // actions to run after the current dispatch returns
+    size_t ndeferred ; // live entries in deferred
+    size_t deferred_cap ; // allocated capacity of deferred
 } ;
 typedef struct sse_epoll_s sse_epoll_t ;
-#define SSE_EPOLL_ZERO { -1, 0, {0}, false, NULL, NULL, NULL, false }
+#define SSE_EPOLL_ZERO { -1, 0, {0}, false, NULL, NULL, NULL, false, NULL, 0, 0 }
 
 /**
  * @struct sse_time_s
@@ -337,6 +348,25 @@ extern int sse_wait(sse_epoll_t *p, int timeout) ;
  * @note All pending events are cleared after dispatch, even if `p->running` becomes false.
  */
 extern void sse_dispatch(sse_epoll_t *p) ;
+
+/**
+ * @brief Defer an action until the current dispatch has fully returned.
+ *
+ * Registers fn(arg) to be run at the very end of sse_dispatch, once no watcher
+ * of the pending queue is touched anymore. This is the safe way to free, from
+ * within a callback, the container of a watcher that may still be referenced by
+ * the dispatch loop — including the container of a *different* watcher pending
+ * in the same cycle (sibling-free), which the reorder of revents alone does not
+ * make safe.
+ *
+ * @param[in] p   Initialized SSE event loop
+ * @param[in] fn  Action to run later (e.g. free). MUST NOT call sse_run/sse_dispatch.
+ * @param[in] arg Argument passed to fn
+ *
+ * @return 1 on success, 0 on failure (errno = ENOMEM); on failure the action is
+ *         NOT registered and the caller is responsible for it.
+ */
+extern int sse_defer(sse_epoll_t *p, void (*fn)(void *), void *arg) ;
 
 /**
  * @brief Run one iteration of the event loop.
