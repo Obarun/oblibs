@@ -94,4 +94,43 @@ extern ssize_t io_write(int fd, char *store, size_t len) ;
  */
 extern ssize_t io_write_result(ssize_t r) ;
 
+/**
+ * @brief Reads exactly `len` bytes from a BLOCKING fd into `store`.
+ *
+ * Loops over io_read()/io_read_result() until `len` bytes are read, EOF is
+ * reached, or an error occurs. EINTR is handled internally; this function is
+ * meant for blocking file descriptors only (on a non-blocking fd it stops on
+ * the first EAGAIN and returns a short count with errno == 0).
+ *
+ * @param fd    A blocking file descriptor.
+ * @param store Destination buffer of at least `len` bytes.
+ * @param len   Number of bytes to read.
+ * @return Number of bytes actually read (0..len).
+ *   - `== len` Success: full buffer read.
+ *   - `< len`  Short read; inspect errno:
+ *       - `EPIPE` EOF reached before `len` bytes.
+ *       - other   Read error.
+ *       - `0`     Would-block (non-blocking fd passed by mistake).
+ */
+extern size_t io_allread(int fd, char *store, size_t len) ;
+
+/**
+ * @brief Writes exactly `len` bytes from `store` to a BLOCKING fd.
+ *
+ * Loops over io_write()/io_write_result() until `len` bytes are written or an
+ * error occurs. EINTR is handled internally; this function is meant for
+ * blocking file descriptors only (on a non-blocking fd it stops on the first
+ * EAGAIN and returns a short count with errno == 0).
+ *
+ * @param fd    A blocking file descriptor.
+ * @param store Source buffer of at least `len` bytes.
+ * @param len   Number of bytes to write.
+ * @return Number of bytes actually written (0..len).
+ *   - `== len` Success: full buffer written.
+ *   - `< len`  Short write; inspect errno:
+ *       - non-zero Write error.
+ *       - `0`      Would-block (non-blocking fd passed by mistake).
+ */
+extern size_t io_allwrite(int fd, char *store, size_t len) ;
+
 #endif
