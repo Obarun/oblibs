@@ -869,7 +869,7 @@ int sse_run(sse_epoll_t *p, int timeout)
     return 1 ;
 }
 
-int sse_poll(sse_epoll_t *p)
+int sse_poll(sse_epoll_t *p, int timeout)
 {
     if (!p || p->fd < 0)
         return (errno = EINVAL, 0) ;
@@ -880,7 +880,7 @@ int sse_poll(sse_epoll_t *p)
 
     while(p->running) {
 
-        if (!sse_run(p, SSE_TIMEOUT_INFINITE)) {
+        if (!sse_run(p, timeout)) {
             e = 0 ;
             break ;
         }

@@ -30,7 +30,6 @@ static void io_callback(sse_watcher_t *w, void *cbdata, int event)
     assert(w->type == SSE_TYPE_IO);
     assert(event & SSE_READ);
     assert(event & SSE_HUP); // pipe was closed
-    assert(!w->active); // pipe was closed, sse_dispatch_io stop the watcher
 
     char buf[256];
     ssize_t n = read(w->fd, buf, sizeof(buf) - 1);

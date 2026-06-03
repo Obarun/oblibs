@@ -371,6 +371,7 @@ extern int sse_run(sse_epoll_t *p, int timeout) ;
  *   - An unrecoverable error occurs
  *
  * @param[in] p Initialized SSE event loop
+ * @param[in] timeout timeout of the event loop, can be SSE_TIMEOUT_INFINITE for infinite
  *
  * @return
  *   - 1 if loop exited cleanly (p->running = false)
@@ -383,7 +384,7 @@ extern int sse_run(sse_epoll_t *p, int timeout) ;
  * @note Sets `p->running = true` before starting and `false` on exit.
  * @note To stop the loop from a callback, set `w->p->running = false`.
  */
-extern int sse_poll(sse_epoll_t *p) ;
+extern int sse_poll(sse_epoll_t *p, int timeout) ;
 
 /**
  * @brief Clean up and free all event loop resources.
