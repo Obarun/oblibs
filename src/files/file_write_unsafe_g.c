@@ -12,17 +12,27 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/string.h>
-
 #include <string.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
 
-#include <skalibs/djbunix.h>
+#include <oblibs/io.h>
 
-int file_write_unsafe_g(char const *file,char const *content)
+int file_write_unsafe_g(char const *file, char const *content)
 {
     size_t contlen = strlen(content) ;
 
-    if (!openwritenclose_unsafe(file,content,contlen)) return 0 ;
+    int fd = io_open_mode(file, O_WRONLY | O_NONBLOCK | O_TRUNC | O_CREAT | O_CLOEXEC, 0666) ;
+    if (fd < 0) return 0 ;
 
+    if (io_allwrite(fd, (char *)content, contlen) != contlen) {
+        int e = errno ;
+        close(fd) ;
+        unlink(file) ;
+        return (errno = e, 0) ;
+    }
+
+    close(fd) ;
     return 1 ;
 }
