@@ -14,29 +14,27 @@
 
 
 #include <oblibs/files.h>
+#include <oblibs/io.h>
 
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>
 
-#include <skalibs/djbunix.h>
-
 int file_openclose_readonly(char *buffile, char const *filename, size_t buffsize)
 {
-    int fd, res, e ;
-    e = errno ;
-    errno = 0 ;
+    int e = errno ;
 
-    fd = open(filename, O_RDONLY) ;
+    int fd = io_open(filename, O_RDONLY) ;
+    if (fd < 0) return -1 ;
 
-    if (errno)
-    {
-        return -1 ;
-    }
-    res = read(fd,buffile,buffsize) ;
-    if (res < 0){ fd_close (fd) ; return -1 ; }
-    fd_close(fd) ;
+    size_t got = io_allread(fd, buffile, buffsize) ;
+    int re = errno ;
+    close(fd) ;
+
+    if (got < buffsize && re != EPIPE)   /* short read not caused by EOF = real error */
+        return (errno = re, -1) ;
+
     errno = e ;
-    return fd;
+    return fd ;
 }
