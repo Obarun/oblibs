@@ -23,11 +23,18 @@ uint8_t environ_search_value(stack *stk, const char *str, const char *key)
 {
     lexer_config cfg = LEXER_CONFIG_ZERO ;
     _alloc_stk_(s, strlen(str) + 1) ;
+    _alloc_stk_(t, strlen(str) + 1) ;
 
     if (!environ_search_key(&s, str, key, &cfg))
         return (errno = EINVAL, 0) ;
 
-    if (!environ_get_value(stk, str + cfg.opos))
+    /** @str is raw here: parse it once (the matched entry comes first from
+     * cfg.opos), then extract its value. environ_get_value itself no longer
+     * parses, so the trim must happen here. */
+    if (!environ_trim(&t, str + cfg.opos))
+        return 0 ;
+
+    if (!environ_get_value(stk, t.s))
         return 0 ;
 
     return 1 ;

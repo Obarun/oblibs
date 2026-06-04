@@ -82,11 +82,13 @@ extern uint8_t environ_get_key(stack *stk, const char *str) ;
  * @Return 0 on fail and set errno*/
 extern uint8_t environ_search_key(stack *stk, const char *str, const char *key, lexer_config *cfg) ;
 
-/** Get the value (meaning everything after '=' and '\n' or EOF)
- * from @str. Replace the content of @stk with the result of
- * the process.
+/** Get the value (meaning everything after the first '=' up to '\n' or EOF)
+ * from @str, verbatim. @str MUST be an already-parsed "key=value" entry
+ * (as produced by environ_trim); this function does NOT parse and will not
+ * unescape, so feeding it raw envfile syntax keeps the escapes literal.
+ * Replace the content of @stk with the result of the process.
  * @Return 1 on success
- * @Return 0 on fail and set errno */
+ * @Return 0 on fail and set errno (EINVAL if @str has no '=') */
 extern uint8_t environ_get_value(stack *stk, const char *str) ;
 
 /** Get the value (meaning everything after '=' and '\n' or EOF)
