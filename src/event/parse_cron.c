@@ -140,31 +140,6 @@ static const unsigned char char_class[256] = {
     CRON_CLASS_OTHER, CRON_CLASS_OTHER, CRON_CLASS_OTHER,    CRON_CLASS_OTHER, CRON_CLASS_OTHER, CRON_CLASS_OTHER, CRON_CLASS_OTHER, 0   //256
 } ;
 
-static void uint8_str(char *buf, uint8_t num, int buf_size)
-{
-    int a = 0, b = 0 ;
-    char temp[4] ; // Enough for 0-255
-
-    if (num == 0) {
-        buf[0] = '0' ;
-        buf[1] = '\0' ;
-        return;
-    }
-
-    // Convert digits to characters in reverse order from base 10
-    while (num > 0 && a < buf_size - 1) {
-        temp[a++] = (num % 10) + '0';
-        num /= 10;
-    }
-
-    // Reverse digits into buffer
-    while (a > 0 && b < buf_size - 1) {
-        buf[b++] = temp[--a];
-    }
-
-    buf[b] = '\0' ;
-}
-
 static inline char parse_next(char const *s, size_t *pos)
 {
     char c = 0 ;
@@ -392,12 +367,8 @@ static int parse_field(cron_context_t *ctx)
         unsigned char cls = char_class[c] ;
         transition_t t = state_table[state][cls] ;
 
-        if (t.action & ACT_ERROR) {
-            char c[2] = { ctx->field[pos-1], '\0' } ;
-            char spos[4] ;
-            uint8_str(spos, pos, sizeof(pos));
-            log_warn_return(LOG_EXIT_ZERO, "Parse error character: ", c," at pos: ", spos) ;
-        }
+        if (t.action & ACT_ERROR)
+            flog_warn_return(LOG_EXIT_ZERO, "Parse error character: %c at pos: %zu", ctx->field[pos-1], pos) ;
 
         if (t.action & ACT_WILDCARD) {
             ctx->parser_min = ctx->min ;
