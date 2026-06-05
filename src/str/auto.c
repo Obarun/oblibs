@@ -30,10 +30,7 @@ void auto_string_builder(char *dest,size_t baselen, char const *str[],...)
     while (*str)
     {
         slen = strlen(*str) ;
-        char t[slen + 1] ;
-        memcpy(t,*str,slen) ;
-        t[slen] = 0 ;
-        memcpy(dest + totlen,t,slen) ;
+        memcpy(dest + totlen, *str, slen) ;
         str++ ;
         totlen += slen ;
     }
@@ -43,17 +40,10 @@ void auto_string_builder(char *dest,size_t baselen, char const *str[],...)
 
 int auto_stra_builder(stralloc *sa,char const *str[],...)
 {
-    size_t slen = 0 ;
     va_list alist ;
     va_start(alist,str) ;
 
     while (*str) {
-
-        slen =  strlen(*str) ;
-        char t[slen + 1] ;
-        memcpy(t, *str, slen) ;
-        t[slen] = 0 ;
-
         if (!stralloc_catb(sa,*str,strlen(*str))) return 0 ;
         str++ ;
     }
