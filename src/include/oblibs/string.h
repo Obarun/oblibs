@@ -109,6 +109,10 @@ extern int auto_strbuf_builder(strbuf *b, char const *str[], ...) ;
  * @Return -1 on fail */
 extern int str_contain(char const *str, char const *search) ;
 
+/** Offset of the first occurrence of @c in @s.
+ * @Return the index of @c, or strlen(@s) if @c is not present */
+extern size_t str_search(char const *s, int c) ;
+
 /** Look if @str start with the regex @regex
  * @Return 1 on success
  * @Return 0 on fail */

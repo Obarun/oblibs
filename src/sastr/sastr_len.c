@@ -17,9 +17,11 @@
 #include <stddef.h>
 
 #include <skalibs/stralloc.h>
-#include <skalibs/bytestr.h>
 
 size_t sastr_len(stralloc *sa)
 {
-    return byte_count(sa->s,sa->len,'\0') ;
+    size_t n = 0 ;
+    for (size_t i = 0 ; i < sa->len ; i++)
+        if (sa->s[i] == 0) n++ ;
+    return n ;
 }

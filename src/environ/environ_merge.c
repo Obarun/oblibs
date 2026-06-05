@@ -18,7 +18,8 @@
 #include <string.h>
 #include <errno.h>
 
-#include <skalibs/bytestr.h>
+#include <oblibs/string.h>
+
 #include <skalibs/env.h>
 
 size_t environ_merge (char const **v, size_t vmax, char const *const *envp, size_t envlen, char const *modifs, size_t modiflen)
@@ -29,7 +30,7 @@ size_t environ_merge (char const **v, size_t vmax, char const *const *envp, size
   for (; i < envlen ; i++) v[i] = envp[i] ;
   for (i = 0 ; i < modiflen ; i += strlen(modifs + i) + 1)
   {
-    size_t split = str_chr(modifs + i, '=') ;
+    size_t split = str_search(modifs + i, '=') ;
     size_t j = 0 ;
     for (; j < vlen ; j++)
       if (!strncmp(modifs + i, v[j], split) && (v[j][split] == '=')) break ;

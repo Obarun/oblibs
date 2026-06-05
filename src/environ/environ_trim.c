@@ -16,7 +16,6 @@
 #include <stdint.h>
 
 #include <skalibs/stralloc.h>
-#include <skalibs/bytestr.h>
 
 #include <oblibs/log.h>
 #include <oblibs/environ.h>
@@ -124,7 +123,11 @@ int environ_trim (stack *stk, char const *file)
         state = what & 0x0f ;
         if (what & 0x0400) environ_scanoct(stk, mark) ;
         if (what & 0x0100) mark = stk->len ;
-        if (what & 0x1000) c = 7 + byte_chr("abtnvfr", 7, c) ;
+        if (what & 0x1000) {
+            static char const esc[] = "abtnvfr" ;
+            char const *p = memchr(esc, c, 7) ;
+            c = 7 + (p ? p - esc : 7) ;
+        }
         if (what & 0x0010) if (!stack_add(stk, &c, 1)) log_die_nomem("stack") ;
         if (what & 0x0020) line++ ;
         if (what & 0x0080) stk->len = mark ;
