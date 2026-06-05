@@ -275,16 +275,16 @@ static void test_catv(void)
 
 /* ---- append + end produces a valid C string ---- */
 
-static void test_end_cstring(void)
+static void test_terminate_cstring(void)
 {
-    TEST_START("test_end_cstring") ;
+    TEST_START("test_terminate_cstring") ;
 
     strbuf sb = STRBUF_ZERO ;
     for (char c = 'A' ; c <= 'E' ; c++)
         TEST_ASSERT(strbuf_catb(&sb, &c, 1), "catb byte") ;
     TEST_ASSERT(sb.len == 5, "len 5") ;
 
-    TEST_ASSERT(strbuf_end(&sb), "end") ;             /* append the NUL */
+    TEST_ASSERT(strbuf_terminate(&sb), "terminate") ;   /* append the NUL */
     TEST_ASSERT(sb.len == 6, "len includes NUL") ;
     TEST_ASSERT(sb.s[5] == 0, "NUL byte present") ;
     TEST_ASSERT(strlen(sb.s) == 5, "valid C string") ;
@@ -329,7 +329,7 @@ static void test_shrink(void)
     TEST_END() ;
 }
 
-/* ---- _alloc_strbuf_: stack seed, auto-free, and the >= STKMAX fallback ---- */
+/* ---- _alloc_strbuf_: stack seed, auto-free, and the > THRESHOLD fallback ---- */
 
 static void test_alloc_macro(void)
 {
@@ -349,7 +349,17 @@ static void test_alloc_macro(void)
     }
 
     {
-        /* n >= STRBUF_STKMAX -> 1-byte seed, heaps on first real write */
+        /* boundary: n == STRBUF_THRESHOLD is allowed on the stack (inclusive cap) */
+        _alloc_strbuf_(edge, STRBUF_THRESHOLD) ;
+        char blob[STRBUF_THRESHOLD] ;
+        memset(blob, 'k', sizeof blob) ;
+        TEST_ASSERT(strbuf_catb(&edge, blob, STRBUF_THRESHOLD), "fill to cap") ;
+        TEST_ASSERT(edge.heap == 0, "n == THRESHOLD stays on stack") ;
+        /* auto-freed here */
+    }
+
+    {
+        /* n > STRBUF_THRESHOLD -> 1-byte seed, heaps on first real write */
         _alloc_strbuf_(huge, 100000) ;
         TEST_ASSERT(strbuf_cats(&huge, "xy"), "write") ;
         TEST_ASSERT(huge.heap == 1, "fallback heaps immediately") ;
@@ -410,7 +420,7 @@ int main(void)
     test_catb_empty() ;
     test_insertb() ;
     test_catv() ;
-    test_end_cstring() ;
+    test_terminate_cstring() ;
     test_shrink() ;
     test_alloc_macro() ;
     test_integrity_mixed() ;

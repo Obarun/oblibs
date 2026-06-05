@@ -18,8 +18,9 @@
  *     append-heavy paths, while still amortized O(1) and friendly to reuse of
  *     freed blocks.
  *   - No zeroing of the allocated slack. Bytes in [len, cap) are UNDEFINED;
- *     callers must not read past len. Append a NUL explicitly with strbuf_end()
- *     when a C string is needed. This drops stralloc's per-grow memset.
+ *     callers must not read past len. Append a NUL explicitly with
+ *     strbuf_terminate() when a C string is needed. This drops stralloc's
+ *     per-grow memset.
  *   - Direct malloc/realloc, no allocator indirection.
  *   - Optional borrowed storage (the `heap` flag): a strbuf may be seeded with
  *     caller-provided storage (e.g. on the C stack via _alloc_strbuf_) and only
@@ -50,8 +51,9 @@ struct strbuf_s
 
 #define STRBUF_ZERO { .s = 0, .len = 0, .cap = 0, .heap = 0 }
 
-/** Cap of the on-stack seed produced by _alloc_strbuf_ (bytes). */
-#define STRBUF_STKMAX 2048
+/** Stack/heap threshold for _alloc_strbuf_ (bytes): a requested seed up to this
+ *  size lives on the stack; beyond it the seed falls back to the heap. */
+#define STRBUF_THRESHOLD 2048
 
 /** Automatic strbuf_free() at scope exit. */
 #define _cleanup_strbuf_ __attribute__((cleanup(strbuf_free)))
@@ -61,12 +63,12 @@ struct strbuf_s
  *
  * The buffer uses the stack seed until it overflows, then migrates to the heap.
  * It is freed automatically at scope exit. For a known-big buffer use
- * STRBUF_ZERO directly (pure heap). @n >= STRBUF_STKMAX falls back to a 1-byte
- * seed (heap on first real write).
+ * STRBUF_ZERO directly (pure heap). @n > STRBUF_THRESHOLD falls back to a 1-byte
+ * seed (heap on first real write); @n == STRBUF_THRESHOLD is allowed on the stack.
  */
 #define _alloc_strbuf_(sb, n) \
     _cleanup_strbuf_ strbuf sb = STRBUF_ZERO ; \
-    char sb##__seed__[((n) > 0 && (n) < STRBUF_STKMAX) ? (n) : 1] ; \
+    char sb##__seed__[((n) > 0 && (n) <= STRBUF_THRESHOLD) ? (n) : 1] ; \
     strbuf_with(&sb, sb##__seed__, sizeof(sb##__seed__))
 
 /**
@@ -117,6 +119,6 @@ extern int strbuf_shrink(strbuf *sb) ;
 #define strbuf_cat(sb1, sb2) strbuf_catb(sb1, (sb2)->s, (sb2)->len)
 #define strbuf_inserts(sb, offset, s) strbuf_insertb(sb, offset, (s), strlen(s))
 #define strbuf_insert(sb1, offset, sb2) strbuf_insertb(sb1, offset, (sb2)->s, (sb2)->len)
-#define strbuf_end(sb) strbuf_catb(sb, "", 1)
+#define strbuf_terminate(sb) strbuf_catb(sb, "", 1)
 
 #endif
