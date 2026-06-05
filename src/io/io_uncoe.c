@@ -17,5 +17,9 @@
 
 int io_uncoe(int fd)
 {
-    return io_unsetfl(fd, O_CLOEXEC) ;
+    int f = fcntl(fd, F_GETFD) ;
+    if (f < 0 || fcntl(fd, F_SETFD, f & ~FD_CLOEXEC) < 0)
+        return 0 ;
+
+    return 1 ;
 }
