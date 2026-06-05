@@ -14,6 +14,7 @@
 
 #include <errno.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -23,11 +24,11 @@
 #include <oblibs/environ.h>
 #include <oblibs/types.h>
 #include <oblibs/fd.h>
+#include <oblibs/io.h>
 
 #include <skalibs/buffer.h>
 #include <skalibs/tai.h>
 #include <skalibs/djbtime.h>
-#include <skalibs/djbunix.h>
 #include <skalibs/unix-transactional.h>
 
 // strerror is disabled by default
@@ -199,15 +200,15 @@ void redir_fd(int fd,char const *file)
     flags &= ~(O_TRUNC|O_EXCL) ;
 
     int fdmodif ;
-    fdmodif = open3(file, flags, 0666) ;
+    fdmodif = io_open_mode(file, flags, 0666) ;
     if ((fdmodif == -1) && (errno == ENXIO))
     {
-        int fdr = open_read(file) ;
+        int fdr = io_open(file, O_RDONLY | O_NONBLOCK) ;
         if (fdr == -1) {
             REDIRFD_1 = REDIRFD_2 = 0 ;
             log_dieusys(LOG_EXIT_SYS, "open_read: ", file) ;
         }
-        fdmodif = open3(file, flags, 0666) ;
+        fdmodif = io_open_mode(file, flags, 0666) ;
         fd_close(fdr) ;
     }
     if (fdmodif == -1) {
@@ -216,12 +217,8 @@ void redir_fd(int fd,char const *file)
     }
     if (fd_move(fd, fdmodif) == -1)
     {
-        char fmt[U32_FMT] ;
-        fmt[u32_fmt(fmt, fdmodif)] = 0 ;
-        char fdmt[U32_FMT] ;
-        fdmt[u32_fmt(fdmt, fd)] = 0 ;
         REDIRFD_1 = REDIRFD_2 = 0 ;
-        log_dieusys(LOG_EXIT_SYS, "move fd ", fmt, " to fd: ",fdmt) ;
+        flog_dieusys(LOG_EXIT_SYS, "move fd %d to fd: %d", fdmodif, fd) ;
     }
 }
 
