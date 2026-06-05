@@ -50,9 +50,12 @@ extern int dir_is_child(char const *parent, char const *child) ;
 /** Remove the last '/' from @path if exist */
 extern void dir_unslash(char *path) ;
 
-/** wrapper around the rm_rf() skalibs function
- * This wrapper freed the stralloc satmp after the
- * use of the rm_rf() function */
-extern int dir_rm_rf (char const *dir) ;
+/** Recursively remove @dir and everything under it (rm -rf semantics).
+ * Symlinks are unlinked, never followed. Removing a nonexistent path is a
+ * success. The directory listing of each level is read fully and the directory
+ * closed before recursing, so no directory handle is held open across the
+ * recursion.
+ * @Return 1 on success, 0 on failure (errno set). */
+extern int dir_destroy (char const *dir) ;
 
 #endif
