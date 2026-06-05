@@ -14,6 +14,7 @@
 
 #include <oblibs/sastr.h>
 #include <oblibs/types.h>
+#include <oblibs/directory.h>
 
 #include <sys/types.h>
 #include <dirent.h>
@@ -21,7 +22,6 @@
 #include <string.h>
 
 #include <skalibs/stralloc.h>
-#include <skalibs/direntry.h>
 #include <skalibs/unix-transactional.h>
 
 int sastr_dir_get_element(stralloc *sa, char const *srcdir,char const *element,mode_t mode,uint8_t include_path)
@@ -34,12 +34,12 @@ int sastr_dir_get_element(stralloc *sa, char const *srcdir,char const *element,m
     if (!dir)
         return 0 ;
 
-    fdsrc = dir_fd(dir) ;
+    fdsrc = dirfd(dir) ;
 
     for (;;)
     {
         struct stat st ;
-        direntry *d ;
+        struct dirent *d ;
         d = readdir(dir) ;
         if (!d) break ;
         if (d->d_name[0] == '.')

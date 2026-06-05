@@ -21,16 +21,6 @@
 
 #include <oblibs/strbuf.h>
 
-/* closedir without disturbing errno (cleanup paths must keep the errno they
- * are about to return). No EINTR retry on purpose: closedir may already have
- * freed the DIR handle, so retrying would risk a use-after-free. */
-static void dir_close(DIR *d)
-{
-    int e = errno ;
-    closedir(d) ;
-    errno = e ;
-}
-
 /* Ensure path->s is NUL-terminated at index len (the NUL is not counted in
  * len). strbuf does not zero its slack, so we write it explicitly. */
 static int term(strbuf *p)

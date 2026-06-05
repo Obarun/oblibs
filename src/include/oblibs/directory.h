@@ -17,8 +17,14 @@
 #define OB_DIRECTORY_H
 
 #include <sys/types.h>
+#include <dirent.h>
 
 #include <skalibs/stralloc.h>
+
+/** Close a directory stream without disturbing errno (for cleanup paths).
+ * No EINTR retry: closedir may already have freed the DIR, so retrying would
+ * risk a use-after-free. */
+extern void dir_close (DIR *dir) ;
 
 /** Create @dst as directory with mode @mode
  * @Return 0 on fail, errno is set
