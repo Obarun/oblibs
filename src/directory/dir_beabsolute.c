@@ -18,17 +18,18 @@
 #include <string.h>
 #include <errno.h>
 #include <stdint.h>
+#include <fcntl.h>
 
 #include <oblibs/string.h>
-
-#include <skalibs/djbunix.h>
+#include <oblibs/fd.h>
+#include <oblibs/io.h>
 
 int dir_beabsolute(char *dst,char const *dir)
 {
     uint8_t file = 0 ;
     size_t dirlen = 4096 ;
     int e = errno ;
-    int fd = open_read(".") ;
+    int fd = io_open(".", O_RDONLY | O_NONBLOCK) ;
     if (fd < 0) return 0 ;
     if (chdir(dir) < 0) {
 
