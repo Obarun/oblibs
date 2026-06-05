@@ -54,63 +54,63 @@ static uint64_t lcg_next(void)
 static void check_uid(uid_t u, uint8_t base)
 {
     char a[64], b[64] ;
-    size_t la = uid_fmt_base(a, u, base) ;
+    size_t la = uid_format_base(a, u, base) ;
     size_t lb = uint64_fmt_generic(b, (uint64_t)u, base) ;
-    TEST_ASSERT(la == lb && !memcmp(a, b, la), "uid_fmt differs from skalibs") ;
+    TEST_ASSERT(la == lb && !memcmp(a, b, la), "uid_format differs from skalibs") ;
 }
 static void check_uid_scan(char const *s, uint8_t base)
 {
     uid_t a = (uid_t)0xa5a5a5a5u ;
     uint64_t ref = 0 ;
-    size_t pa = uid_scan_base(s, &a, base) ;
+    size_t pa = uid_parse_base(s, &a, base) ;
     size_t pb = uint64_scan_base_max(s, &ref, base, UID_MAX_VAL) ;
-    TEST_ASSERT(pa == pb, "uid_scan position differs from skalibs (capped)") ;
-    if (pa) TEST_ASSERT(a == (uid_t)ref, "uid_scan value differs from skalibs (capped)") ;
+    TEST_ASSERT(pa == pb, "uid_parse position differs from skalibs (capped)") ;
+    if (pa) TEST_ASSERT(a == (uid_t)ref, "uid_parse value differs from skalibs (capped)") ;
 }
 
 /* gid_t (unsigned, capped at its max) */
 static void check_gid(gid_t g, uint8_t base)
 {
     char a[64], b[64] ;
-    size_t la = gid_fmt_base(a, g, base) ;
+    size_t la = gid_format_base(a, g, base) ;
     size_t lb = uint64_fmt_generic(b, (uint64_t)g, base) ;
-    TEST_ASSERT(la == lb && !memcmp(a, b, la), "gid_fmt differs from skalibs") ;
+    TEST_ASSERT(la == lb && !memcmp(a, b, la), "gid_format differs from skalibs") ;
 }
 static void check_gid_scan(char const *s, uint8_t base)
 {
     gid_t a = (gid_t)0xa5a5a5a5u ;
     uint64_t ref = 0 ;
-    size_t pa = gid_scan_base(s, &a, base) ;
+    size_t pa = gid_parse_base(s, &a, base) ;
     size_t pb = uint64_scan_base_max(s, &ref, base, GID_MAX_VAL) ;
-    TEST_ASSERT(pa == pb, "gid_scan position differs from skalibs (capped)") ;
-    if (pa) TEST_ASSERT(a == (gid_t)ref, "gid_scan value differs from skalibs (capped)") ;
+    TEST_ASSERT(pa == pb, "gid_parse position differs from skalibs (capped)") ;
+    if (pa) TEST_ASSERT(a == (gid_t)ref, "gid_parse value differs from skalibs (capped)") ;
 }
 
 /* pid_t (signed, strict signed range) */
 static void check_pid(pid_t p, uint8_t base)
 {
     char a[64], b[64] ;
-    size_t la = pid_fmt_base(a, p, base) ;
+    size_t la = pid_format_base(a, p, base) ;
     size_t lb = int64_fmt_generic(b, (int64_t)p, base) ;
-    TEST_ASSERT(la == lb && !memcmp(a, b, la), "pid_fmt differs from skalibs") ;
+    TEST_ASSERT(la == lb && !memcmp(a, b, la), "pid_format differs from skalibs") ;
 }
 static void check_pid_scan(char const *s, uint8_t base)
 {
     pid_t a = (pid_t)0x5a5a5a5a ;
     int64_t ref = 0 ;
-    size_t pa = pid_scan_base(s, &a, base) ;
+    size_t pa = pid_parse_base(s, &a, base) ;
     size_t pb = int64_scan_base_max(s, &ref, base, PID_MAX_VAL) ;
-    TEST_ASSERT(pa == pb, "pid_scan position differs from skalibs (capped)") ;
-    if (pa) TEST_ASSERT(a == (pid_t)ref, "pid_scan value differs from skalibs (capped)") ;
+    TEST_ASSERT(pa == pb, "pid_parse position differs from skalibs (capped)") ;
+    if (pa) TEST_ASSERT(a == (pid_t)ref, "pid_parse value differs from skalibs (capped)") ;
 }
 
 static void test_fmt(void)
 {
     TEST_START("test_fmt") ;
     /* size constants must hold the worst case + terminator */
-    TEST_ASSERT(uid_fmt_base(0, (uid_t)UID_MAX_VAL, 10) + 1 <= UID_FMT, "UID_FMT too small") ;
-    TEST_ASSERT(gid_fmt_base(0, (gid_t)GID_MAX_VAL, 10) + 1 <= GID_FMT, "GID_FMT too small") ;
-    TEST_ASSERT(pid_fmt_base(0, (pid_t)-PID_MAX_VAL - 1, 10) + 1 <= PID_FMT, "PID_FMT too small") ;
+    TEST_ASSERT(uid_format_base(0, (uid_t)UID_MAX_VAL, 10) + 1 <= UID_FMT, "UID_FMT too small") ;
+    TEST_ASSERT(gid_format_base(0, (gid_t)GID_MAX_VAL, 10) + 1 <= GID_FMT, "GID_FMT too small") ;
+    TEST_ASSERT(pid_format_base(0, (pid_t)-PID_MAX_VAL - 1, 10) + 1 <= PID_FMT, "PID_FMT too small") ;
 
     for (uint8_t base = 2 ; base <= 36 ; base++) {
         for (long i = 0 ; i < 20000 ; i++) {
@@ -135,9 +135,9 @@ static void test_scan(void)
         for (long i = 0 ; i < 20000 ; i++) {
             uint64_t r = lcg_next() ;
             char buf[64] ; size_t len ;
-            len = uid_fmt_base(buf, (uid_t)r, base) ; buf[len] = 0 ; check_uid_scan(buf, base) ;
-            len = gid_fmt_base(buf, (gid_t)r, base) ; buf[len] = 0 ; check_gid_scan(buf, base) ;
-            len = pid_fmt_base(buf, (pid_t)r, base) ; buf[len] = 0 ; check_pid_scan(buf, base) ;
+            len = uid_format_base(buf, (uid_t)r, base) ; buf[len] = 0 ; check_uid_scan(buf, base) ;
+            len = gid_format_base(buf, (gid_t)r, base) ; buf[len] = 0 ; check_gid_scan(buf, base) ;
+            len = pid_format_base(buf, (pid_t)r, base) ; buf[len] = 0 ; check_pid_scan(buf, base) ;
         }
     }
     /* boundary / out-of-range / invalid (freezes the capping semantics) */

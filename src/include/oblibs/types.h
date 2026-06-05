@@ -279,11 +279,11 @@ static inline size_t u8_scan_base(char const *s, uint8_t *u, uint8_t base)
  * ===========================================================================*/
 
 /* uid_t : unsigned, capped at the type's max (robust to its width) */
-static inline size_t uid_fmt_base(char *s, uid_t u, uint8_t base)
+static inline size_t uid_format_base(char *s, uid_t u, uint8_t base)
 {
     return u64_fmtbase(s, (uint64_t)u, base) ;
 }
-static inline size_t uid_scan_base(char const *s, uid_t *u, uint8_t base)
+static inline size_t uid_parse_base(char const *s, uid_t *u, uint8_t base)
 {
     uint64_t t ;
     size_t n = u64_scan_base_max(s, &t, base, (uint64_t)(uid_t)-1) ;
@@ -292,11 +292,11 @@ static inline size_t uid_scan_base(char const *s, uid_t *u, uint8_t base)
 }
 
 /* gid_t : unsigned, capped at the type's max */
-static inline size_t gid_fmt_base(char *s, gid_t g, uint8_t base)
+static inline size_t gid_format_base(char *s, gid_t g, uint8_t base)
 {
     return u64_fmtbase(s, (uint64_t)g, base) ;
 }
-static inline size_t gid_scan_base(char const *s, gid_t *g, uint8_t base)
+static inline size_t gid_parse_base(char const *s, gid_t *g, uint8_t base)
 {
     uint64_t t ;
     size_t n = u64_scan_base_max(s, &t, base, (uint64_t)(gid_t)-1) ;
@@ -305,11 +305,11 @@ static inline size_t gid_scan_base(char const *s, gid_t *g, uint8_t base)
 }
 
 /* pid_t : signed, scanned within the type's strict signed range [PID_MIN, PID_MAX] */
-static inline size_t pid_fmt_base(char *s, pid_t p, uint8_t base)
+static inline size_t pid_format_base(char *s, pid_t p, uint8_t base)
 {
     return i64_fmtbase(s, (int64_t)p, base) ;
 }
-static inline size_t pid_scan_base(char const *s, pid_t *p, uint8_t base)
+static inline size_t pid_parse_base(char const *s, pid_t *p, uint8_t base)
 {
     int64_t t ;
     size_t n = i64_scan_base_max(s, &t, base, ((uint64_t)1 << (sizeof(pid_t)*8 - 1)) - 1) ;
@@ -317,32 +317,13 @@ static inline size_t pid_scan_base(char const *s, pid_t *p, uint8_t base)
     return n ;
 }
 
-#define uid_fmt(s, u)   uid_fmt_base((s), (u), 10)
-#define uid_ofmt(s, u)  uid_fmt_base((s), (u), 8)
-#define uid_xfmt(s, u)  uid_fmt_base((s), (u), 16)
-#define uid_bfmt(s, u)  uid_fmt_base((s), (u), 2)
-#define uid_scan(s, u)  uid_scan_base((s), (u), 10)
-#define uid_oscan(s, u) uid_scan_base((s), (u), 8)
-#define uid_xscan(s, u) uid_scan_base((s), (u), 16)
-#define uid_bscan(s, u) uid_scan_base((s), (u), 2)
-
-#define gid_fmt(s, g)   gid_fmt_base((s), (g), 10)
-#define gid_ofmt(s, g)  gid_fmt_base((s), (g), 8)
-#define gid_xfmt(s, g)  gid_fmt_base((s), (g), 16)
-#define gid_bfmt(s, g)  gid_fmt_base((s), (g), 2)
-#define gid_scan(s, g)  gid_scan_base((s), (g), 10)
-#define gid_oscan(s, g) gid_scan_base((s), (g), 8)
-#define gid_xscan(s, g) gid_scan_base((s), (g), 16)
-#define gid_bscan(s, g) gid_scan_base((s), (g), 2)
-
-#define pid_fmt(s, p)   pid_fmt_base((s), (p), 10)
-#define pid_ofmt(s, p)  pid_fmt_base((s), (p), 8)
-#define pid_xfmt(s, p)  pid_fmt_base((s), (p), 16)
-#define pid_bfmt(s, p)  pid_fmt_base((s), (p), 2)
-#define pid_scan(s, p)  pid_scan_base((s), (p), 10)
-#define pid_oscan(s, p) pid_scan_base((s), (p), 8)
-#define pid_xscan(s, p) pid_scan_base((s), (p), 16)
-#define pid_bscan(s, p) pid_scan_base((s), (p), 2)
+/* decimal convenience; for another base use the *_base forms above */
+#define uid_format(s, u) uid_format_base((s), (u), 10)
+#define uid_parse(s, u)  uid_parse_base((s), (u), 10)
+#define gid_format(s, g) gid_format_base((s), (g), 10)
+#define gid_parse(s, g)  gid_parse_base((s), (g), 10)
+#define pid_format(s, p) pid_format_base((s), (p), 10)
+#define pid_parse(s, p)  pid_parse_base((s), (p), 10)
 
 /* buffer sizes (oversized but safe whatever the type width) */
 #define UID_FMT U64_FMT
