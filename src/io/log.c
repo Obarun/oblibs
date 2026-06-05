@@ -26,10 +26,7 @@
 #include <oblibs/fd.h>
 #include <oblibs/io.h>
 #include <oblibs/ostream.h>
-
-#include <skalibs/tai.h>
-#include <skalibs/djbtime.h>
-#include <skalibs/unix-transactional.h>
+#include <oblibs/clock.h>
 
 // strerror is disabled by default
 // the define of the log function
@@ -224,30 +221,23 @@ void redir_fd(int fd,char const *file)
 
 void log_clock(ostream *stream)
 {
-    size_t secless = 22 ;
-    char hstamp[32 + 2] ;
-    char tstamp[TIMESTAMP + 2] ;
-    tain now ;
-    tain_wallclock_read(&now) ;
-    char *pstr = 0 ;
+    struct timespec now ;
+    clock_now(&now) ;
+    char buf[CLOCK_LOCAL_LEN + 2] ;
 
     if (!CLOCK_TIMESTAMP)
     {
-        timestamp_fmt(tstamp, &now) ;
-        tstamp[TIMESTAMP] = ' ' ;
-        tstamp[TIMESTAMP + 1] = 0 ;
-        pstr = &tstamp[0] ;
+        clock_tai64n_fmt(buf, &now) ;             // '@' + 24 hex (TAI64N)
+        buf[CLOCK_TAI64N_LEN] = ' ' ;
+        buf[CLOCK_TAI64N_LEN + 1] = 0 ;
     }
     else
     {
-        localtmn l ;
-        localtmn_from_tain(&l, &now, 1) ;
-        localtmn_fmt(hstamp, &l) ;
-        hstamp[secless] = ' ' ;
-        hstamp[secless + 1] = 0 ;
-        pstr = &hstamp[0] ;
+        clock_local_fmt(buf, &now) ;              // "YYYY-MM-DD HH:MM:SS.nnnnnnnnn"
+        buf[22] = ' ' ;                           // truncate to seconds + 2 frac digits
+        buf[23] = 0 ;
     }
-    ostream_puts(stream, pstr) ;
+    ostream_puts(stream, buf) ;
 }
 
 void log_out(char const *str[],...)
