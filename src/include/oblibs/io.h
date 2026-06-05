@@ -17,6 +17,7 @@
 
 #include <stddef.h>
 #include <sys/types.h>
+#include <sys/uio.h>
 
 #ifndef O_CLOEXEC
 #define O_CLOEXEC 0x40000000
@@ -45,6 +46,20 @@ extern ssize_t io_open_mode(const char *path, unsigned int flags, mode_t mode) ;
 extern ssize_t io_read(int fd, char *store, size_t len) ;
 
 /**
+ * @brief Vectored read with EINTR retry (raw result).
+ *
+ * Scatter-read counterpart of io_read(): retries on EINTR and returns the
+ * raw readv() result. Normalize it with io_read_result() for non-blocking
+ * semantics. The iovec array is not modified.
+ *
+ * @param fd     The file descriptor to read from.
+ * @param iov    Array of iovec destination buffers.
+ * @param iovcnt Number of entries in iov.
+ * @return The raw readv() return value (bytes read, 0 on EOF, -1 on error).
+ */
+extern ssize_t io_readv(int fd, struct iovec const *iov, int iovcnt) ;
+
+/**
  * @brief Normalizes the result of a non-blocking read operation.
  *
  * This function processes the return value of a read-like system call to
@@ -63,6 +78,20 @@ extern ssize_t io_read(int fd, char *store, size_t len) ;
  */
 extern ssize_t io_read_result (ssize_t r) ;
 extern ssize_t io_write(int fd, char *store, size_t len) ;
+
+/**
+ * @brief Vectored write with EINTR retry (raw result).
+ *
+ * Gather-write counterpart of io_write(): retries on EINTR and returns the
+ * raw writev() result. Normalize it with io_write_result() for non-blocking
+ * semantics. The iovec array is not modified.
+ *
+ * @param fd     The file descriptor to write to.
+ * @param iov    Array of iovec source buffers.
+ * @param iovcnt Number of entries in iov.
+ * @return The raw writev() return value (bytes written, -1 on error).
+ */
+extern ssize_t io_writev(int fd, struct iovec const *iov, int iovcnt) ;
 
 /**
  * @brief Normalizes the result of a non-blocking write operation.
@@ -115,6 +144,22 @@ extern ssize_t io_write_result(ssize_t r) ;
 extern size_t io_allread(int fd, char *store, size_t len) ;
 
 /**
+ * @brief Reads exactly the iovec total from a BLOCKING fd (scatter).
+ *
+ * Vectored counterpart of io_allread(): loops over io_readv()/io_read_result()
+ * until every iovec is filled, EOF is reached, or an error occurs. EINTR is
+ * handled internally; meant for blocking fds only. The caller's iovec array is
+ * left untouched (an internal copy is advanced as data lands).
+ *
+ * @param fd     A blocking file descriptor.
+ * @param iov    Array of iovec destination buffers.
+ * @param iovcnt Number of entries in iov.
+ * @return Number of bytes actually read (0..sum of iov_len). A short count means
+ *         EOF (errno == EPIPE) or a read error; inspect errno.
+ */
+extern size_t io_allreadv(int fd, struct iovec const *iov, int iovcnt) ;
+
+/**
  * @brief Writes exactly `len` bytes from `store` to a BLOCKING fd.
  *
  * Loops over io_write()/io_write_result() until `len` bytes are written or an
@@ -132,5 +177,21 @@ extern size_t io_allread(int fd, char *store, size_t len) ;
  *       - `0`      Would-block (non-blocking fd passed by mistake).
  */
 extern size_t io_allwrite(int fd, char *store, size_t len) ;
+
+/**
+ * @brief Writes exactly the iovec total to a BLOCKING fd (gather).
+ *
+ * Vectored counterpart of io_allwrite(): loops over io_writev()/io_write_result()
+ * until every iovec is drained or an error occurs. EINTR is handled internally;
+ * meant for blocking fds only. The caller's iovec array is left untouched (an
+ * internal copy is advanced as data leaves).
+ *
+ * @param fd     A blocking file descriptor.
+ * @param iov    Array of iovec source buffers.
+ * @param iovcnt Number of entries in iov.
+ * @return Number of bytes actually written (0..sum of iov_len). A short count
+ *         means a write error; inspect errno.
+ */
+extern size_t io_allwritev(int fd, struct iovec const *iov, int iovcnt) ;
 
 #endif
