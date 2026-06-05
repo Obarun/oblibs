@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 
-#include <skalibs/gccattributes.h>
+#include <oblibs/attributes.h>
 
 // might we have some colors...
 #define NOCOLOR     "\x1B[0m"
@@ -219,8 +219,8 @@ extern void log_out(char const *str[],...) ;
 extern void log_out_builder(log_dbg_info_t *db_info,int level, char const *msg[],char const *str[],...) ;
 
 // die builder function
-extern void log_die_builder (int e,log_dbg_info_t *db_info,int level, char const *msg[],char const *str[],...) gccattr_noreturn ;
-extern void log_die_nclean_builder (int e,ss_log_cleanup_func_t *cleaner,log_dbg_info_t *db_info,int level, char const *msg[],char const *str[],...) gccattr_noreturn ;
+extern void log_die_builder (int e,log_dbg_info_t *db_info,int level, char const *msg[],char const *str[],...) attribute_noreturn ;
+extern void log_die_nclean_builder (int e,ss_log_cleanup_func_t *cleaner,log_dbg_info_t *db_info,int level, char const *msg[],char const *str[],...) attribute_noreturn ;
 extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_t *db_info,int level,char const *msg[], char const *str[],...) ;
 
 // let's go

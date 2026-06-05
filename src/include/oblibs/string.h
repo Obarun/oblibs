@@ -20,7 +20,6 @@
 #include <stdint.h>
 
 #include <skalibs/stralloc.h>
-#include <skalibs/gccattributes.h>
 
 #include <oblibs/ostream.h>
 
