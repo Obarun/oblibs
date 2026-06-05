@@ -22,6 +22,7 @@
 #include <skalibs/stralloc.h>
 
 #include <oblibs/ostream.h>
+#include <oblibs/strbuf.h>
 
 #if !defined(nb_el)
     #define nb_el(x) (sizeof((x)) / sizeof((x)[0]))
@@ -39,6 +40,8 @@
 #define auto_stra(sa,...) auto_stra_builder(sa,(char const *[]){__VA_ARGS__, NULL})
 
 #define auto_buf(b,...) auto_buf_builder(b,(char const *[]){__VA_ARGS__, NULL})
+
+#define auto_strbuf(b,...) auto_strbuf_builder(b,(char const *[]){__VA_ARGS__, NULL})
 
 /** count the length of the string until the @end
  * character was found.
@@ -90,6 +93,15 @@ extern int auto_stra_builder(stralloc *sa,char const *str[],...) ;
  * @Return 1 on success
  * @Return 0 on fail */
 extern int auto_buf_builder(ostream *b, char const *str[], ...) ;
+
+/** Append to strbuf @b a list of strings @str.
+ * Each element of @str must be a NUL-terminated C string (the length is taken
+ * with strlen); the array itself ends on a NULL pointer.
+ * Leaves @b NUL-terminated (a usable C string) with @b->len excluding that NUL,
+ * exactly like auto_stra_builder.
+ * @Return 1 on success
+ * @Return 0 on fail */
+extern int auto_strbuf_builder(strbuf *b, char const *str[], ...) ;
 
 /** Search string @search in string @str
  * @Return the count of the lenght corresponding

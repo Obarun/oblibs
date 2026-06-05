@@ -20,6 +20,7 @@
 #include <skalibs/stralloc.h>
 
 #include <oblibs/ostream.h>
+#include <oblibs/strbuf.h>
 
 void auto_string_builder(char *dest,size_t baselen, char const *str[],...)
 {
@@ -68,5 +69,27 @@ int auto_buf_builder(ostream *b, char const *str[], ...)
         str++ ;
     }
     va_end(alist) ;
+    return 1 ;
+}
+
+int auto_strbuf_builder(strbuf *b, char const *str[], ...)
+{
+    va_list alist ;
+    va_start(alist,str) ;
+
+    while (*str) {
+
+        if (!strbuf_cats(b, *str)) {
+            va_end(alist) ;
+            return 0 ;
+        }
+
+        str++ ;
+    }
+    va_end(alist) ;
+    /* leave a NUL-terminated C string, len excluding the NUL (like auto_stra) */
+    if (!strbuf_terminate(b))
+        return 0 ;
+    b->len-- ;
     return 1 ;
 }
