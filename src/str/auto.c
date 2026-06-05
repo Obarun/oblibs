@@ -18,7 +18,8 @@
 #include <stdarg.h>
 
 #include <skalibs/stralloc.h>
-#include <skalibs/buffer.h>
+
+#include <oblibs/ostream.h>
 
 void auto_string_builder(char *dest,size_t baselen, char const *str[],...)
 {
@@ -62,20 +63,17 @@ int auto_stra_builder(stralloc *sa,char const *str[],...)
     return 1 ;
 }
 
-int auto_buf_builder(buffer *b, char const *str[], ...)
+int auto_buf_builder(ostream *b, char const *str[], ...)
 {
-    size_t slen = 0 ;
     va_list alist ;
     va_start(alist,str) ;
 
     while (*str) {
 
-        slen =  strlen(*str) ;
-        char t[slen + 1] ;
-        memcpy(t, *str, slen) ;
-        t[slen] = 0 ;
-        if (buffer_puts(b, *str) < 0)
+        if (!ostream_puts(b, *str)) {
+            va_end(alist) ;
             return 0 ;
+        }
 
         str++ ;
     }

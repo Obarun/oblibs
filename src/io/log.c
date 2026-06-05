@@ -25,8 +25,8 @@
 #include <oblibs/types.h>
 #include <oblibs/fd.h>
 #include <oblibs/io.h>
+#include <oblibs/ostream.h>
 
-#include <skalibs/buffer.h>
 #include <skalibs/tai.h>
 #include <skalibs/djbtime.h>
 #include <skalibs/unix-transactional.h>
@@ -38,12 +38,12 @@ size_t *LOG_SYS = LOG_SYS_NO ;
 
 // only error + log_info by default
 unsigned int VERBOSITY = 1 ;
-//only on buffer_1 by default
+//only on ostream_1 by default
 unsigned int DOUBLE_OUTPUT = 0 ;
 // append a trailing newline by default
 unsigned int TRAILING_NEWLINE = 1 ;
 // set the default buffer to use
-// 0 -> buffer_2, 1 -> buffer_1
+// 0 -> ostream_2, 1 -> ostream_1
 unsigned int SWITCH_STREAM = 0 ;
 // display informative message eg. info;, warning:,...
 // 1 -> yes, 0 -> no
@@ -222,7 +222,7 @@ void redir_fd(int fd,char const *file)
     }
 }
 
-void log_clock(buffer *stream)
+void log_clock(ostream *stream)
 {
     size_t secless = 22 ;
     char hstamp[32 + 2] ;
@@ -247,7 +247,7 @@ void log_clock(buffer *stream)
         hstamp[secless + 1] = 0 ;
         pstr = &hstamp[0] ;
     }
-    buffer_puts(stream,pstr) ;
+    ostream_puts(stream, pstr) ;
 }
 
 void log_out(char const *str[],...)
@@ -255,8 +255,8 @@ void log_out(char const *str[],...)
     int e = errno ;
     va_list alist ;
     va_start(alist,str) ;
-    buffer_ref stream_1 = SWITCH_STREAM ? buffer_2 : buffer_1 ;
-    buffer_ref stream_2 = SWITCH_STREAM ? buffer_1 : buffer_2 ;
+    ostream *stream_1 = SWITCH_STREAM ? ostream_2 : ostream_1 ;
+    ostream *stream_2 = SWITCH_STREAM ? ostream_1 : ostream_2 ;
 
     if (REDIRFD_1)
         redir_fd(1,REDIRFD_1) ;
@@ -271,20 +271,20 @@ void log_out(char const *str[],...)
             log_clock(stream_1) ;
     }
     while (*str) {
-        buffer_puts(stream_2, *str) ;
+        ostream_puts(stream_2, *str) ;
         if (DOUBLE_OUTPUT)
-            buffer_puts(stream_1, *str) ;
+            ostream_puts(stream_1, *str) ;
         *str++ ;
     }
     if (TRAILING_NEWLINE)
     {
-        buffer_putflush(stream_2, "\n", 1) ;
-        if (DOUBLE_OUTPUT) buffer_putflush(stream_1, "\n", 1) ;
+        ostream_putflush(stream_2, "\n", 1) ;
+        if (DOUBLE_OUTPUT) ostream_putflush(stream_1, "\n", 1) ;
     }
     else
     {
-        buffer_flush(stream_2) ;
-        if (DOUBLE_OUTPUT) buffer_flush(stream_1) ;
+        ostream_flush(stream_2) ;
+        if (DOUBLE_OUTPUT) ostream_flush(stream_1) ;
     }
     va_end(alist) ;
     errno = e ;

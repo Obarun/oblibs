@@ -20,8 +20,9 @@
 #include <stdint.h>
 
 #include <skalibs/stralloc.h>
-#include <skalibs/buffer.h>
 #include <skalibs/gccattributes.h>
+
+#include <oblibs/ostream.h>
 
 #if !defined(nb_el)
     #define nb_el(x) (sizeof((x)) / sizeof((x)[0]))
@@ -83,11 +84,13 @@ extern void auto_string_builder(char *dest,size_t baselen, char const *str[],...
  * @Return 0 on fail */
 extern int auto_stra_builder(stralloc *sa,char const *str[],...) ;
 
-/** Append @b with a list of string @str.
- * The buffer is NOT flushed.
+/** Append to stream @b a list of strings @str.
+ * Each element of @str must be a NUL-terminated C string (the length is taken
+ * with strlen); the array itself ends on a NULL pointer.
+ * The stream is NOT flushed.
  * @Return 1 on success
  * @Return 0 on fail */
-extern int auto_buf_builder(buffer *b, char const *str[], ...) ;
+extern int auto_buf_builder(ostream *b, char const *str[], ...) ;
 
 /** Search string @search in string @str
  * @Return the count of the lenght corresponding
