@@ -12,8 +12,6 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/directory.h>
-
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>

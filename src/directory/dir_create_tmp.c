@@ -13,16 +13,15 @@
  */
 
 #include <oblibs/string.h>
+#include <oblibs/strbuf.h>
 
 #include <stdlib.h>
 
-#include <skalibs/stralloc.h>
-
-char *dir_create_tmp(stralloc *sa, char const *dst, char const *tname)
+char *dir_create_tmp(strbuf *sb, char const *dst, char const *tname)
 {
     if (dst[0] != '/') return 0 ;
 
-    if (!auto_stra(sa,dst,"/",tname,":","XXXXXX")) return 0 ;
+    if (!auto_strbuf(sb, dst, "/",tname, ":", "XXXXXX")) return 0 ;
 
-    return mkdtemp(sa->s) ;
+    return mkdtemp(sb->s) ;
 }

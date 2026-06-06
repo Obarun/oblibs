@@ -12,15 +12,11 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/account.h>
-
 #include <sys/types.h>
 #include <grp.h>
 #include <errno.h>
 
-#include <skalibs/stralloc.h>
-
-int get_gidbygroup(char const *name,gid_t *gid)
+int get_gidbygroup(char const *name, gid_t *gid)
 {
     int e = errno ;
     errno = 0 ;

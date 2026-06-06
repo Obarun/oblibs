@@ -12,13 +12,11 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/directory.h>
-
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
 
-static int auto_create(char const *dst,mode_t mode)
+static int auto_create(char const *dst, mode_t mode)
 {
     if (mkdir(dst, mode) < 0)
         if (errno != EEXIST) return 0 ;

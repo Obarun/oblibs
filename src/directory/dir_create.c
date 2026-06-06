@@ -12,8 +12,6 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/directory.h>
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
