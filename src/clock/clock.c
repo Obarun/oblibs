@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <time.h>
+#include <errno.h>
 
 int clock_now(struct timespec *ts)
 {
@@ -40,4 +41,94 @@ size_t clock_local_fmt(char *s, struct timespec const *ts)
     return (size_t)snprintf(s, CLOCK_LOCAL_LEN + 1, "%d-%02d-%02d %02d:%02d:%02d.%09ld",
                             1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday,
                             tm.tm_hour, tm.tm_min, tm.tm_sec, (long)ts->tv_nsec) ;
+}
+
+int clock_now_mono(struct timespec *ts)
+{
+    return clock_gettime(CLOCK_MONOTONIC, ts) == 0 ;
+}
+
+void clock_add(struct timespec *r, struct timespec const *a, struct timespec const *b)
+{
+    time_t sec = a->tv_sec + b->tv_sec ;
+    long nano = a->tv_nsec + b->tv_nsec ;
+    if (nano >= 1000000000L) { nano -= 1000000000L ; sec++ ; }
+    r->tv_sec = sec ;
+    r->tv_nsec = nano ;
+}
+
+void clock_sub(struct timespec *r, struct timespec const *a, struct timespec const *b)
+{
+    time_t sec = a->tv_sec - b->tv_sec ;
+    long nano = a->tv_nsec - b->tv_nsec ;
+    if (nano < 0) { nano += 1000000000L ; sec-- ; }
+    r->tv_sec = sec ;
+    r->tv_nsec = nano ;
+}
+
+void clock_addsec(struct timespec *r, struct timespec const *a, int64_t sec)
+{
+    r->tv_sec = a->tv_sec + (time_t)sec ;
+    r->tv_nsec = a->tv_nsec ;
+}
+
+void clock_from_ms(struct timespec *r, uint32_t ms)
+{
+    r->tv_sec = ms / 1000 ;
+    r->tv_nsec = (long)(ms % 1000) * 1000000L ;
+}
+
+int clock_cmp(struct timespec const *a, struct timespec const *b)
+{
+    if (a->tv_sec != b->tv_sec) return a->tv_sec < b->tv_sec ? -1 : 1 ;
+    if (a->tv_nsec != b->tv_nsec) return a->tv_nsec < b->tv_nsec ? -1 : 1 ;
+    return 0 ;
+}
+
+int clock_to_localtm(struct tm *tm, struct timespec const *ts)
+{
+    return localtime_r(&ts->tv_sec, tm) != 0 ;
+}
+
+int clock_from_localtm(struct timespec *ts, struct tm *tm)
+{
+    time_t t = mktime(tm) ;
+    ts->tv_sec = t ;
+    ts->tv_nsec = 0 ;
+    return t != (time_t)-1 ;
+}
+
+int clock_deepsleep(struct timespec const *deadline)
+{
+    int r ;
+    while ((r = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, deadline, 0)) == EINTR) ;
+    if (r) { errno = r ; return 0 ; }   /* clock_nanosleep returns the errno, it does not set it */
+    return 1 ;
+}
+
+void clock_to_timeval(struct timeval *tv, struct timespec const *ts)
+{
+    tv->tv_sec = ts->tv_sec ;
+    /* Round to nearest usec, matching skalibs timeval_from_tain byte-for-byte.
+     * Like skalibs, the < 0.5us window where (nano+500)/1000 reaches 1000000
+     * is left un-normalised: this is a display-only utmpx stamp. */
+    tv->tv_usec = (ts->tv_nsec + 500) / 1000 ;
+}
+
+void clock_pack(char *s, struct timespec const *ts)
+{
+    uint64_t sec = (uint64_t)ts->tv_sec ;
+    uint32_t nano = (uint32_t)ts->tv_nsec ;
+    for (int i = 7 ; i >= 0 ; i--) { s[i] = (char)(sec & 0xff) ; sec >>= 8 ; }
+    for (int i = 3 ; i >= 0 ; i--) { s[8 + i] = (char)(nano & 0xff) ; nano >>= 8 ; }
+}
+
+void clock_unpack(char const *s, struct timespec *ts)
+{
+    uint64_t sec = 0 ;
+    uint32_t nano = 0 ;
+    for (int i = 0 ; i < 8 ; i++) sec = (sec << 8) | (unsigned char)s[i] ;
+    for (int i = 0 ; i < 4 ; i++) nano = (nano << 8) | (unsigned char)s[8 + i] ;
+    ts->tv_sec = (time_t)sec ;
+    ts->tv_nsec = (long)nano ;
 }
