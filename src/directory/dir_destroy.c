@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <dirent.h>
 
+#include <oblibs/directory.h>
 #include <oblibs/strbuf.h>
 
 /* Ensure path->s is NUL-terminated at index len (the NUL is not counted in

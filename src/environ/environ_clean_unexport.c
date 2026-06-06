@@ -15,22 +15,19 @@
 #include <string.h>
 #include <errno.h>
 
-#include <oblibs/sastr.h>
-#include <oblibs/stack.h>
+#include <oblibs/sbl.h>
 #include <oblibs/string.h>
 #include <oblibs/environ.h>
 
-#include <skalibs/stralloc.h>
-
-uint8_t environ_clean_unexport(stralloc *modifs)
+uint8_t environ_clean_unexport(strbuf *modifs)
 {
     if (!modifs->len)
         return 1 ;
 
     size_t pos = 0 ;
-    _alloc_stk_(stk, modifs->len + 1) ;
+    _alloc_strbuf_(stk, modifs->len + 1) ;
 
-    FOREACH_SASTR(modifs, pos) {
+    FOREACH_SBL(modifs, pos) {
 
         char *line = modifs->s + pos ;
         size_t len = strlen(line) ;
@@ -40,23 +37,23 @@ uint8_t environ_clean_unexport(stralloc *modifs)
 
         if (line[r + 1] == VAR_UNEXPORT) {
 
-            if (!stack_add(&stk, line, ++r) ||
-                !stack_add(&stk, line + (r + 1), len - (r + 1)) ||
-                !stack_add(&stk, "", 1))
+            if (!strbuf_catb(&stk, line, ++r) ||
+                !strbuf_catb(&stk, line + (r + 1), len - (r + 1)) ||
+                !strbuf_terminate(&stk))
                     return 0 ;
 
         } else {
 
-            if (!stack_add(&stk, line, len) ||
-                !stack_add(&stk, "" , 1))
+            if (!strbuf_catb(&stk, line, len) ||
+                !strbuf_terminate(&stk))
                     return 0 ;
         }
     }
 
     modifs->len = 0 ;
 
-    if (!stralloc_copyb(modifs, stk.s, stk.len) ||
-        !stralloc_0(modifs))
+    if (!strbuf_copyb(modifs, stk.s, stk.len) ||
+        !strbuf_terminate(modifs))
             return (errno = EOVERFLOW, 0) ;
     modifs->len-- ;
 

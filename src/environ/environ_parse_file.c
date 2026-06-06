@@ -18,12 +18,10 @@
 
 #include <oblibs/log.h>
 #include <oblibs/files.h>
-#include <oblibs/stack.h>
+#include <oblibs/strbuf.h>
 #include <oblibs/environ.h>
 
-#include <skalibs/stralloc.h>
-
-uint8_t environ_parse_file(stack *stk, const char *file)
+uint8_t environ_parse_file(strbuf *sb, const char *file)
 {
     ssize_t flen = file_get_size(file) ;
     if (flen <= 0 || flen >= MAXENV) {
@@ -36,11 +34,11 @@ uint8_t environ_parse_file(stack *stk, const char *file)
         return 0 ;
     }
 
-    _alloc_stk_(f, flen + 1) ;
-    if (!stack_read_file(&f, file))
+    _alloc_strbuf_(f, flen + 1) ;
+    if (!strbuf_read_file(&f, file))
         return 0 ;
 
-    if (!environ_trim(stk, f.s))
+    if (!environ_trim(sb, f.s))
         return 0 ;
 
     return 1 ;

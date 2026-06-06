@@ -20,7 +20,6 @@
 
 #include <oblibs/hash.h>
 #include <oblibs/linux.h>
-#include <oblibs/stack.h>
 #include <oblibs/io.h>
 
 static struct lx_inotify_s ei = { .fd = -1 } ;

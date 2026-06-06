@@ -18,9 +18,9 @@
 #include <grp.h>
 #include <errno.h>
 
-#include <skalibs/stralloc.h>
+#include <oblibs/strbuf.h>
 
-int get_groupbygid(gid_t gid,stralloc *name)
+int get_groupbygid(gid_t gid,strbuf *name)
 {
     int e = errno ;
     errno = 0 ;
@@ -30,7 +30,7 @@ int get_groupbygid(gid_t gid,stralloc *name)
         if (!errno) errno = ESRCH ;
         return 0 ;
     }
-    stralloc_cats(name,gr->gr_name) ;
+    strbuf_cats(name,gr->gr_name) ;
     errno = e ;
     return 1 ;
 }

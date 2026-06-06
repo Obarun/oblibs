@@ -15,9 +15,8 @@
 #include <string.h>
 #include <stdint.h>
 
-#include <skalibs/stralloc.h>
-
 #include <oblibs/log.h>
+#include <oblibs/strbuf.h>
 #include <oblibs/environ.h>
 #include <oblibs/types.h>
 
@@ -28,14 +27,14 @@
  * These functions was modified by Eric Vidal <eric@obarun.org> to use struct stack instead
  * of struct stralloc */
 
-static void environ_scanoct (stack *stk, size_t pos)
+static void environ_scanoct (strbuf *sb, size_t pos)
 {
     uint32_t u ;
-    if (!stack_add(stk, "", 1))
-        log_die_nomem("stack") ;
-    u32_oscan(stk->s + pos, &u) ;
-    stk->s[pos] = u ;
-    stk->len = pos+1 ;
+    if (!strbuf_terminate(sb))
+        log_die_nomem("strbuf") ;
+    u32_oscan(sb->s + pos, &u) ;
+    sb->s[pos] = u ;
+    sb->len = pos+1 ;
 }
 
 static inline uint8_t environ_cclass (char c)
@@ -95,7 +94,7 @@ static inline char environ_next(char const *s,size_t *pos)
     return c ;
 }
 
-int environ_trim (stack *stk, char const *file)
+int environ_trim (strbuf *sb, char const *file)
 {
     static uint16_t const table[14][14] =
     {
@@ -121,23 +120,23 @@ int environ_trim (stack *stk, char const *file)
         char c = environ_next(file, &pos) ;
         uint16_t what = table[state][environ_cclass(c)] ;
         state = what & 0x0f ;
-        if (what & 0x0400) environ_scanoct(stk, mark) ;
-        if (what & 0x0100) mark = stk->len ;
+        if (what & 0x0400) environ_scanoct(sb, mark) ;
+        if (what & 0x0100) mark = sb->len ;
         if (what & 0x1000) {
             static char const esc[] = "abtnvfr" ;
             char const *p = memchr(esc, c, 7) ;
             c = 7 + (p ? p - esc : 7) ;
         }
-        if (what & 0x0010) if (!stack_add(stk, &c, 1)) log_die_nomem("stack") ;
+        if (what & 0x0010) if (!strbuf_catb(sb, &c, 1)) log_die_nomem("strbuf") ;
         if (what & 0x0020) line++ ;
-        if (what & 0x0080) stk->len = mark ;
-        if (what & 0x0040) if (!stack_add(stk,"",1)) log_die_nomem("stack") ;
+        if (what & 0x0080) sb->len = mark ;
+        if (what & 0x0040) if (!strbuf_terminate(sb)) log_die_nomem("strbuf") ;
         if (what & 0x0200)
         {
-        stk->s[stk->len-2] = (scan_digit(stk->s[stk->len-2], 16) << 4) + scan_digit(stk->s[stk->len-1], 16) ;
-        stk->len-- ;
+        sb->s[sb->len-2] = (scan_digit(sb->s[sb->len-2], 16) << 4) + scan_digit(sb->s[sb->len-1], 16) ;
+        sb->len-- ;
         }
-        if (what & 0x0800) environ_scanoct(stk, mark) ;
+        if (what & 0x0800) environ_scanoct(sb, mark) ;
     }
     if (state > 14) {
         char fmt[U32_FMT] ;
@@ -145,6 +144,11 @@ int environ_trim (stack *stk, char const *file)
         log_warn_return(LOG_EXIT_ZERO, "syntax error at line: ", fmt, " in file: ", file) ;
     }
 
-    return stack_close(stk) ;
+    /* close the list: NUL at sb->s[len] (valid C string even when empty),
+     * not counted -- like the old stack_close. */
+    if (!strbuf_terminate(sb))
+        return 0 ;
+    sb->len-- ;
+    return 1 ;
 }
 

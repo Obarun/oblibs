@@ -16,21 +16,18 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#include <oblibs/sastr.h>
+#include <oblibs/sbl.h>
 #include <oblibs/log.h>
-#include <oblibs/stack.h>
 #include <oblibs/environ.h>
 
-#include <skalibs/stralloc.h>
-
-uint8_t environ_merge_dir(stralloc *modifs, char const *path)
+uint8_t environ_merge_dir(strbuf *modifs, char const *path)
 {
     int r ;
     size_t pos = 0, plen = strlen(path) ;
-    _alloc_sa_(sa) ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
     char const *exclude[1] = { 0 } ;
 
-    r = sastr_dir_get(&sa,path,exclude,S_IFREG) ;
+    r = sbl_dir_get(&sa,path,exclude,S_IFREG) ;
     if (!r)
         return 0 ;
 
@@ -39,30 +36,30 @@ uint8_t environ_merge_dir(stralloc *modifs, char const *path)
     if (!sa.len)
         return 1 ;
 
-    if (!sastr_sort(&sa))
+    if (!sbl_sort(&sa))
         return 0 ;
 
-    if (sastr_nelement(&sa) > MAXFILE) {
+    if (sbl_count(&sa) > MAXFILE) {
         log_warn("too many files to parse from: ",path) ;
         errno = E2BIG ;
         return 0 ;
     }
 
-    FOREACH_SASTR(&sa, pos) {
+    FOREACH_SBL(&sa, pos) {
 
-        _alloc_stk_(spath, plen + (strlen(sa.s + pos)) + 2) ;
+        _alloc_strbuf_(spath, plen + (strlen(sa.s + pos)) + 2) ;
 
-        if (!stack_add(&spath, path, plen) ||
-            !stack_add(&spath, "/", 1) ||
-            !stack_add(&spath, sa.s + pos, strlen(sa.s + pos)) ||
-            !stack_close(&spath))
+        if (!strbuf_catb(&spath, path, plen) ||
+            !strbuf_catb(&spath, "/", 1) ||
+            !strbuf_catb(&spath, sa.s + pos, strlen(sa.s + pos)) ||
+            !strbuf_terminate(&spath))
                 return 0 ;
 
         if (!environ_merge_file(modifs, spath.s))
             return 0 ;
     }
 
-    if (!stralloc_0(modifs))
+    if (!strbuf_terminate(modifs))
         return 0 ;
 
     modifs->len-- ;
@@ -70,7 +67,7 @@ uint8_t environ_merge_dir(stralloc *modifs, char const *path)
     return 1 ;
 }
 
-uint8_t environ_merge_dir_g(stralloc *modifs, const char *path)
+uint8_t environ_merge_dir_g(strbuf *modifs, const char *path)
 {
     if (!environ_merge_dir(modifs, path) ||
         !environ_clean_unexport(modifs))

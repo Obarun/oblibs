@@ -29,7 +29,7 @@
 #include <errno.h>
 
 #include <oblibs/environ.h>
-#include <oblibs/stack.h>
+#include <oblibs/strbuf.h>
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -47,7 +47,7 @@
 /* Compare the NUL-separated entries of @stk against @expected[0..n), and verify
  * there are exactly n of them (no extra, no missing). Values must not contain
  * an embedded NUL (none of the test cases do). */
-static void check_entries(stack *stk, char const *const *expected, size_t n)
+static void check_entries(strbuf *stk, char const *const *expected, size_t n)
 {
     char const *p = stk->s ;
     for (size_t i = 0 ; i < n ; i++) {
@@ -61,7 +61,7 @@ static void check_entries(stack *stk, char const *const *expected, size_t n)
 static void test_basic(void)
 {
     TEST_START("test_basic") ;
-    _alloc_stk_(stk, 128) ;
+    _alloc_strbuf_(stk, 128) ;
     TEST_ASSERT(environ_trim(&stk, "A=1\nB=2\nC=3"), "trim") ;
     char const *exp[] = { "A=1", "B=2", "C=3" } ;
     check_entries(&stk, exp, 3) ;
@@ -72,7 +72,7 @@ static void test_basic(void)
 static void test_escapes(void)
 {
     TEST_START("test_escapes") ;
-    _alloc_stk_(stk, 64) ;
+    _alloc_strbuf_(stk, 64) ;
     TEST_ASSERT(environ_trim(&stk, "K=\"\\a\\b\\t\\n\\v\\f\\r\""), "trim") ;
     TEST_ASSERT(!strcmp(stk.s, "K=\a\b\t\n\v\f\r"), "escape mapping") ;
     TEST_ASSERT((unsigned char)stk.s[2] == 7,  "\\a -> BEL") ;
@@ -89,12 +89,12 @@ static void test_escapes(void)
 static void test_backslash_quote(void)
 {
     TEST_START("test_backslash_quote") ;
-    _alloc_stk_(stk, 64) ;
+    _alloc_strbuf_(stk, 64) ;
     TEST_ASSERT(environ_trim(&stk, "K=\"a\\\\b\\\"c\""), "trim") ;
     TEST_ASSERT(!strcmp(stk.s, "K=a\\b\"c"), "literal backslash and quote") ;
 
     /* doc example: cmd_args=-g \"daemon off;\"  ->  -g "daemon off;" */
-    _alloc_stk_(stk2, 64) ;
+    _alloc_strbuf_(stk2, 64) ;
     TEST_ASSERT(environ_trim(&stk2, "cmd_args=-g \\\"daemon off;\\\""), "trim cmd_args") ;
     TEST_ASSERT(!strcmp(stk2.s, "cmd_args=-g \"daemon off;\""), "escaped quotes value") ;
     TEST_END() ;
@@ -104,11 +104,11 @@ static void test_backslash_quote(void)
 static void test_hex_octal(void)
 {
     TEST_START("test_hex_octal") ;
-    _alloc_stk_(stk, 64) ;
+    _alloc_strbuf_(stk, 64) ;
     TEST_ASSERT(environ_trim(&stk, "K=\"\\x41\\x42\""), "trim hex") ;
     TEST_ASSERT(!strcmp(stk.s, "K=AB"), "hex \\x41\\x42 -> AB") ;
 
-    _alloc_stk_(stk2, 64) ;
+    _alloc_strbuf_(stk2, 64) ;
     TEST_ASSERT(environ_trim(&stk2, "K=\"\\101\\102\""), "trim octal") ;
     TEST_ASSERT(!strcmp(stk2.s, "K=AB"), "octal \\101\\102 -> AB") ;
     TEST_END() ;
@@ -120,19 +120,19 @@ static void test_whitespace(void)
 {
     TEST_START("test_whitespace") ;
 
-    _alloc_stk_(a, 64) ;
+    _alloc_strbuf_(a, 64) ;
     TEST_ASSERT(environ_trim(&a, "A = 1"), "spaced =") ;
     TEST_ASSERT(!strcmp(a.s, "A=1"), "spaces around = stripped") ;
 
-    _alloc_stk_(b, 64) ;
+    _alloc_strbuf_(b, 64) ;
     TEST_ASSERT(environ_trim(&b, "A=  1   "), "lead/trail ws") ;
     TEST_ASSERT(!strcmp(b.s, "A=1"), "unquoted value ws stripped") ;
 
-    _alloc_stk_(c, 64) ;
+    _alloc_strbuf_(c, 64) ;
     TEST_ASSERT(environ_trim(&c, "A=\"  x  \""), "quoted ws") ;
     TEST_ASSERT(!strcmp(c.s, "A=  x  "), "quoted value ws preserved") ;
 
-    _alloc_stk_(d, 64) ;
+    _alloc_strbuf_(d, 64) ;
     TEST_ASSERT(environ_trim(&d, "A=hello world"), "internal space") ;
     TEST_ASSERT(!strcmp(d.s, "A=hello world"), "internal space kept") ;
 
@@ -143,7 +143,7 @@ static void test_whitespace(void)
 static void test_comments_blanks(void)
 {
     TEST_START("test_comments_blanks") ;
-    _alloc_stk_(stk, 128) ;
+    _alloc_strbuf_(stk, 128) ;
     TEST_ASSERT(environ_trim(&stk, "# header\n\nVERBOSITY=1\n   # indented\nTREE=boot\n"), "trim") ;
     char const *exp[] = { "VERBOSITY=1", "TREE=boot" } ;
     check_entries(&stk, exp, 2) ;
@@ -155,12 +155,12 @@ static void test_empty(void)
 {
     TEST_START("test_empty") ;
 
-    _alloc_stk_(a, 32) ;
+    _alloc_strbuf_(a, 32) ;
     TEST_ASSERT(environ_trim(&a, "A="), "empty value") ;
     char const *exp[] = { "A=" } ;
     check_entries(&a, exp, 1) ;
 
-    _alloc_stk_(b, 32) ;
+    _alloc_strbuf_(b, 32) ;
     TEST_ASSERT(environ_trim(&b, ""), "empty input") ;
     TEST_ASSERT(b.len == 0, "no entries for empty input") ;
 
@@ -171,7 +171,7 @@ static void test_empty(void)
 static void test_real_world(void)
 {
     TEST_START("test_real_world") ;
-    _alloc_stk_(stk, 256) ;
+    _alloc_strbuf_(stk, 256) ;
     char const *conf =
         "VERBOSITY=1\n"
         "PATH=/usr/bin:/usr/sbin:/bin:/sbin\n"
@@ -196,7 +196,7 @@ static void test_real_world(void)
 static void test_boot_system_shape(void)
 {
     TEST_START("test_boot_system_shape") ;
-    _alloc_stk_(stk, 512) ;
+    _alloc_strbuf_(stk, 512) ;
     char const *conf =
         "## [STARTWARN]\n"
         "## DO NOT MODIFY THIS FILE.\n"

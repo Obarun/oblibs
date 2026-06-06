@@ -19,8 +19,6 @@
 #include <stdarg.h>
 #include <stdint.h>
 
-#include <skalibs/stralloc.h>
-
 #include <oblibs/ostream.h>
 #include <oblibs/strbuf.h>
 
@@ -36,8 +34,6 @@
 #define auto_string_from(dest,baselen,...) auto_string_builder(dest,baselen,(char const *[]){__VA_ARGS__, NULL})
 
 #define auto_strings(dest,...) auto_string_builder(dest,0,(char const *[]){__VA_ARGS__, NULL})
-
-#define auto_stra(sa,...) auto_stra_builder(sa,(char const *[]){__VA_ARGS__, NULL})
 
 #define auto_buf(b,...) auto_buf_builder(b,(char const *[]){__VA_ARGS__, NULL})
 
@@ -79,13 +75,6 @@ extern int ob_dirname(char *dst,char const *path) ;
  * @dest is appended with 0 at end of the string*/
 extern void auto_string_builder(char *dest,size_t baselen, char const *str[],...) ;
 
-/** Append @sa with a list of string @str
- * Only accept char const * as string
- * @sa is appended with 0 at the end of the string.
- * @Return 1 on success
- * @Return 0 on fail */
-extern int auto_stra_builder(stralloc *sa,char const *str[],...) ;
-
 /** Append to stream @b a list of strings @str.
  * Each element of @str must be a NUL-terminated C string (the length is taken
  * with strlen); the array itself ends on a NULL pointer.
@@ -97,8 +86,7 @@ extern int auto_buf_builder(ostream *b, char const *str[], ...) ;
 /** Append to strbuf @b a list of strings @str.
  * Each element of @str must be a NUL-terminated C string (the length is taken
  * with strlen); the array itself ends on a NULL pointer.
- * Leaves @b NUL-terminated (a usable C string) with @b->len excluding that NUL,
- * exactly like auto_stra_builder.
+ * Leaves @b NUL-terminated (a usable C string) with @b->len excluding that NUL.
  * @Return 1 on success
  * @Return 0 on fail */
 extern int auto_strbuf_builder(strbuf *b, char const *str[], ...) ;

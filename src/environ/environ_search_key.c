@@ -16,20 +16,21 @@
 #include <errno.h>
 
 #include <oblibs/lexer.h>
-#include <oblibs/stack.h>
+#include <oblibs/strbuf.h>
 
-uint8_t environ_search_key(stack *stk, const char *str, const char *key, lexer_config *cfg)
+uint8_t environ_search_key(strbuf *sb, const char *str, const char *key, lexer_config *cfg)
 {
     if (!*str || !*key)
         return (errno = EINVAL, 0) ;
 
      size_t slen = strlen(str) ;
-    _alloc_stk_(s, slen + 2) ;
+    _alloc_strbuf_(s, slen + 2) ;
 
-    if (!stack_add(&s, "\n", 1) ||
-        !stack_add(&s, str, slen) ||
-        !stack_close(&s))
+    if (!strbuf_catb(&s, "\n", 1) ||
+        !strbuf_catb(&s, str, slen) ||
+        !strbuf_terminate(&s))
             return (errno = EOVERFLOW, 0) ;
+    s.len-- ; /* close: NUL at s.s[len], not counted (was stack_close) */
 
     cfg->str = s.s ; cfg->slen = s.len ;
     cfg->open = "\n"; cfg->olen = 1 ;
@@ -42,13 +43,13 @@ uint8_t environ_search_key(stack *stk, const char *str, const char *key, lexer_c
 
         cfg->opos = cfg->cpos = 0 ;
         lexer_reset(cfg) ;
-        stack_reset(stk) ;
+        sb->len = 0 ;
 
-        if (!lexer_trim(stk, cfg))
+        if (!lexer_trim(sb, cfg))
             return (errno = EINVAL, 0) ;
 
         if (cfg->found) {
-            if (!strcmp(stk->s, key))
+            if (!strcmp(sb->s, key))
                 return 1 ;
             cfg->pos = ++cfg->opos ;
         } else

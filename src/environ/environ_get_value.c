@@ -15,7 +15,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <oblibs/stack.h>
+#include <oblibs/strbuf.h>
 #include <oblibs/environ.h>
 #include <oblibs/string.h>
 
@@ -24,7 +24,7 @@
  * first '=' up to '\n' or EOF into @stk verbatim. No re-parsing: running
  * environ_trim here would double-unescape (or reject) a value that already
  * went through the parser once. */
-uint8_t environ_get_value(stack *stk, const char *str)
+uint8_t environ_get_value(strbuf *sb, const char *str)
 {
     ssize_t r = get_len_until(str, '=') ;
     if (r < 0)
@@ -35,12 +35,11 @@ uint8_t environ_get_value(stack *stk, const char *str)
     while (val[len] && val[len] != '\n')
         len++ ;
 
-    if (len + 1 > stk->maxlen)
-        return (errno = EOVERFLOW, 0) ;
+    if (!strbuf_reserve(sb, len + 1))
+        return 0 ;
 
-    memmove(stk->s, val, len) ;
-    stk->s[len] = 0 ;
-    stk->len = len ;
-    stk->count = 1 ;
+    memmove(sb->s, val, len) ;
+    sb->s[len] = 0 ;
+    sb->len = len ;
     return 1 ;
 }

@@ -78,7 +78,7 @@
 
 #include <oblibs/hash.h>
 #include <oblibs/queue.h>
-#include <oblibs/stack.h>
+#include <oblibs/strbuf.h>
 #include <oblibs/bits.h>
 
 #ifndef GRAPH_MAX_VERTEX_NAME
@@ -347,7 +347,7 @@ extern int graph_add_edge(graph *g, const char *vertex, const char *edge, bool a
  * - The stack 'stk' is assumed to be properly initialized and contain valid vertex names.
  * - A failure in adding any edge will halt further additions and return 0.
  */
-extern int graph_add_nedge(graph *g, const char *vertex, stack *stk, bool requiredby, bool addedge) ;
+extern int graph_add_nedge(graph *g, const char *vertex, strbuf *sb, bool requiredby, bool addedge) ;
 
 /**
  * @brief Removes a directed edge between two vertices in the graph.

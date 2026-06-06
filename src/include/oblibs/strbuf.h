@@ -65,6 +65,14 @@ struct strbuf_s
  * It is freed automatically at scope exit. For a known-big buffer use
  * STRBUF_ZERO directly (pure heap). @n > STRBUF_THRESHOLD falls back to a 1-byte
  * seed (heap on first real write); @n == STRBUF_THRESHOLD is allowed on the stack.
+ *
+ * ESSENTIAL: the seed is a `char[n]` array living on the CURRENT C stack frame
+ * for the WHOLE duration of the call. When the content outgrows it and migrates
+ * to the heap, the seed array is NOT reclaimed -- it keeps occupying @n bytes of
+ * stack until the function returns. So in a RECURSIVE function, seeds accumulate
+ * as @n * depth and can overflow the C stack on deep inputs, regardless of the
+ * heap migration. In recursion, prefer STRBUF_ZERO (pure heap, O(1) stack/frame)
+ * or a deliberately small seed.
  */
 #define _alloc_strbuf_(sb, n) \
     _cleanup_strbuf_ strbuf sb = STRBUF_ZERO ; \
@@ -112,6 +120,12 @@ extern void strbuf_free(strbuf *sb) ;
 /** @brief Shrink owned heap storage down to len. No-op on borrowed storage.
  *  @return 1 on success, 0 on allocation failure. */
 extern int strbuf_shrink(strbuf *sb) ;
+
+/** @brief Read the whole regular file at @path and APPEND its bytes at @sb->len,
+ *  then NUL-terminate (the NUL is not counted in len). Robust (io_allread).
+ *  On error @sb is restored to its prior length (or freed if it was empty).
+ *  @return 1 on success, 0 on failure (errno: ENOENT if missing / not regular). */
+extern int strbuf_read_file(strbuf *sb, char const *path) ;
 
 #define strbuf_copys(sb, s) strbuf_copyb(sb, (s), strlen(s))
 #define strbuf_cats(sb, s) strbuf_catb(sb, (s), strlen(s))

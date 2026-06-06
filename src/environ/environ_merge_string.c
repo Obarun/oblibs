@@ -15,15 +15,11 @@
 #include <string.h>
 #include <errno.h>
 
-#include <oblibs/sastr.h>
-#include <oblibs/stack.h>
+#include <oblibs/strbuf.h>
 #include <oblibs/environ.h>
-#include <oblibs/files.h>
 #include <oblibs/log.h>
 
-#include <skalibs/stralloc.h>
-
-uint8_t environ_merge_string(stralloc *modifs, const char *str)
+uint8_t environ_merge_string(strbuf *modifs, const char *str)
 {
     if (!str)
         return (errno = EINVAL, 0) ;
@@ -33,25 +29,25 @@ uint8_t environ_merge_string(stralloc *modifs, const char *str)
         return (errno = ENAMETOOLONG, 0) ;
     }
 
-    _alloc_stk_(stk, strlen(str) + 1) ;
+    _alloc_strbuf_(stk, strlen(str) + 1) ;
 
     if (!environ_trim(&stk, str))
         return 0 ;
 
     if (!modifs->len) {
         /** no previous file, copy verbatim*/
-        if (!stralloc_copyb(modifs, stk.s, stk.len) ||
-            !stralloc_0(modifs))
+        if (!strbuf_copyb(modifs, stk.s, stk.len) ||
+            !strbuf_terminate(modifs))
                 return (errno = EOVERFLOW, 0) ;
 
         modifs->len-- ;
         return 1 ;
     }
 
-    _alloc_sa_(new) ;
+    _alloc_strbuf_(new, stk.len + 1) ;
 
-    if (!stralloc_copyb(&new, stk.s, stk.len) ||
-        !stralloc_0(&new))
+    if (!strbuf_copyb(&new, stk.s, stk.len) ||
+        !strbuf_terminate(&new))
             return (errno = EOVERFLOW, 0) ;
     new.len-- ;
     if (!environ_merge_environ(modifs, &new))

@@ -15,39 +15,36 @@
 #include <errno.h>
 #include <string.h>
 
-#include <oblibs/sastr.h>
+#include <oblibs/sbl.h>
 #include <oblibs/lexer.h>
-#include <oblibs/stack.h>
 #include <oblibs/environ.h>
 
-#include <skalibs/stralloc.h>
-
-uint8_t environ_merge_environ(stralloc *modifs, stralloc *new)
+uint8_t environ_merge_environ(strbuf *modifs, strbuf *new)
 {
     size_t pos = 0 ;
-    _alloc_sa_(sa) ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
 
     if (!modifs->len)
         return 1 ;
 
-    if (!stralloc_catb(&sa, new->s, new->len))
+    if (!strbuf_catb(&sa, new->s, new->len))
         return (errno = EOVERFLOW, 0) ;
 
     if (!environ_rebuild(new))
         return 0 ;
 
     lexer_config c = LEXER_CONFIG_ZERO ;
-    _alloc_stk_(nkey, new->len + 1) ;
+    _alloc_strbuf_(nkey, new->len + 1) ;
 
     /**
      * Search from @modifs environment if a
      * same key=value pair exist comparing their
      * respective keys name.
      */
-    FOREACH_SASTR(modifs, pos) {
+    FOREACH_SBL(modifs, pos) {
 
         char *line = modifs->s + pos ;
-        _alloc_stk_(ekey, strlen(line) + 1) ;
+        _alloc_strbuf_(ekey, strlen(line) + 1) ;
         lexer_reset_hard(&c) ;
 
         // get the @modifs environment key
@@ -58,14 +55,14 @@ uint8_t environ_merge_environ(stralloc *modifs, stralloc *new)
         if (!environ_search_key(&nkey, new->s, ekey.s, &c)) {
             if (errno == EOVERFLOW)
                 return (errno = EOVERFLOW, 0) ;
-            if (!sastr_add_string(&sa, line))
+            if (!sbl_add(&sa, line))
                 return 0 ;
         }
     }
 
     // flush the modifs environment with the new one
-    if (!stralloc_copyb(modifs, sa.s, sa.len) ||
-        !stralloc_0(modifs))
+    if (!strbuf_copyb(modifs, sa.s, sa.len) ||
+        !strbuf_terminate(modifs))
             return (errno = EOVERFLOW, 0) ;
 
     modifs->len-- ;

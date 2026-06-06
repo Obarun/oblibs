@@ -15,15 +15,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include <oblibs/sastr.h>
+#include <oblibs/sbl.h>
 #include <oblibs/environ.h>
 
-#include <skalibs/stralloc.h>
-
-uint8_t environ_create_environ(char const **nenvp, char const *const *env, stralloc *modifs)
+uint8_t environ_create_environ(char const **nenvp, char const *const *env, strbuf *modifs)
 {
     size_t elen = environ_length(env) ;
-    size_t n = elen + 1 + sastr_nelement(modifs) ;
+    size_t n = elen + 1 + sbl_count(modifs) ;
 
     if (!environ_merge(nenvp, n , env, elen, modifs->s, modifs->len))
         return 0 ;

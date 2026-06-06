@@ -14,16 +14,15 @@
 
 #include <errno.h>
 
-#include <oblibs/sastr.h>
-#include <skalibs/stralloc.h>
+#include <oblibs/strbuf.h>
 
-uint8_t environ_import_arguments(stralloc *modifs, char const *const *environ, size_t len)
+uint8_t environ_import_arguments(strbuf *modifs, char const *const *environ, size_t len)
 {
     if (!environ || !environ[0])
         return (errno = EINVAL, 0) ;
     size_t pos = 0 ;
     for(; pos < len ; pos++) {
-        if (!stralloc_cats(modifs, environ[pos]) || !stralloc_0(modifs))
+        if (!strbuf_cats(modifs, environ[pos]) || !strbuf_terminate(modifs))
             return 0 ;
     }
 

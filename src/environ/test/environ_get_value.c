@@ -28,11 +28,8 @@
 #include <string.h>
 #include <errno.h>
 
-#include <skalibs/stralloc.h>
-
+#include <oblibs/strbuf.h>
 #include <oblibs/environ.h>
-#include <oblibs/stack.h>
-#include <oblibs/sastr.h>
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -50,7 +47,7 @@
 /* helper: run environ_get_value on @line, assert value equals @expect */
 static void expect_value(char const *line, char const *expect)
 {
-    _alloc_stk_(val, strlen(line) + 1) ;
+    _alloc_strbuf_(val, strlen(line) + 1) ;
     TEST_ASSERT(environ_get_value(&val, line) == 1, "environ_get_value should succeed") ;
     TEST_ASSERT(val.len == strlen(expect), "value length mismatch") ;
     TEST_ASSERT(!strcmp(val.s, expect), "value content mismatch") ;
@@ -98,7 +95,7 @@ static void test_no_separator(void)
 {
     TEST_START("test_no_separator") ;
 
-    _alloc_stk_(val, 16) ;
+    _alloc_strbuf_(val, 16) ;
     errno = 0 ;
     TEST_ASSERT(environ_get_value(&val, "novalue") == 0, "no '=' must fail") ;
     TEST_ASSERT(errno == EINVAL, "no '=' must set EINVAL") ;
@@ -113,7 +110,7 @@ static void test_end_to_end_merge(void)
 {
     TEST_START("test_end_to_end_merge") ;
 
-    _alloc_sa_(modifs) ;
+    _cleanup_strbuf_ strbuf modifs = STRBUF_ZERO ;
     /* raw file content: KEY="a\\b"  ->  parsed value is  a\b  (one backslash) */
     TEST_ASSERT(environ_merge_string(&modifs, "KEY=\"a\\\\b\"") == 1, "merge_string should succeed") ;
     TEST_ASSERT(!strcmp(modifs.s, "KEY=a\\b"), "merge_string parse result") ;
@@ -131,7 +128,7 @@ static void test_search_value_raw(void)
 
     char const *raw = "FOO=plain\nBAR=\"a\\\\b\"\nBAZ=last" ;
 
-    _alloc_stk_(v, strlen(raw) + 1) ;
+    _alloc_strbuf_(v, strlen(raw) + 1) ;
 
     TEST_ASSERT(environ_search_value(&v, raw, "FOO") == 1, "search FOO") ;
     TEST_ASSERT(!strcmp(v.s, "plain"), "FOO value") ;

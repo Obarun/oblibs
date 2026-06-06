@@ -19,7 +19,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#include <skalibs/stralloc.h>
+#include <oblibs/strbuf.h>
 
 /** Close a directory stream without disturbing errno (for cleanup paths).
  * No EINTR retry: closedir may already have freed the DIR, so retrying would
@@ -34,7 +34,7 @@ extern int dir_create (char const *dst, mode_t mode) ;
 /** Create a tmp directory at @dst with @tname as template
  * @Return NULL and set errno
  * @Return return the value of tmp directory*/
-extern char *dir_create_tmp(stralloc *sa, char const *dst, char const *tname) ;
+extern char *dir_create_tmp(strbuf *sb, char const *dst, char const *tname) ;
 
 /** Create @dst directory with mode @mode
  * If parent of @dst doesn't exist it will created with mode @mode and do it

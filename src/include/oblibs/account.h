@@ -17,7 +17,7 @@
 
 #include <sys/types.h>
 
-#include <skalibs/stralloc.h>
+#include <oblibs/strbuf.h>
 
 /** get the uid of user's @name
  * and store the result in @uid
@@ -29,7 +29,7 @@ extern int get_uidbyname(char const *name,uid_t *uid) ;
  * and store the result in @name
  * @Return 1 on success
  * @Return 0 on fail and set errno */
-extern int get_namebyuid(uid_t uid,stralloc *name) ;
+extern int get_namebyuid(uid_t uid,strbuf *name) ;
 
 /** get the gid of user's @name
  * and store the result in @gid
@@ -41,7 +41,7 @@ extern int get_gidbyname(char const *name,gid_t *gid) ;
  * and store the result in @name
  * @Return 1 on success
  * @Return 0 on fail and set errno */
-extern int get_groupbygid(gid_t gid,stralloc *name) ;
+extern int get_groupbygid(gid_t gid,strbuf *name) ;
 
 /** get the gid of group's @name
  * and store the result in @gid

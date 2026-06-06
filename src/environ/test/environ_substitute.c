@@ -1,19 +1,17 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
-#include <skalibs/stralloc.h>
+#include <oblibs/strbuf.h>
 #include <oblibs/environ.h>
-#include <oblibs/stack.h>
-#include <oblibs/sastr.h>
 
-void compare(stralloc *sa, const char *a, const char *b)
+void compare(strbuf *sa, const char *a, const char *b)
 {
     subst_t info = SUBST_ZERO ;
     sa->len = 0 ;
     assert(environ_merge_string(sa, a) == 1) ;
     assert(environ_substitute(sa, &info) == 1) ;
     assert(environ_rebuild(sa) == 1) ;
-    assert(stralloc_0(sa) == 1) ;
+    assert(strbuf_terminate(sa) == 1) ;
     assert(strcmp(sa->s, b) == 0) ;
     subst_free(&info) ;
 }
@@ -22,7 +20,7 @@ void basic()
 {
     printf("Running test basic...\n") ;
 
-    _alloc_sa_(sa) ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
 
     const char *a = "Args=!-n ${ArgsConfFile}\n\
 ArgsConfFile=!-f /etc/bluetooth/main.conf" ;
@@ -37,7 +35,7 @@ void basic1()
 {
     printf("Running test basic1...\n") ;
 
-    _alloc_sa_(sa) ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
 
     const char *a = "Args=!%%tmpfiles%%/opentmpfiles.sh ${ArgsScript}\n\
 ArgsScript=!--create --verbose --boot" ;
@@ -52,7 +50,7 @@ void basic2()
 {
     printf("Running test basic2...\n") ;
 
-    _alloc_sa_(sa) ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
 
     const char *a = "Args=!--session --print-pid=4 --nofork --nopidfile --address=unix:path=${Socket}\n\
 Socket=!@R/bus" ;
@@ -67,7 +65,7 @@ void basic3()
 {
     printf("Running test basic3...\n") ;
 
-    _alloc_sa_(sa) ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
 
     const char *a = "Args=!${ArgsConfFile} -aN\n\
 ArgsConfFile=!-c /etc/zfs/zpool.cache" ;
@@ -82,7 +80,7 @@ void complex()
 {
     printf("Running test complex...\n") ;
 
-    _alloc_sa_(sa) ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
 
     const char *a = "Args=!--nodaemonize ${ArgsConfFile} ${ArgsPidFile}\n\
 ArgsConfFile=!--fpm-config /etc/php/php-fpm.conf\n\
@@ -101,7 +99,7 @@ void complex1()
 {
     printf("Running test complex1...\n") ;
 
-    _alloc_sa_(sa) ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
 
     const char *a = "ArgsStart=!-d -v ${ArgsConfFile} ${ArgsPidFile}\n\
 ArgsStop=!-r\n\
@@ -128,7 +126,7 @@ void nope()
 {
     printf("Running test nope...\n") ;
 
-    _alloc_sa_(sa) ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
 
     const char *a = "ConfFile=!%%initconf%%\n\
 Timeout=!60000\n\
@@ -145,7 +143,7 @@ void comment()
 {
     printf("Running test comment...\n") ;
 
-    _alloc_sa_(sa) ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
 
     const char *a = "ConfFile=!%%initconf%%\n\
 ## first comment\n\
@@ -164,7 +162,7 @@ void unknown()
 {
     printf("Running test unknown...\n") ;
 
-    _alloc_sa_(sa) ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
 
     const char *a = "Socket=/run/libvirt/libvirt-sock ${unknown}" ;
 
@@ -177,7 +175,7 @@ void empty_line()
 {
     printf("Running test empty_line...\n") ;
 
-    _alloc_sa_(sa) ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
 
     const char *a = "Socket=/run/libvirt/libvirt-sock ${empty}\n\
 \n\

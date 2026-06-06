@@ -17,10 +17,9 @@
 
 #include <sys/types.h>
 
-#include <oblibs/stack.h>
+#include <oblibs/strbuf.h>
 #include <oblibs/lexer.h>
 #include <oblibs/subst.h>
-#include <skalibs/stralloc.h>
 
 #define MAXVAR  50
 #define MAXFILE 20
@@ -36,26 +35,26 @@ extern char **environ ;
  * Use https://skarnet.org/software/execline/envfile.html algorithm
  * @Return 0 on fail else 1
  */
-extern int environ_trim(stack *stk, char const *file) ;
+extern int environ_trim(strbuf *sb, char const *file) ;
 
 /** Convenient API reading file and checking validity of
  * the @stk size, then call environ_trim
  * Set errno.
  * @Return 0 on fail else 1
  * */
-extern uint8_t environ_parse_file(stack *stk, const char *file) ;
+extern uint8_t environ_parse_file(strbuf *sb, const char *file) ;
 
 /** Substitute value of @key with @val into @envp
  * @Return 1 on success
  * @Return 0 on fail*/
-extern uint8_t environ_substitute(stralloc *modifs, subst_t *info) ;
+extern uint8_t environ_substitute(strbuf *modifs, subst_t *info) ;
 
 /** Extract the key (meaning everything before '=') from @str,
  * removing " \t\r\n" characters.
- * Replace the content of @stk with the result of the process.
+ * Replace the content of @sb with the result of the process.
  * @Return 1 on success
  * @Return 0 on fail and set errno*/
-extern uint8_t environ_get_key(stack *stk, const char *str) ;
+extern uint8_t environ_get_key(strbuf *sb, const char *str) ;
 
 /** Extract @key (meaning verything before '=') from @str,
  * removing " \t\r\n" characters.
@@ -63,7 +62,7 @@ extern uint8_t environ_get_key(stack *stk, const char *str) ;
  * result of the process.
  * @Return 1 on success
  * @Return 0 on fail and set errno*/
-extern uint8_t environ_search_key(stack *stk, const char *str, const char *key, lexer_config *cfg) ;
+extern uint8_t environ_search_key(strbuf *sb, const char *str, const char *key, lexer_config *cfg) ;
 
 /** Get the value (meaning everything after the first '=' up to '\n' or EOF)
  * from @str, verbatim. @str MUST be an already-parsed "key=value" entry
@@ -72,7 +71,7 @@ extern uint8_t environ_search_key(stack *stk, const char *str, const char *key, 
  * Replace the content of @stk with the result of the process.
  * @Return 1 on success
  * @Return 0 on fail and set errno (EINVAL if @str has no '=') */
-extern uint8_t environ_get_value(stack *stk, const char *str) ;
+extern uint8_t environ_get_value(strbuf *sb, const char *str) ;
 
 /** Get the value (meaning everything after '=' and '\n' or EOF)
  * of @key from @str. Replace the content of @stk with the
@@ -80,7 +79,7 @@ extern uint8_t environ_get_value(stack *stk, const char *str) ;
  * Set errno.
  * @Return 1 on success
  * @Return 0 on fail and set errno */
-extern uint8_t environ_search_value(stack *stk, const char *str, const char *key) ;
+extern uint8_t environ_search_value(strbuf *sb, const char *str, const char *key) ;
 
 /** Rebuild a string of sastr format
  * appending '\n' at the end of each line.
@@ -89,7 +88,7 @@ extern uint8_t environ_search_value(stack *stk, const char *str, const char *key
  * Set errno.
  * @Return 1 on success
  * @Return 0 on fail. */
-extern uint8_t environ_rebuild(stralloc *sa) ;
+extern uint8_t environ_rebuild(strbuf *sb) ;
 
 /** Append @modifs with key=value pair from @file.
  * For a same key=value pair in @modifs and @file,
@@ -97,7 +96,7 @@ extern uint8_t environ_rebuild(stralloc *sa) ;
  * Set errno
  * @Return 0 on fail else 1
  */
-extern uint8_t environ_merge_file(stralloc *modifs, const char *file) ;
+extern uint8_t environ_merge_file(strbuf *modifs, const char *file) ;
 
 /** Append @modifs with key=value pair from @str.
  * For a same key=value pair in @modifs and @str,
@@ -105,19 +104,19 @@ extern uint8_t environ_merge_file(stralloc *modifs, const char *file) ;
  * Set errno
  * @Return 0 on fail else 1
  */
-extern uint8_t environ_merge_string(stralloc *modifs, const char *str) ;
+extern uint8_t environ_merge_string(strbuf *modifs, const char *str) ;
 
 /** Append @modifs with key=value pair from
  * a **@environ format.
  * Set errno.
  * @Return 0 on fail else 1
 */
-extern uint8_t environ_import_arguments(stralloc *modifs, char const *const *environ, size_t len) ;
+extern uint8_t environ_import_arguments(strbuf *modifs, char const *const *environ, size_t len) ;
 
 /** Remove '!' character at the begin of the value
  * Set errno.
  * */
-extern uint8_t environ_clean_unexport(stralloc *modifs) ;
+extern uint8_t environ_clean_unexport(strbuf *modifs) ;
 
 /** @PATH MUST POINT TO A DIRECTORY NOT A FILE.
  * For each file found at @path:
@@ -134,26 +133,26 @@ extern uint8_t environ_clean_unexport(stralloc *modifs) ;
  * WARNING: this function do not return 0 if @path is empty
  * or files are empty. Simply check the len of @modifs after the call
  * of this function.*/
-extern uint8_t environ_merge_dir(stralloc *modifs, char const *path) ;
+extern uint8_t environ_merge_dir(strbuf *modifs, char const *path) ;
 
 /** same as environ_merge_dir but also call environ_clean_unexport
  * Set errno.
 */
-extern uint8_t environ_merge_dir_g(stralloc *modifs, const char *path) ;
+extern uint8_t environ_merge_dir_g(strbuf *modifs, const char *path) ;
 
 /** Merge @new to @modifs. For a same key=value pair, @new
  * take precedence.
  * Set errno.
  * @Return 0 on fail else 1
  */
-extern uint8_t environ_merge_environ(stralloc *modifs, stralloc *new) ;
+extern uint8_t environ_merge_environ(strbuf *modifs, strbuf *new) ;
 
 /** Create an new @nenvp environ array merging
  * first @modifs to @env.For a same key=value pair, @modifs
  * take precedence.
  * @Return 0 on fail else 1
  */
-extern uint8_t environ_create_environ(char const **nenvp, char const *const *env, stralloc *modifs) ;
+extern uint8_t environ_create_environ(char const **nenvp, char const *const *env, strbuf *modifs) ;
 
 /** Get the length of @e
  * @Return the length of @e

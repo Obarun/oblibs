@@ -14,31 +14,28 @@
 
 #include <string.h>
 
-#include <oblibs/sastr.h>
-#include <oblibs/stack.h>
+#include <oblibs/sbl.h>
 
-#include <skalibs/stralloc.h>
-
-uint8_t environ_rebuild(stralloc *sa)
+uint8_t environ_rebuild(strbuf *sb)
 {
-    if (!sa->len)
+    if (!sb->len)
         return 1 ;
     size_t pos = 0 ;
-    size_t n = sastr_nelement(sa) ;
-    _alloc_stk_(s, sa->len + n + 1) ;
+    size_t n = sbl_count(sb) ;
+    _alloc_strbuf_(s, sb->len + n + 1) ;
 
-    FOREACH_SASTR(sa, pos) {
-        if (!stack_add(&s, sa->s + pos, strlen(sa->s + pos)) ||
-            !stack_add(&s, "\n", 1))
+    FOREACH_SBL(sb, pos) {
+        if (!strbuf_catb(&s, sb->s + pos, strlen(sb->s + pos)) ||
+            !strbuf_catb(&s, "\n", 1))
                 return 0 ;
     }
     s.s[s.len - 1] = 0 ;
 
-    sa->len = 0 ;
-    if (!stralloc_copyb(sa, s.s, s.len) ||
-        !stralloc_0(sa))
+    sb->len = 0 ;
+    if (!strbuf_copyb(sb, s.s, s.len) ||
+        !strbuf_terminate(sb))
             return 0 ;
-    sa->len-- ;
+    sb->len-- ;
 
     return  1 ;
 }

@@ -16,9 +16,7 @@
 #include <string.h>
 
 #include <oblibs/account.h>
-#include <oblibs/sastr.h>
-
-#include <skalibs/stralloc.h>
+#include <oblibs/sbl.h>
 
 int scan_uidlist(char const *str, uid_t *array)
 {
@@ -26,25 +24,21 @@ int scan_uidlist(char const *str, uid_t *array)
     size_t pos = 0 ;
     uid_t uid, nuser ;
 
-    stralloc tmp = STRALLOC_ZERO ;
+    _alloc_strbuf_(tmp, strlen(str)) ;
 
     r = uid = 0 ;
     nuser = array[0] ;
 
-    if (!sastr_clean_string(&tmp,str)) return 0 ;
+    if (!sbl_clean_string(&tmp, str)) return 0 ;
 
-    for (;pos < tmp.len; pos += strlen(tmp.s + pos)+1)
-    {
+    FOREACH_SBL(&tmp, pos) {
         char *val = tmp.s + pos ;
-        r = get_uidbyname(val,&uid) ;
-        if(r == -1) goto err ;
-        nuser++;
+        r = get_uidbyname(val, &uid) ;
+        if (r == -1) return 0 ;
+        nuser++ ;
         array[0] = nuser ;
         array[nuser] = uid ;
     }
-    stralloc_free(&tmp) ;
+
     return 1 ;
-    err:
-        stralloc_free(&tmp) ;
-        return 0 ;
 }

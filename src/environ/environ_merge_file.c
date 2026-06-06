@@ -15,37 +15,34 @@
 #include <string.h>
 #include <errno.h>
 
-#include <oblibs/sastr.h>
-#include <oblibs/stack.h>
+#include <oblibs/strbuf.h>
 #include <oblibs/environ.h>
 #include <oblibs/files.h>
 
-#include <skalibs/stralloc.h>
-
-uint8_t environ_merge_file(stralloc *modifs, const char *file)
+uint8_t environ_merge_file(strbuf *modifs, const char *file)
 {
     size_t filesize = file_get_size(file) ;
     if (!filesize)
         return (errno = EINVAL, 0) ;
-    _alloc_stk_(stk, filesize + 1) ;
+    _alloc_strbuf_(stk, filesize + 1) ;
 
     if (!environ_parse_file(&stk, file))
         return 0 ;
 
     if (!modifs->len) {
         /** no previous file, copy verbatim*/
-        if (!stralloc_copyb(modifs, stk.s, stk.len) ||
-            !stralloc_0(modifs))
+        if (!strbuf_copyb(modifs, stk.s, stk.len) ||
+            !strbuf_terminate(modifs))
                 return (errno = EOVERFLOW, 0) ;
 
         modifs->len-- ;
         return 1 ;
     }
 
-    _alloc_sa_(new) ;
+    _alloc_strbuf_(new, stk.len + 1) ;
 
-    if (!stralloc_copyb(&new, stk.s, stk.len) ||
-        !stralloc_0(&new))
+    if (!strbuf_copyb(&new, stk.s, stk.len) ||
+        !strbuf_terminate(&new))
             return (errno = EOVERFLOW, 0) ;
     new.len-- ;
     if (!environ_merge_environ(modifs, &new))

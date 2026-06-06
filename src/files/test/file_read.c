@@ -13,11 +13,11 @@
  */
 
 /* Differential non-regression test: the oblibs-native file_readputsa
- * (io_open + io_allread + stralloc_ready_tuned) must behave like the former
- * skalibs openreadfileclose path — same bytes appended into the caller's
- * stralloc, same NUL-terminated/len-- convention, same append-at-len and
- * error semantics. Verified against ground truth and against a direct
- * openreadfileclose reference. */
+ * (io_open + io_allread + strbuf) must behave like the former skalibs
+ * openreadfileclose path -- same bytes appended into the caller's buffer,
+ * same NUL-terminated/len-- convention, same append-at-len and error
+ * semantics. The caller buffer is now a strbuf; the skalibs openreadfileclose
+ * reference (a stralloc) is kept as the ground-truth oracle. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,6 +29,7 @@
 #include <sys/types.h>
 
 #include <oblibs/files.h>
+#include <oblibs/strbuf.h>
 
 #include <skalibs/stralloc.h>
 #include <skalibs/djbunix.h>
@@ -91,8 +92,8 @@ static void test_content(void)
         size_t n = sizes[i] ;
         writefile(path, pat, n) ;
 
-        stralloc res = STRALLOC_ZERO ;
-        TEST_ASSERT(file_readputsa(&res, tdir, "data") == 1, "file_readputsa failed") ;
+        strbuf res = STRBUF_ZERO ;
+        TEST_ASSERT(file_read(&res, tdir, "data") == 1, "file_readputsa failed") ;
         TEST_ASSERT(res.len == n, "wrong length") ;
         TEST_ASSERT(memcmp(res.s, pat, n) == 0, "content != ground truth") ;
         TEST_ASSERT(res.s[res.len] == 0, "result not NUL-terminated past len") ;
@@ -105,14 +106,14 @@ static void test_content(void)
         TEST_ASSERT(res.len == ref.len, "length differs from skalibs") ;
         TEST_ASSERT(memcmp(res.s, ref.s, res.len) == 0, "content differs from skalibs") ;
 
-        stralloc_free(&res) ;
+        strbuf_free(&res) ;
         stralloc_free(&ref) ;
     }
 
     TEST_END() ;
 }
 
-/* Case 2: append into a non-empty stralloc preserves the existing prefix. */
+/* Case 2: append into a non-empty buffer preserves the existing prefix. */
 static void test_append(void)
 {
     TEST_START("test_append") ;
@@ -122,42 +123,42 @@ static void test_append(void)
     path_in(path, "data") ;
     writefile(path, content, strlen(content)) ;
 
-    stralloc sa = STRALLOC_ZERO ;
+    strbuf sa = STRBUF_ZERO ;
     char const *prefix = "PREFIX:" ;
-    TEST_ASSERT(stralloc_cats(&sa, prefix), "seed prefix failed") ;
+    TEST_ASSERT(strbuf_cats(&sa, prefix), "seed prefix failed") ;
     size_t base = sa.len ;
 
-    TEST_ASSERT(file_readputsa(&sa, tdir, "data") == 1, "file_readputsa failed") ;
+    TEST_ASSERT(file_read(&sa, tdir, "data") == 1, "file_readputsa failed") ;
     TEST_ASSERT(sa.len == base + strlen(content), "wrong appended length") ;
     TEST_ASSERT(memcmp(sa.s, prefix, base) == 0, "prefix clobbered") ;
     TEST_ASSERT(memcmp(sa.s + base, content, strlen(content)) == 0, "appended content wrong") ;
 
-    stralloc_free(&sa) ;
+    strbuf_free(&sa) ;
     TEST_END() ;
 }
 
-/* Case 3: missing file -> 0, ENOENT, stralloc restored. */
+/* Case 3: missing file -> 0, ENOENT, buffer restored. */
 static void test_missing(void)
 {
     TEST_START("test_missing") ;
 
-    /* wasnull branch: fresh stralloc must end up freed (s == NULL) */
-    stralloc fresh = STRALLOC_ZERO ;
+    /* wasnull branch: fresh buffer must end up freed (s == NULL) */
+    strbuf fresh = STRBUF_ZERO ;
     errno = 0 ;
-    TEST_ASSERT(file_readputsa(&fresh, tdir, "nope") == 0, "should fail on missing file") ;
+    TEST_ASSERT(file_read(&fresh, tdir, "nope") == 0, "should fail on missing file") ;
     TEST_ASSERT(errno == ENOENT, "errno should be ENOENT") ;
-    TEST_ASSERT(fresh.s == NULL, "fresh stralloc should be freed") ;
+    TEST_ASSERT(fresh.s == NULL, "fresh buffer should be freed") ;
 
     /* non-null branch: len must be restored to base, prefix preserved */
-    stralloc sa = STRALLOC_ZERO ;
-    TEST_ASSERT(stralloc_cats(&sa, "KEEP"), "seed failed") ;
+    strbuf sa = STRBUF_ZERO ;
+    TEST_ASSERT(strbuf_cats(&sa, "KEEP"), "seed failed") ;
     size_t base = sa.len ;
     errno = 0 ;
-    TEST_ASSERT(file_readputsa(&sa, tdir, "nope") == 0, "should fail on missing file") ;
+    TEST_ASSERT(file_read(&sa, tdir, "nope") == 0, "should fail on missing file") ;
     TEST_ASSERT(errno == ENOENT, "errno should be ENOENT") ;
     TEST_ASSERT(sa.len == base, "len should be restored to base") ;
     TEST_ASSERT(memcmp(sa.s, "KEEP", base) == 0, "prefix should be preserved") ;
-    stralloc_free(&sa) ;
+    strbuf_free(&sa) ;
 
     TEST_END() ;
 }
@@ -167,12 +168,12 @@ static void test_not_regular(void)
 {
     TEST_START("test_not_regular") ;
 
-    stralloc sa = STRALLOC_ZERO ;
+    strbuf sa = STRBUF_ZERO ;
     errno = 0 ;
     /* tdir itself is a directory, read it via its parent */
-    TEST_ASSERT(file_readputsa(&sa, "/", "tmp") == 0, "should fail on a directory") ;
+    TEST_ASSERT(file_read(&sa, "/", "tmp") == 0, "should fail on a directory") ;
     TEST_ASSERT(errno == ENOENT, "errno should be ENOENT") ;
-    stralloc_free(&sa) ;
+    strbuf_free(&sa) ;
 
     TEST_END() ;
 }

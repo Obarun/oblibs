@@ -17,7 +17,7 @@
 
 #include <sys/types.h>
 
-#include <skalibs/stralloc.h>
+#include <oblibs/strbuf.h>
 
 /** Scan if @str has the corresponding @mode
  * @Return 1 on success
@@ -52,14 +52,10 @@ extern int file_write_unsafe(char const *dst,char const *name,char const *conten
  * @Return 0 on fail and set errno*/
 extern int file_write_unsafe_g(char const *file,char const *content) ;
 
-/** Append @sa with the contents of file @file find in @src
+/** Append @sb with the contents of the regular file @file found in directory
+ * @dir (i.e. read @dir/@file). For an already-complete path, use
+ * strbuf_read_file() directly.
  * @Return 1 on success
  * @Return 0 on fail */
-extern int file_readputsa(stralloc *sa,char const *src,char const *file) ;
-
-/** Append @sa with the contents of @file where @file is
- * absolute path to the file and call file_readputsa
- * @Return 1 on success
- * @Return 0 on fail */
-extern int file_readputsa_g(stralloc *sa,char const *file) ;
+extern int file_read(strbuf *sb,char const *dir,char const *file) ;
 #endif

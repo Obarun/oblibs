@@ -20,7 +20,7 @@
 #include <oblibs/log.h>
 #include <oblibs/graph.h>
 #include <oblibs/bits.h>
-#include <oblibs/stack.h>
+#include <oblibs/sbl.h>
 
 int graph_queue_compare(const void *a, const void *b)
 {
@@ -195,18 +195,18 @@ int graph_add_edge(graph *g, const char *vertex, const char *edge, bool addedge)
     return 1 ;
 }
 
-int graph_add_nedge(graph *g, const char *vertex, stack *stk, bool requiredby, bool addedge)
+int graph_add_nedge(graph *g, const char *vertex, strbuf *sb, bool requiredby, bool addedge)
 {
     size_t pos = 0 ;
 
-    if (stk->len) {
+    if (sb->len) {
 
-        FOREACH_STK(stk, pos) {
+        FOREACH_SBL(sb, pos) {
             if (requiredby == false) {
-                if (!graph_add_edge(g, vertex, stk->s + pos, addedge))
+                if (!graph_add_edge(g, vertex, sb->s + pos, addedge))
                     return 0 ;
             } else {
-                if (!graph_add_edge(g, stk->s + pos, vertex, addedge))
+                if (!graph_add_edge(g, sb->s + pos, vertex, addedge))
                     return 0 ;
             }
         }

@@ -18,8 +18,7 @@
 
 #include <oblibs/bits.h>
 #include <oblibs/string.h>
-#include <oblibs/stack.h>
-#include <oblibs/lexer.h>
+#include <oblibs/sbl.h>
 #include <oblibs/log.h>
 
 #include <oblibs/sse.h>
@@ -255,7 +254,7 @@ static void set_range(cron_context_t *ctx)
     bitset_range(b, ctx->parser_min, ctx->parser_max, ctx->parser_step) ;
 }
 
-static int solve_macro(const char *expression, stack *s)
+static int solve_macro(const char *expression, strbuf *s)
 {
     if (strcmp(expression, "@yearly") == 0 || strcmp(expression, "@annually") == 0) {
         auto_strings(s->s, "0 0 0 1 1 ?") ;
@@ -495,21 +494,24 @@ int parse_cron(const char *expression, cron_t *expr, const char *tz)
         return 0 ;
 
     size_t pos = 0 ;
-    _alloc_stk_(e, 256) ;
+    _alloc_strbuf_(raw, 256) ;   /* raw expression as a C string */
+    _alloc_sbl_(e, 256) ;        /* cleaned fields, NUL-separated */
     cron_context_t ctx = CRON_CONTEXT_ZERO ;
 
     if (*expression == '@') {
-        if (!solve_macro(expression, &e)) {
+        if (!solve_macro(expression, &raw)) {
             return (errno = EINVAL, 0) ;
         }
     } else {
-        auto_strings(e.s, expression) ;
+        auto_strings(raw.s, expression) ;
     }
 
-    if (!stack_string_clean(&e, e.s))
+    /* clean from @raw into @e (separate buffers: no aliasing) */
+    if (!sbl_clean_string(&e, raw.s))
         return (errno = ENOMEM, 0) ;
 
-    if (e.count < 5 || e.count > 7)
+    size_t ecount = sbl_count(&e) ;
+    if (ecount < 5 || ecount > 7)
         return (errno = EINVAL, 0) ;
 
     init_state_table() ;
@@ -530,9 +532,9 @@ int parse_cron(const char *expression, cron_t *expr, const char *tz)
 
     uint8_t count = 0 ;
 
-    FOREACH_STK(&e, pos) {
+    FOREACH_SBL(&e, pos) {
 
-        if (count > e.count)
+        if (count > ecount)
             break ;
 
         ctx.field = e.s + pos ;
@@ -542,7 +544,7 @@ int parse_cron(const char *expression, cron_t *expr, const char *tz)
 
         // seconds
         if (count == 0) {
-            if (e.count == 5) {
+            if (ecount == 5) {
                 bitset8_set(&ctx.e->seconds, 0) ;
                 count++ ;
             } else {
@@ -620,7 +622,7 @@ int parse_cron(const char *expression, cron_t *expr, const char *tz)
         count++ ;
     }
 
-    if (e.count < 7) {
+    if (ecount < 7) {
 
         ctx.min = ctx.parser_min = CRON_MIN_YEARS ;
         ctx.max = ctx.parser_max = CRON_MAX_YEARS ;

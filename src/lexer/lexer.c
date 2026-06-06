@@ -14,7 +14,7 @@
 
 #include <string.h>
 
-#include <oblibs/stack.h>
+#include <oblibs/strbuf.h>
 #include <oblibs/lexer.h>
 #include <oblibs/log.h>
 
@@ -58,7 +58,7 @@ static inline uint8_t lexer_loop(lexer_config *cfg, char const *regex, size_t le
     return 0 ;
 }
 
-static inline uint8_t lexer_do(stack *stk, uint8_t state, lexer_config *cfg)
+static inline uint8_t lexer_do(strbuf *sb, uint8_t state, lexer_config *cfg)
 {
     char c = cfg->str[cfg->pos] ;
 
@@ -66,7 +66,7 @@ static inline uint8_t lexer_do(stack *stk, uint8_t state, lexer_config *cfg)
         case LEXER_STATE_CHAR:
             if (cfg->invalue) {
 
-                if (!stack_add(stk, &c, 1))
+                if (!strbuf_catb(sb, &c, 1))
                     return (errno = EOVERFLOW, 0) ;
 
                 cfg->count++ ;
@@ -82,10 +82,10 @@ static inline uint8_t lexer_do(stack *stk, uint8_t state, lexer_config *cfg)
             if (cfg->kopen && !lexer_loop(cfg, cfg->skip, cfg->skiplen)) {
 
                 if (cfg->style) {
-                    if (!stack_add(stk, cfg->open, cfg->olen))
+                    if (!strbuf_catb(sb, cfg->open, cfg->olen))
                         return (errno = EOVERFLOW, 0) ;
                 } else {
-                    if (!stack_add(stk, &c, 1))
+                    if (!strbuf_catb(sb, &c, 1))
                         return (errno = EOVERFLOW, 0) ;
                 }
 
@@ -94,7 +94,7 @@ static inline uint8_t lexer_do(stack *stk, uint8_t state, lexer_config *cfg)
             break;
         case LEXER_STATE_IN_VALUE:
             if (cfg->invalue) {
-                if (!stack_add(stk, &c, 1))
+                if (!strbuf_catb(sb, &c, 1))
                     return (errno = EOVERFLOW, 0) ;
 
                 cfg->count++ ;
@@ -108,10 +108,10 @@ static inline uint8_t lexer_do(stack *stk, uint8_t state, lexer_config *cfg)
 
                 if (cfg->kclose) {
                     if (cfg->style) {
-                        if (!stack_add(stk, cfg->close, cfg->clen))
+                        if (!strbuf_catb(sb, cfg->close, cfg->clen))
                             return (errno = EOVERFLOW, 0) ;
                     } else {
-                        if (!stack_add(stk, &c, 1))
+                        if (!strbuf_catb(sb, &c, 1))
                             return (errno = EOVERFLOW, 0) ;
                     }
                     cfg->count++ ;
@@ -168,7 +168,7 @@ static inline uint8_t lexer_cclass (char c, lexer_config *cfg)
     return LEXER_ACTION_OTHER ;
 }
 
-uint8_t lexer(stack *stk, lexer_config *cfg)
+uint8_t lexer(strbuf *sb, lexer_config *cfg)
 {
     static uint16_t const state_table[5][5] = {
         [LEXER_STATE_CHAR] = {
@@ -225,7 +225,7 @@ uint8_t lexer(stack *stk, lexer_config *cfg)
             state = state_table[state][lexer_cclass(c, cfg)];
 
         errno = 0 ;
-        exit = lexer_do(stk, state, cfg) ;
+        exit = lexer_do(sb, state, cfg) ;
 
         if (exit) {
             goto finish ;
@@ -256,7 +256,7 @@ uint8_t lexer(stack *stk, lexer_config *cfg)
     return cfg->exitcode ;
 }
 
-uint8_t lexer_trim(stack *stk, lexer_config *cfg)
+uint8_t lexer_trim(strbuf *sb, lexer_config *cfg)
 {
     if (!cfg->slen)
         return 0 ;
@@ -270,11 +270,11 @@ uint8_t lexer_trim(stack *stk, lexer_config *cfg)
         lexer_reset(&c) ;
         c.opos = c.cpos = 0 ;
 
-        if (!lexer(stk, &c))
+        if (!lexer(sb, &c))
             return 0 ;
 
         if (c.count) {
-            if (!stack_add(stk, "", 1))
+            if (!strbuf_terminate(sb))
                 return 0 ;
         }
 
@@ -286,15 +286,17 @@ uint8_t lexer_trim(stack *stk, lexer_config *cfg)
         }
     }
 
-    if (!stack_close(stk))
-        log_warn_return(LOG_EXIT_ZERO, "stack overflow") ;
-
-    stk->count = stack_count_element(stk) ;
+    /* Close the list like stack_close did: guarantee a NUL at sb->s[len]
+     * (so the buffer is always a valid C string, even when empty) without
+     * counting it in len. The per-element NULs are already in [0, len). */
+    if (!strbuf_terminate(sb))
+        log_warn_return(LOG_EXIT_ZERO, "strbuf overflow") ;
+    sb->len-- ;
 
     return 1 ;
 }
 
-uint8_t lexer_trim_with(stack *stk, const char *s, size_t len, lexer_config *cfg)
+uint8_t lexer_trim_with(strbuf *sb, const char *s, size_t len, lexer_config *cfg)
 {
     if (!len)
         return 0 ;
@@ -302,7 +304,7 @@ uint8_t lexer_trim_with(stack *stk, const char *s, size_t len, lexer_config *cfg
     uint8_t r = 0 ;
     lexer_cp_cfg(&c, cfg) ;
     c.str = s ; c.slen = strlen(s) ;
-    r = lexer_trim(stk, &c) ;
+    r = lexer_trim(sb, &c) ;
     if (c.found)
         lexer_cp_cfg(cfg, &c) ;
 
@@ -347,25 +349,25 @@ void lexer_reset_hard(lexer_config *cfg)
 
 lexer_config const lexer_config_zero = LEXER_CONFIG_ZERO ;
 
-uint8_t lexer_trim_clean(stack *stk, const char *s)
+uint8_t lexer_trim_clean(strbuf *sb, const char *s)
 {
     lexer_config cfg = LEXER_CFG_TRIM_CLEAN ;
-    return lexer_trim_with_g(stk, s, &cfg) ;
+    return lexer_trim_with_g(sb, s, &cfg) ;
 }
 
-uint8_t lexer_trim_unclean(stack *stk, const char *s)
+uint8_t lexer_trim_unclean(strbuf *sb, const char *s)
 {
     lexer_config cfg = LEXER_CFG_TRIM_UNCLEAN ;
-    return lexer_trim_with_g(stk, s, &cfg) ;
+    return lexer_trim_with_g(sb, s, &cfg) ;
 }
 
-uint8_t lexer_trim_line(stack *stk, const char *s)
+uint8_t lexer_trim_line(strbuf *sb, const char *s)
 {
     lexer_config cfg = LEXER_CFG_GET_LINE ;
-    return lexer_trim_with_g(stk, s, &cfg) ;
+    return lexer_trim_with_g(sb, s, &cfg) ;
 }
 
-uint8_t lexer_trim_with_delim(stack *stk, const char *str, unsigned int delim)
+uint8_t lexer_trim_with_delim(strbuf *sb, const char *str, unsigned int delim)
 {
     lexer_config cfg = LEXER_CONFIG_ZERO ;
     char c[2] = { delim, 0 } ;
@@ -374,5 +376,5 @@ uint8_t lexer_trim_with_delim(stack *stk, const char *str, unsigned int delim)
     cfg.forceclose = 1 ; cfg.forceopen = 1 ;
     cfg.kopen = 1 ; cfg.kclose = 0 ;
 
-    return lexer_trim_with_g(stk,str,&cfg) ;
+    return lexer_trim_with_g(sb,str,&cfg) ;
 }

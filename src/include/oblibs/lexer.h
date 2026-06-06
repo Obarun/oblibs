@@ -17,8 +17,9 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
-#include <oblibs/stack.h>
+#include <oblibs/strbuf.h>
 
 // lexer state
 enum {
@@ -95,10 +96,10 @@ struct lexer_config_s
     .exitcode = 0,\
 }
 
-extern uint8_t lexer(stack *stk, lexer_config *cfg)  ;
-extern uint8_t lexer_trim(stack *stk, lexer_config *cfg) ;
-extern uint8_t lexer_trim_with(stack *stk, const char *s, size_t len, lexer_config *cfg) ;
-#define lexer_trim_with_g(stk,s,cfg) lexer_trim_with(stk, (s), strlen(s), (cfg))
+extern uint8_t lexer(strbuf *sb, lexer_config *cfg)  ;
+extern uint8_t lexer_trim(strbuf *sb, lexer_config *cfg) ;
+extern uint8_t lexer_trim_with(strbuf *sb, const char *s, size_t len, lexer_config *cfg) ;
+#define lexer_trim_with_g(sb,s,cfg) lexer_trim_with(sb, (s), strlen(s), (cfg))
 extern void lexer_cp_cfg(lexer_config *dst, lexer_config *src) ;
 /** set cfg->found = cfg->count = cfg->exitcode = 0 */
 extern void lexer_reset(lexer_config *cfg) ;
@@ -113,17 +114,13 @@ extern lexer_config LEXER_CFG_TRIM_UNCLEAN ;
 extern lexer_config LEXER_CFG_GET_LINE ;
 
 // use LEXER_CFG_TRIM_CLEAN configuration
-extern uint8_t lexer_trim_clean(stack *stk, const char *s) ;
+extern uint8_t lexer_trim_clean(strbuf *sb, const char *s) ;
 // use LEXER_CFG_TRIM_UNCLEAN configuration
-extern uint8_t lexer_trim_unclean(stack *stk, const char *s) ;
+extern uint8_t lexer_trim_unclean(strbuf *sb, const char *s) ;
 // use LEXER_CFG_GET_LINE configuration
-extern uint8_t lexer_trim_line(stack *stk, const char *s) ;
+extern uint8_t lexer_trim_line(strbuf *sb, const char *s) ;
 /** trim @str with @delim as delimiter
  * it also escapr ' \t\r\n'*/
-extern uint8_t lexer_trim_with_delim(stack *stk, const char *str, unsigned int delim) ;
-
-#define stack_string_clean(stk,s) lexer_trim_clean(stk,(s))
-#define stack_string_unclean(stk,s) lexer_trim_unclean(stk,(s))
-#define stack_string_trimline(stk,s) lexer_trim_line(stk,(s))
+extern uint8_t lexer_trim_with_delim(strbuf *sb, const char *str, unsigned int delim) ;
 
 #endif

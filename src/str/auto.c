@@ -17,8 +17,6 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include <skalibs/stralloc.h>
-
 #include <oblibs/ostream.h>
 #include <oblibs/strbuf.h>
 
@@ -37,21 +35,6 @@ void auto_string_builder(char *dest,size_t baselen, char const *str[],...)
     }
     va_end(alist) ;
     dest[totlen] = 0 ;
-}
-
-int auto_stra_builder(stralloc *sa,char const *str[],...)
-{
-    va_list alist ;
-    va_start(alist,str) ;
-
-    while (*str) {
-        if (!stralloc_catb(sa,*str,strlen(*str))) return 0 ;
-        str++ ;
-    }
-    va_end(alist) ;
-    if (!stralloc_0(sa)) return 0 ;
-    sa->len-- ;
-    return 1 ;
 }
 
 int auto_buf_builder(ostream *b, char const *str[], ...)

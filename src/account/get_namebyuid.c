@@ -18,9 +18,9 @@
 #include <pwd.h>
 #include <errno.h>
 
-#include <skalibs/stralloc.h>
+#include <oblibs/strbuf.h>
 
-int get_namebyuid(uid_t uid,stralloc *name)
+int get_namebyuid(uid_t uid,strbuf *name)
 {
     int e = errno ;
     errno = 0 ;
@@ -30,7 +30,7 @@ int get_namebyuid(uid_t uid,stralloc *name)
         if (!errno) errno = ESRCH ;
         return 0 ;
     }
-    stralloc_cats(name,pw->pw_name) ;
+    strbuf_cats(name,pw->pw_name) ;
     errno = e ;
     return 1 ;
 }
