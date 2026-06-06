@@ -27,6 +27,12 @@
 #include <oblibs/io.h>
 #include <oblibs/ostream.h>
 #include <oblibs/clock.h>
+#include <oblibs/attributes.h>
+
+/* Program-name prefix for log messages (was provided by skalibs). Defined weak
+ * so it does not clash if a consumer still links skalibs (which exports a strong
+ * PROG); programs set it at startup with `PROG = "name"`. */
+char const *PROG attribute_weak = 0 ;
 
 // strerror is disabled by default
 // the define of the log function

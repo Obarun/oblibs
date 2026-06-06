@@ -18,9 +18,6 @@ message('See INSTALL_MESON.md for detailed configuration instructions and warnin
 
 fs = import('fs')
 
-# Versioning
-version_skalibs = '>=2.14.3.0'
-
 # Compiler setup
 cc = meson.get_compiler('c')
 
@@ -35,20 +32,6 @@ user_dynamiclib_dirs = get_option('with-dynamiclib-dir')
 # Combine default and user-provided paths
 include_dirs = default_include_dirs + user_include_dirs
 lib_dirs = default_lib_dirs + user_staticlib_dirs + user_dynamiclib_dirs
-
-# Dependency: skalibs
-skalibs_lib = cc.find_library('skarnet', dirs: lib_dirs, static: get_option('enable-static-deps'), required: false)
-skalibs_header = cc.has_header('skalibs.h', args: ['-I', include_dirs], required: false)
-if not skalibs_lib.found() # or not skalibs_header
-  error('skalibs ' + version_skalibs + ' not found. Ensure libskalibs and skalibs.h are installed, or specify paths with with-include-dir and with-staticlib-dir/with-dynamiclib-dir.')
-endif
-dep_skalibs = declare_dependency(
-  dependencies: skalibs_lib,
-  include_directories: include_dirs
-)
-
-# Define global dependencies
-skalibs_dep = dep_skalibs
 
 # Special case for default_options
 INCLUDEDIR = get_option('prefix') / get_option('includedir') / 'oblibs'
@@ -154,11 +137,6 @@ subdir('src/')
 
 if get_option('with-pkgconfig')
   # Generate and install pkg-config file for liboblibs
-  private_libs = []
-  if get_option('enable-static') or get_option('enable-static-deps')
-    private_libs += ['-lskalibs']
-  endif
-
   pkg = import('pkgconfig')
   pkg.generate(
     name: 'liboblibs',
@@ -166,7 +144,7 @@ if get_option('with-pkgconfig')
     description: 'Small Library for Obarun C project',
     version: meson.project_version(),
     libraries: ['-loblibs'],
-    libraries_private: private_libs,
+    libraries_private: [],
     subdirs: ['oblibs'], # Headers in ${includedir}/oblibs
   )
 endif

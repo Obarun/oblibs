@@ -27,6 +27,7 @@
 #define attribute_const      __attribute__((const))
 #define attribute_malloc     __attribute__((malloc))
 #define attribute_deprecated __attribute__((deprecated))
+#define attribute_weak       __attribute__((weak))
 
 #else
 
@@ -36,6 +37,7 @@
 #define attribute_const
 #define attribute_malloc
 #define attribute_deprecated
+#define attribute_weak
 
 #endif
 

@@ -12,12 +12,10 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-/* Differential non-regression test: the oblibs-native file_readputsa
- * (io_open + io_allread + strbuf) must behave like the former skalibs
- * openreadfileclose path -- same bytes appended into the caller's buffer,
- * same NUL-terminated/len-- convention, same append-at-len and error
- * semantics. The caller buffer is now a strbuf; the skalibs openreadfileclose
- * reference (a stralloc) is kept as the ground-truth oracle. */
+/* Non-regression test for strbuf_read_file / file_read (io_open + io_allread):
+ * read a regular file into a strbuf, appended at sb->len, NUL-terminated (len
+ * excludes the NUL), with rollback on error. Checked against a known ground
+ * truth (the bytes written by the test itself). */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,9 +28,6 @@
 
 #include <oblibs/files.h>
 #include <oblibs/strbuf.h>
-
-#include <skalibs/stralloc.h>
-#include <skalibs/djbunix.h>
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -93,21 +88,11 @@ static void test_content(void)
         writefile(path, pat, n) ;
 
         strbuf res = STRBUF_ZERO ;
-        TEST_ASSERT(file_read(&res, tdir, "data") == 1, "file_readputsa failed") ;
+        TEST_ASSERT(file_read(&res, tdir, "data") == 1, "file_read failed") ;
         TEST_ASSERT(res.len == n, "wrong length") ;
         TEST_ASSERT(memcmp(res.s, pat, n) == 0, "content != ground truth") ;
         TEST_ASSERT(res.s[res.len] == 0, "result not NUL-terminated past len") ;
-
-        /* skalibs reference: same flow the old implementation used */
-        stralloc ref = STRALLOC_ZERO ;
-        TEST_ASSERT(openreadfileclose(path, &ref, 0), "skalibs read failed") ;
-        TEST_ASSERT(stralloc_0(&ref), "stralloc_0 failed") ;
-        ref.len-- ;
-        TEST_ASSERT(res.len == ref.len, "length differs from skalibs") ;
-        TEST_ASSERT(memcmp(res.s, ref.s, res.len) == 0, "content differs from skalibs") ;
-
         strbuf_free(&res) ;
-        stralloc_free(&ref) ;
     }
 
     TEST_END() ;

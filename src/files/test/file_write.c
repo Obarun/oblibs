@@ -12,10 +12,10 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-/* Differential non-regression test: the oblibs-native file_write_unsafe /
- * file_write_unsafe_g (io_open_mode + io_allwrite) must behave byte-for-byte
- * like skalibs' openwritenclose_unsafe they replaced — same content, same mode,
- * same truncation, and the same unlink-on-failure with errno preserved. */
+/* Non-regression test for file_write_unsafe / file_write_unsafe_g
+ * (io_open_mode + io_allwrite): exact content, mode honoring umask, O_TRUNC
+ * rewrite, and unlink-on-failure with errno preserved. Checked against a known
+ * ground truth (the bytes the test asked to write). */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,8 +29,6 @@
 #include <sys/resource.h>
 
 #include <oblibs/files.h>
-
-#include <skalibs/djbunix.h>
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -78,7 +76,7 @@ static void path_in(char *out, char const *name)
     memcpy(out + dl + 1, name, nl + 1) ;
 }
 
-/* Case 1+2: byte-for-byte identical content AND identical mode, several sizes
+/* Case 1+2: exact content AND mode (0644 = 0666 & ~umask), several sizes
  * (including 0 and a multi-page buffer with embedded NUL bytes). */
 static void test_identical(void)
 {
@@ -88,39 +86,33 @@ static void test_identical(void)
     char buf[5000] ;
     fill_pattern(buf, sizeof buf) ;
 
-    char pa[64], pb[64] ;
-    path_in(pa, "ref_sk") ;     /* written by skalibs openwritenclose_unsafe */
-    path_in(pb, "ob") ;         /* written by oblibs file_write_unsafe       */
+    char pb[64] ;
+    path_in(pb, "ob") ;
 
     for (size_t i = 0 ; i < sizeof(sizes)/sizeof(*sizes) ; i++) {
         size_t n = sizes[i] ;
 
-        TEST_ASSERT(openwritenclose_unsafe(pa, buf, n), "skalibs write failed") ;
         TEST_ASSERT(file_write_unsafe(tdir, "ob", buf, n) == 1, "oblibs write failed") ;
 
-        char ra[5000], rb[5000] ;
-        ssize_t la = readfile(pa, ra, sizeof ra) ;
+        char rb[5000] ;
         ssize_t lb = readfile(pb, rb, sizeof rb) ;
-        TEST_ASSERT(la == (ssize_t)n && lb == (ssize_t)n, "size mismatch vs skalibs") ;
-        TEST_ASSERT(memcmp(ra, rb, n) == 0, "content mismatch vs skalibs") ;
+        TEST_ASSERT(lb == (ssize_t)n, "size mismatch vs ground truth") ;
+        TEST_ASSERT(memcmp(rb, buf, n) == 0, "content mismatch vs ground truth") ;
 
-        struct stat sa, sb ;
-        TEST_ASSERT(stat(pa, &sa) == 0 && stat(pb, &sb) == 0, "stat failed") ;
-        TEST_ASSERT((sa.st_mode & 07777) == (sb.st_mode & 07777), "mode mismatch vs skalibs") ;
+        struct stat sb ;
+        TEST_ASSERT(stat(pb, &sb) == 0, "stat failed") ;
+        TEST_ASSERT((sb.st_mode & 07777) == 0644, "mode should be 0644") ;
     }
 
-    /* file_write_unsafe_g: text content (NUL-terminated), full path form */
-    char pc[64], pd[64] ;
-    path_in(pc, "ref_sk_g") ;
+    /* file_write_unsafe_g: text content, full path form */
+    char pd[64] ;
     path_in(pd, "ob_g") ;
     char const *txt = "hello obarun\nstate line\n" ;
-    TEST_ASSERT(openwritenclose_unsafe(pc, txt, strlen(txt)), "skalibs _g write failed") ;
     TEST_ASSERT(file_write_unsafe_g(pd, txt) == 1, "oblibs _g write failed") ;
-    char rc[64], rd[64] ;
-    ssize_t lc = readfile(pc, rc, sizeof rc) ;
+    char rd[64] ;
     ssize_t ld = readfile(pd, rd, sizeof rd) ;
-    TEST_ASSERT(lc == ld && lc == (ssize_t)strlen(txt), "_g size mismatch") ;
-    TEST_ASSERT(memcmp(rc, rd, lc) == 0, "_g content mismatch") ;
+    TEST_ASSERT(ld == (ssize_t)strlen(txt), "_g size mismatch") ;
+    TEST_ASSERT(memcmp(rd, txt, ld) == 0, "_g content mismatch") ;
 
     TEST_END() ;
 }
@@ -148,8 +140,8 @@ static void test_truncate(void)
     TEST_END() ;
 }
 
-/* Case 4: write failure — the partial file must be unlinked and errno preserved,
- * exactly like skalibs. RLIMIT_FSIZE makes the write fail deterministically. */
+/* Case 4: write failure — the partial file must be unlinked and errno preserved.
+ * RLIMIT_FSIZE makes the write fail deterministically. */
 static void test_unlink_on_fail(void)
 {
     TEST_START("test_unlink_on_fail") ;
@@ -165,9 +157,8 @@ static void test_unlink_on_fail(void)
     char buf[4096] ;
     fill_pattern(buf, sizeof buf) ;
 
-    char pb[64], pa[64] ;
+    char pb[64] ;
     path_in(pb, "ob_fail") ;
-    path_in(pa, "sk_fail") ;
 
     errno = 0 ;
     TEST_ASSERT(file_write_unsafe(tdir, "ob_fail", buf, sizeof buf) == 0, "oblibs write should fail") ;
@@ -176,11 +167,6 @@ static void test_unlink_on_fail(void)
     errno = 0 ;
     TEST_ASSERT(stat(pb, &st) == -1 && errno == ENOENT, "partial file should be unlinked") ;
 
-    /* skalibs reference: same outcome (returns 0, file absent) */
-    TEST_ASSERT(openwritenclose_unsafe(pa, buf, sizeof buf) == 0, "skalibs write should fail") ;
-    errno = 0 ;
-    TEST_ASSERT(stat(pa, &st) == -1 && errno == ENOENT, "skalibs should also unlink the partial file") ;
-
     TEST_ASSERT(setrlimit(RLIMIT_FSIZE, &save) == 0, "restore setrlimit failed") ;
 
     TEST_END() ;
@@ -188,7 +174,7 @@ static void test_unlink_on_fail(void)
 
 static void cleanup(void)
 {
-    char const *names[] = { "ref_sk", "ob", "ref_sk_g", "ob_g", "trunc", "ob_fail", "sk_fail" } ;
+    char const *names[] = { "ob", "ob_g", "trunc", "ob_fail" } ;
     char p[64] ;
     for (size_t i = 0 ; i < sizeof(names)/sizeof(*names) ; i++) {
         path_in(p, names[i]) ;
@@ -199,12 +185,12 @@ static void cleanup(void)
 
 int main(void)
 {
-    /* deterministic mode: 0666 & ~022 = 0644 on both code paths */
+    /* deterministic mode: 0666 & ~022 = 0644 */
     umask(022) ;
 
     TEST_ASSERT(mkdtemp(tdir) != NULL, "mkdtemp failed") ;
 
-    printf("=== file_write_unsafe differential test suite ===\n\n") ;
+    printf("=== file_write_unsafe test suite ===\n\n") ;
 
     test_identical() ;
     test_truncate() ;

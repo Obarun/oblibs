@@ -27,9 +27,6 @@ if is_shared
   libob_shared = shared_library('oblibs',
     sources: libob_sources,
     include_directories: incdir,
-    dependencies: [
-      skalibs_dep,
-    ],
     install: true,
     install_dir: get_option('libdir'),
     soversion: '@0@'.format(soversion_ob),
@@ -45,9 +42,6 @@ if is_static
   libob_static = static_library('oblibs',
     sources: libob_sources,
     include_directories: incdir,
-    dependencies: [
-      skalibs_dep,
-    ],
     install: true,
     install_dir: lib_static_path,
     c_args: static_c_args,
@@ -61,10 +55,7 @@ endif
 
 libob_dep = declare_dependency(
   include_directories: incdir,
-  link_with: get_option('enable-shared') ? libob_shared : libob_static,
-  dependencies: [
-    skalibs_dep
-  ]
+  link_with: get_option('enable-shared') ? libob_shared : libob_static
 )
 
 header_dir = meson.project_source_root() / 'src/include/oblibs'
