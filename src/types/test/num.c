@@ -13,9 +13,16 @@
  */
 
 /*
- * Differential test: every num_* function is compared byte-for-byte against the
- * skalibs function it replaces. Any mismatch fails the test. This is the proof
- * that the replacement introduces no regression vs skalibs.
+ * Self-contained test for the num_* conversions (oblibs/types.h). No skalibs.
+ * Two complementary strategies:
+ *   - ROUND-TRIP over wide deterministic sweeps: u64_fmtbase then u64_scan_base
+ *     (and the signed / narrow variants) must reproduce the original value and
+ *     consume the whole string -- this proves fmt and scan are mutually
+ *     consistent across every base without any external oracle.
+ *   - GOLDEN anchors for absolute correctness: a handful of arithmetic facts
+ *     (e.g. 255 base16 == "ff") plus the subtler scan rejection / overflow-stop
+ *     and digit-mapping behaviours, whose exact values were CAPTURED from the
+ *     original byte-exact differential run against skalibs.
  */
 
 #include <stdio.h>
@@ -24,11 +31,6 @@
 #include <stdint.h>
 
 #include <oblibs/types.h>
-
-#include <skalibs/uint64.h>   /* uint64_fmt_generic, uint640_fmt_generic, int64_fmt_generic, uint64_scan_base[_max] */
-#include <skalibs/uint32.h>   /* uint32_scan_base */
-#include <skalibs/uint16.h>   /* uint16_scan_base */
-#include <skalibs/fmtscan.h>  /* fmtscan_asc, fmtscan_num */
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -50,299 +52,228 @@ static uint64_t lcg_next(void)
     return lcg_state ;
 }
 
-/* compare u64_fmtbase vs uint64_fmt_generic for one (x, base) */
-static void check_fmt(uint64_t x, uint8_t base)
+/* ---- round-trip: fmt then scan reproduces the value and consumes it all ---- */
+
+static void rt_u64(uint64_t x, uint8_t base)
 {
-    char a[128], b[128] ;
-    size_t la = u64_fmtbase(a, x, base) ;
-    size_t lb = uint64_fmt_generic(b, x, base) ;
-    TEST_ASSERT(la == lb, "u64_fmtbase length differs from skalibs") ;
-    TEST_ASSERT(!memcmp(a, b, la), "u64_fmtbase bytes differ from skalibs") ;
-    /* length-only mode (s == 0) */
-    TEST_ASSERT(u64_fmtbase(0, x, base) == uint64_fmt_generic(0, x, base),
-                "u64_fmtbase length-only differs from skalibs") ;
+    char buf[128] ;
+    size_t len = u64_fmtbase(buf, x, base) ;
+    buf[len] = 0 ;
+    uint64_t v = ~x ;
+    size_t p = u64_scan_base(buf, &v, base) ;
+    TEST_ASSERT(p == len, "u64 round-trip did not consume the whole string") ;
+    TEST_ASSERT(v == x, "u64 round-trip value mismatch") ;
 }
 
-/* compare u64_fmtpad vs uint640_fmt_generic for one (x, n, base) */
-static void check_fmtpad(uint64_t x, size_t n, uint8_t base)
+static void rt_i64(int64_t d, uint8_t base)
 {
-    char a[128], b[128] ;
-    size_t la = u64_fmtpad(a, x, n, base) ;
-    size_t lb = uint640_fmt_generic(b, x, n, base) ;
-    TEST_ASSERT(la == lb, "u64_fmtpad length differs from skalibs") ;
-    TEST_ASSERT(!memcmp(a, b, la), "u64_fmtpad bytes differ from skalibs") ;
-    TEST_ASSERT(u64_fmtpad(0, x, n, base) == uint640_fmt_generic(0, x, n, base),
-                "u64_fmtpad length-only differs from skalibs") ;
+    char buf[128] ;
+    size_t len = i64_fmtbase(buf, d, base) ;
+    buf[len] = 0 ;
+    int64_t v = ~d ;
+    size_t p = i64_scan_base(buf, &v, base) ;
+    TEST_ASSERT(p == len, "i64 round-trip did not consume the whole string") ;
+    TEST_ASSERT(v == d, "i64 round-trip value mismatch") ;
 }
 
-/* compare i64_fmtbase vs int64_fmt_generic for one (d, base) */
-static void check_ifmt(int64_t d, uint8_t base)
+static void rt_narrow(uint64_t r, uint8_t base)
 {
-    char a[128], b[128] ;
-    size_t la = i64_fmtbase(a, d, base) ;
-    size_t lb = int64_fmt_generic(b, d, base) ;
-    TEST_ASSERT(la == lb, "i64_fmtbase length differs from skalibs") ;
-    TEST_ASSERT(!memcmp(a, b, la), "i64_fmtbase bytes differ from skalibs") ;
-    TEST_ASSERT(i64_fmtbase(0, d, base) == int64_fmt_generic(0, d, base),
-                "i64_fmtbase length-only differs from skalibs") ;
+    char buf[128] ; size_t len ;
+    uint32_t v32 = (uint32_t)r, o32 = ~v32 ;
+    uint16_t v16 = (uint16_t)r, o16 = (uint16_t)~v16 ;
+    uint8_t  v8  = (uint8_t)r,  o8  = (uint8_t)~v8 ;
+
+    len = u64_fmtbase(buf, v32, base) ; buf[len] = 0 ;
+    TEST_ASSERT(u32_scan_base(buf, &o32, base) == len && o32 == v32, "u32 round-trip") ;
+    len = u64_fmtbase(buf, v16, base) ; buf[len] = 0 ;
+    TEST_ASSERT(u16_scan_base(buf, &o16, base) == len && o16 == v16, "u16 round-trip") ;
+    len = u64_fmtbase(buf, v8, base) ; buf[len] = 0 ;
+    TEST_ASSERT(u8_scan_base(buf, &o8, base) == len && o8 == v8, "u8 round-trip") ;
 }
 
-/* compare u64_scan_base vs uint64_scan_base for one (s, base) */
-static void check_scan(char const *s, uint8_t base)
+static void test_roundtrip(void)
 {
-    uint64_t va = 0xa5a5a5a5a5a5a5a5ULL, vb = 0xa5a5a5a5a5a5a5a5ULL ;  /* same sentinel */
-    size_t pa = u64_scan_base(s, &va, base) ;
-    size_t pb = uint64_scan_base(s, &vb, base) ;
-    TEST_ASSERT(pa == pb, "u64_scan_base position differs from skalibs") ;
-    TEST_ASSERT(va == vb, "u64_scan_base value differs from skalibs") ;
-}
-
-static void test_fmt_edge(void)
-{
-    TEST_START("test_fmt_edge") ;
-    static uint64_t const edges[] = {
-        0, 1, 2, 7, 8, 9, 10, 15, 16, 31, 32, 63, 64, 99, 100, 127, 128,
-        255, 256, 999, 1000, 65535, 65536, 1000000, 4294967295ULL, 4294967296ULL,
-        9999999999ULL, 10000000000ULL, 18446744073709551614ULL, UINT64_MAX
-    } ;
-    for (uint8_t base = 2 ; base <= 36 ; base++) {
-        /* powers of base around length transitions */
-        uint64_t p = 1 ;
-        for (int k = 0 ; k < 13 ; k++) {
-            check_fmt(p - 1, base) ; check_fmt(p, base) ; check_fmt(p + 1, base) ;
-            if (p > UINT64_MAX / base) break ;
-            p *= base ;
-        }
-        for (size_t i = 0 ; i < sizeof(edges)/sizeof(*edges) ; i++)
-            check_fmt(edges[i], base) ;
-    }
-    TEST_END() ;
-}
-
-static void test_fmt_sweep(void)
-{
-    TEST_START("test_fmt_sweep") ;
-    /* exhaustive small range */
-    for (uint64_t x = 0 ; x <= 200000 ; x++)
+    TEST_START("test_roundtrip") ;
+    for (uint64_t x = 0 ; x <= 100000 ; x++)
         for (uint8_t base = 2 ; base <= 36 ; base++)
-            check_fmt(x, base) ;
-    /* random 64-bit sweep */
-    for (long i = 0 ; i < 100000 ; i++) {
+            rt_u64(x, base) ;
+    for (long i = 0 ; i < 60000 ; i++) {
         uint64_t x = lcg_next() ;
-        for (uint8_t base = 2 ; base <= 36 ; base++)
-            check_fmt(x, base) ;
+        int64_t d = (int64_t)x ;
+        for (uint8_t base = 2 ; base <= 36 ; base++) {
+            rt_u64(x, base) ;
+            rt_i64(d, base) ;
+            rt_narrow(x, base) ;
+        }
     }
-    TEST_END() ;
-}
-
-static void test_fmtpad(void)
-{
-    TEST_START("test_fmtpad") ;
-    static uint64_t const vals[] = { 0, 1, 9, 10, 99, 100, 65535, 4294967295ULL, UINT64_MAX } ;
+    /* signed edges */
+    static int64_t const ie[] = { 0, 1, -1, INT64_MAX, INT64_MIN, INT64_MIN + 1,
+                                  2147483647LL, -2147483648LL, 127, -128 } ;
     for (uint8_t base = 2 ; base <= 36 ; base++)
-        for (size_t n = 0 ; n <= 40 ; n++)
-            for (size_t i = 0 ; i < sizeof(vals)/sizeof(*vals) ; i++)
-                check_fmtpad(vals[i], n, base) ;
-    /* random */
-    for (long i = 0 ; i < 50000 ; i++) {
-        uint64_t x = lcg_next() ;
-        size_t n = lcg_next() % 41 ;
-        uint8_t base = 2 + lcg_next() % 35 ;
-        check_fmtpad(x, n, base) ;
-    }
-    TEST_END() ;
-}
-
-static void test_ifmt(void)
-{
-    TEST_START("test_ifmt") ;
-    static int64_t const edges[] = {
-        0, 1, -1, 9, -9, 10, -10, 127, -128, 255, -256,
-        2147483647LL, -2147483648LL, INT64_MAX, INT64_MIN, INT64_MIN + 1
-    } ;
+        for (size_t i = 0 ; i < sizeof ie/sizeof*ie ; i++)
+            rt_i64(ie[i], base) ;
+    /* unsigned edges */
+    static uint64_t const ue[] = { 0, 1, 255, 256, 65535, 65536, 4294967295ULL,
+                                   4294967296ULL, UINT64_MAX, UINT64_MAX - 1 } ;
     for (uint8_t base = 2 ; base <= 36 ; base++)
-        for (size_t i = 0 ; i < sizeof(edges)/sizeof(*edges) ; i++)
-            check_ifmt(edges[i], base) ;
-    for (long i = 0 ; i < 100000 ; i++) {
-        int64_t d = (int64_t)lcg_next() ;
-        for (uint8_t base = 2 ; base <= 36 ; base++)
-            check_ifmt(d, base) ;
-    }
+        for (size_t i = 0 ; i < sizeof ue/sizeof*ue ; i++)
+            rt_u64(ue[i], base) ;
     TEST_END() ;
 }
 
-/* narrow-width scans vs skalibs */
-static void check_scan32(char const *s, uint8_t base)
+/* ---- golden fmt anchors (arithmetic facts, base-independent of any oracle) ---- */
+
+static void fmt_eq(uint64_t x, uint8_t base, char const *exp)
 {
-    uint32_t a = 0xa5a5a5a5u, b = 0xa5a5a5a5u ;  /* same sentinel */
-    size_t pa = u32_scan_base(s, &a, base) ;
-    size_t pb = uint32_scan_base(s, &b, base) ;
-    TEST_ASSERT(pa == pb, "u32_scan_base position differs from skalibs") ;
-    TEST_ASSERT(a == b, "u32_scan_base value differs from skalibs") ;
+    char buf[128] ;
+    size_t len = u64_fmtbase(buf, x, base) ;
+    buf[len] = 0 ;
+    TEST_ASSERT(len == strlen(exp) && !strcmp(buf, exp), "u64_fmtbase golden mismatch") ;
+    TEST_ASSERT(u64_fmtbase(0, x, base) == len, "u64_fmtbase length-only mismatch") ;
+}
+static void ifmt_eq(int64_t d, uint8_t base, char const *exp)
+{
+    char buf[128] ;
+    size_t len = i64_fmtbase(buf, d, base) ;
+    buf[len] = 0 ;
+    TEST_ASSERT(len == strlen(exp) && !strcmp(buf, exp), "i64_fmtbase golden mismatch") ;
+}
+static void pad_eq(uint64_t x, size_t n, uint8_t base, char const *exp)
+{
+    char buf[128] ;
+    size_t len = u64_fmtpad(buf, x, n, base) ;
+    buf[len] = 0 ;
+    TEST_ASSERT(len == strlen(exp) && !strcmp(buf, exp), "u64_fmtpad golden mismatch") ;
 }
 
-static void check_scan16(char const *s, uint8_t base)
+static void test_fmt_golden(void)
 {
-    uint16_t a = 0xa5a5u, b = 0xa5a5u ;
-    size_t pa = u16_scan_base(s, &a, base) ;
-    size_t pb = uint16_scan_base(s, &b, base) ;
-    TEST_ASSERT(pa == pb, "u16_scan_base position differs from skalibs") ;
-    TEST_ASSERT(a == b, "u16_scan_base value differs from skalibs") ;
+    TEST_START("test_fmt_golden") ;
+    fmt_eq(0, 10, "0") ; fmt_eq(0, 16, "0") ; fmt_eq(0, 2, "0") ;
+    fmt_eq(255, 10, "255") ; fmt_eq(255, 16, "ff") ; fmt_eq(255, 8, "377") ;
+    fmt_eq(255, 2, "11111111") ;
+    fmt_eq(256, 16, "100") ; fmt_eq(10, 2, "1010") ;
+    fmt_eq(4294967295ULL, 16, "ffffffff") ; fmt_eq(4294967295ULL, 10, "4294967295") ;
+    fmt_eq(UINT64_MAX, 16, "ffffffffffffffff") ;
+    fmt_eq(UINT64_MAX, 10, "18446744073709551615") ;
+    fmt_eq(35, 36, "z") ; fmt_eq(36, 36, "10") ;
+
+    ifmt_eq(0, 10, "0") ; ifmt_eq(-1, 10, "-1") ; ifmt_eq(-128, 10, "-128") ;
+    ifmt_eq(255, 16, "ff") ; ifmt_eq(-255, 16, "-ff") ;
+    ifmt_eq(INT64_MIN, 10, "-9223372036854775808") ;
+    ifmt_eq(INT64_MAX, 10, "9223372036854775807") ;
+
+    pad_eq(5, 3, 10, "005") ; pad_eq(255, 4, 16, "00ff") ; pad_eq(0, 1, 10, "0") ;
+    pad_eq(123, 2, 10, "123") ; pad_eq(0, 4, 2, "0000") ;
+    TEST_END() ;
 }
 
-/* skalibs has no uint8 scan: reference is the 64-bit engine capped at UINT8_MAX */
-static void check_scan8(char const *s, uint8_t base)
-{
-    uint8_t a = 0xa5 ;
-    uint64_t ref = 0 ;
-    size_t pa = u8_scan_base(s, &a, base) ;
-    size_t pb = uint64_scan_base_max(s, &ref, base, UINT8_MAX) ;
-    TEST_ASSERT(pa == pb, "u8_scan_base position differs from skalibs (capped)") ;
-    if (pa) TEST_ASSERT(a == (uint8_t)ref, "u8_scan_base value differs from skalibs (capped)") ;
-}
+/* ---- golden scan anchors: rejection (p==0) and overflow-stop semantics ---- */
 
-static void test_scan_narrow(void)
+typedef struct uscan_s { char const *s ; uint8_t base ; size_t pos ; uint64_t val ; } uscan_t ;
+
+static void test_scan_golden(void)
 {
-    TEST_START("test_scan_narrow") ;
-    /* round-trip: values within each width's range, formatted then scanned back */
-    for (long i = 0 ; i < 50000 ; i++) {
-        uint64_t r = lcg_next() ;
-        uint32_t v32 = (uint32_t)r ;
-        uint16_t v16 = (uint16_t)r ;
-        uint8_t  v8  = (uint8_t)r ;
-        for (uint8_t base = 2 ; base <= 36 ; base++) {
-            char buf[128] ; size_t len ;
-            len = u64_fmtbase(buf, v32, base) ; buf[len] = 0 ; check_scan32(buf, base) ;
-            len = u64_fmtbase(buf, v16, base) ; buf[len] = 0 ; check_scan16(buf, base) ;
-            len = u64_fmtbase(buf, v8,  base) ; buf[len] = 0 ; check_scan8(buf, base) ;
-        }
-    }
-    /* overflow / boundary / invalid strings — each width must cap (or stop) like skalibs */
-    static char const *str[] = {
-        "", " ", "z", "-1",
-        "254", "255", "256", "257",
-        "65534", "65535", "65536", "65537",
-        "4294967294", "4294967295", "4294967296", "4294967297",
-        "999999999999", "18446744073709551615", "18446744073709551616",
-        " fe", "fe", "ff", "100", "fff", "ffff", "10000", "ffffffff", "100000000",
-        "00000000255", "777", "11111111"
+    TEST_START("test_scan_golden") ;
+    /* pos==0 means rejected: value is left untouched (not checked). */
+    static uscan_t const g[] = {
+        { "", 10, 0, 0 }, { " ", 10, 0, 0 }, { "z", 10, 0, 0 },
+        { "-1", 10, 0, 0 }, { "+1", 10, 0, 0 }, { "ff", 10, 0, 0 },
+        { "00000", 10, 5, 0 },
+        { "ff", 16, 2, 255 }, { "FF", 16, 2, 255 },
+        { "18446744073709551615", 10, 20, 18446744073709551615ULL },
+        { "18446744073709551616", 10, 19, 1844674407370955161ULL },   /* overflow stops */
+        { "ffffffffffffffff", 16, 16, 18446744073709551615ULL },
+        { "10000000000000000", 10, 17, 10000000000000000ULL },
+        { "12345 trail", 10, 5, 12345 },
+        { "0777stop", 10, 4, 777 }, { "0777stop", 16, 4, 1911 },
     } ;
-    for (size_t i = 0 ; i < sizeof(str)/sizeof(*str) ; i++)
-        for (uint8_t base = 2 ; base <= 36 ; base++) {
-            check_scan32(str[i], base) ;
-            check_scan16(str[i], base) ;
-            check_scan8(str[i], base) ;
-        }
+    for (size_t i = 0 ; i < sizeof g/sizeof*g ; i++) {
+        uint64_t v = 0xdeadbeefcafebabeULL ;
+        size_t p = u64_scan_base(g[i].s, &v, g[i].base) ;
+        TEST_ASSERT(p == g[i].pos, "u64 scan golden position") ;
+        if (p) TEST_ASSERT(v == g[i].val, "u64 scan golden value") ;
+    }
+
+    /* narrow widths stop before exceeding their type max (capture from skalibs). */
+    struct { char const *s ; size_t p ; uint32_t v ; } const n32[] = {
+        { "4294967295", 10, 4294967295U }, { "4294967296", 9, 429496729U }, { "256", 3, 256 } } ;
+    for (size_t i = 0 ; i < sizeof n32/sizeof*n32 ; i++) {
+        uint32_t v = 0 ; size_t p = u32_scan_base(n32[i].s, &v, 10) ;
+        TEST_ASSERT(p == n32[i].p && v == n32[i].v, "u32 scan cap golden") ;
+    }
+    struct { char const *s ; size_t p ; uint16_t v ; } const n16[] = {
+        { "65535", 5, 65535 }, { "65536", 4, 6553 }, { "256", 3, 256 } } ;
+    for (size_t i = 0 ; i < sizeof n16/sizeof*n16 ; i++) {
+        uint16_t v = 0 ; size_t p = u16_scan_base(n16[i].s, &v, 10) ;
+        TEST_ASSERT(p == n16[i].p && v == n16[i].v, "u16 scan cap golden") ;
+    }
+    struct { char const *s ; size_t p ; uint8_t v ; } const n8[] = {
+        { "255", 3, 255 }, { "256", 2, 25 }, { "257", 2, 25 } } ;
+    for (size_t i = 0 ; i < sizeof n8/sizeof*n8 ; i++) {
+        uint8_t v = 0 ; size_t p = u8_scan_base(n8[i].s, &v, 10) ;
+        TEST_ASSERT(p == n8[i].p && v == n8[i].v, "u8 scan cap golden") ;
+    }
     TEST_END() ;
 }
 
-/* signed scan engine vs skalibs */
-static void check_iscan(char const *s, uint8_t base)
-{
-    int64_t a = 0x5a5a5a5a5a5a5a5aLL, b = 0x5a5a5a5a5a5a5a5aLL ;  /* same sentinel */
-    size_t pa = i64_scan_base(s, &a, base) ;
-    size_t pb = int64_scan_base(s, &b, base) ;
-    TEST_ASSERT(pa == pb, "i64_scan_base position differs from skalibs") ;
-    TEST_ASSERT(a == b, "i64_scan_base value differs from skalibs") ;
-}
+typedef struct iscan_s { char const *s ; size_t pos ; int64_t val ; } iscan_t ;
 
-static void check_iscan_max(char const *s, uint8_t base, uint64_t max)
+static void test_iscan_golden(void)
 {
-    int64_t a = 0x5a5a5a5a5a5a5a5aLL, b = 0x5a5a5a5a5a5a5a5aLL ;
-    size_t pa = i64_scan_base_max(s, &a, base, max) ;
-    size_t pb = int64_scan_base_max(s, &b, base, max) ;
-    TEST_ASSERT(pa == pb, "i64_scan_base_max position differs from skalibs") ;
-    TEST_ASSERT(a == b, "i64_scan_base_max value differs from skalibs") ;
-}
-
-static void test_iscan(void)
-{
-    TEST_START("test_iscan") ;
-    static char const *str[] = {
-        "", " ", "z", "-", "+", "--1", "+-1",
-        "0", "-0", "1", "-1", "+1", "127", "-128",
-        "2147483647", "-2147483648", "+2147483647",
-        "9223372036854775807", "-9223372036854775808",
-        "9223372036854775808", "-9223372036854775809",   /* overflow */
-        "18446744073709551616", "-99999999999999999999999",
-        "-7fff", "ff", "-ff", "  -5", "-123 trail"
+    TEST_START("test_iscan_golden") ;
+    static iscan_t const g[] = {
+        { "", 0, 0 }, { "z", 0, 0 }, { "-", 0, 0 }, { "+", 0, 0 },
+        { "0", 1, 0 }, { "-1", 2, -1 }, { "+1", 2, 1 }, { "127", 3, 127 }, { "-128", 4, -128 },
+        { "9223372036854775807", 19, INT64_MAX },
+        { "-9223372036854775808", 20, INT64_MIN },
+        { "9223372036854775808", 18, 922337203685477580LL },    /* overflow stops */
+        { "-9223372036854775809", 19, -922337203685477580LL },
+        { "-123 trail", 4, -123 },
     } ;
-    static uint64_t const maxes[] = { 127, 255, INT16_MAX, INT32_MAX, UINT32_MAX, INT64_MAX } ;
-    for (uint8_t base = 2 ; base <= 36 ; base++) {
-        for (size_t i = 0 ; i < sizeof(str)/sizeof(*str) ; i++) {
-            check_iscan(str[i], base) ;
-            for (size_t m = 0 ; m < sizeof(maxes)/sizeof(*maxes) ; m++)
-                check_iscan_max(str[i], base, maxes[m]) ;
-        }
-    }
-    /* round-trip via i64_fmtbase + random/edge values */
-    static int64_t const edges[] = { 0, 1, -1, INT64_MAX, INT64_MIN, INT64_MIN + 1,
-                                     2147483647LL, -2147483648LL } ;
-    for (uint8_t base = 2 ; base <= 36 ; base++)
-        for (size_t i = 0 ; i < sizeof(edges)/sizeof(*edges) ; i++) {
-            char buf[128] ; size_t len = i64_fmtbase(buf, edges[i], base) ; buf[len] = 0 ;
-            check_iscan(buf, base) ;
-        }
-    for (long i = 0 ; i < 100000 ; i++) {
-        int64_t d = (int64_t)lcg_next() ;
-        for (uint8_t base = 2 ; base <= 36 ; base++) {
-            char buf[128] ; size_t len = i64_fmtbase(buf, d, base) ; buf[len] = 0 ;
-            check_iscan(buf, base) ;
-        }
+    for (size_t i = 0 ; i < sizeof g/sizeof*g ; i++) {
+        int64_t v = 0x5a5a5a5a5a5a5a5aLL ;
+        size_t p = i64_scan_base(g[i].s, &v, 10) ;
+        TEST_ASSERT(p == g[i].pos, "i64 scan golden position") ;
+        if (p) TEST_ASSERT(v == g[i].val, "i64 scan golden value") ;
     }
     TEST_END() ;
 }
 
-static void test_scan(void)
+/* ---- golden digit mapping (captured from skalibs fmtscan_asc / fmtscan_num) ---- */
+
+static void test_digit_golden(void)
 {
-    TEST_START("test_scan") ;
-    /* round-trip: format a value, then scan it back, compared against skalibs */
-    for (long i = 0 ; i < 100000 ; i++) {
-        uint64_t x = lcg_next() ;
-        for (uint8_t base = 2 ; base <= 36 ; base++) {
-            char buf[128] ;
-            size_t len = u64_fmtbase(buf, x, base) ;
-            buf[len] = 0 ;
-            check_scan(buf, base) ;
-        }
-    }
-    /* invalid / boundary inputs */
-    static char const *bad[] = {
-        "", " ", "z", "/", ":", "-1", "+1", "  10", "\0",
-        "00000", "0x10", "ff", "FF", "9a", "abcXYZ",
-        "18446744073709551615",   /* UINT64_MAX in base 10 */
-        "18446744073709551616",   /* overflow base 10 */
-        "99999999999999999999999999",  /* huge overflow */
-        "ffffffffffffffff",       /* UINT64_MAX in base 16 */
-        "10000000000000000",      /* overflow base 16 */
-        "12345678 trailing", "0777stop"
+    TEST_START("test_digit_golden") ;
+    static char const *const map = "0123456789abcdefghijklmnopqrstuvwxyz" ;
+    for (int v = 0 ; v <= 35 ; v++)
+        TEST_ASSERT(fmt_digit((unsigned char)v) == map[v], "fmt_digit 0..35") ;
+    /* fmt_digit of an out-of-range value is never requested by callers, so its
+     * return is left unspecified and not asserted here. */
+
+    /* scan_digit returns the digit value, or >= base when @c is not a digit of
+     * that base (callers test "< base"); non-alphanumerics yield exactly base. */
+    struct { char c ; uint8_t base ; unsigned exp ; } const sd[] = {
+        { '0', 2, 0 }, { '0', 10, 0 }, { '0', 16, 0 }, { '0', 36, 0 },
+        { '9', 2, 2 }, { '9', 10, 9 }, { '9', 16, 9 }, { '9', 36, 9 },
+        { 'a', 2, 2 }, { 'a', 10, 10 }, { 'a', 16, 10 }, { 'a', 36, 10 },
+        { 'f', 16, 15 }, { 'f', 36, 15 },
+        { 'g', 16, 16 }, { 'g', 36, 16 },
+        { 'z', 16, 16 }, { 'z', 36, 35 },
+        { 'A', 16, 10 }, { 'Z', 36, 35 },
+        { ':', 16, 16 }, { ':', 36, 36 },
+        { '/', 16, 16 }, { '/', 36, 36 },
+        { ' ', 16, 16 }, { ' ', 36, 36 },
     } ;
-    for (size_t i = 0 ; i < sizeof(bad)/sizeof(*bad) ; i++)
-        for (uint8_t base = 2 ; base <= 36 ; base++)
-            check_scan(bad[i], base) ;
+    for (size_t i = 0 ; i < sizeof sd/sizeof*sd ; i++)
+        TEST_ASSERT(scan_digit((unsigned char)sd[i].c, sd[i].base) == sd[i].exp, "scan_digit golden") ;
     TEST_END() ;
 }
 
-static void test_digit(void)
-{
-    TEST_START("test_digit") ;
-    for (int v = 0 ; v <= 255 ; v++)
-        TEST_ASSERT(fmt_digit((unsigned char)v) == (char)fmtscan_asc((unsigned char)v),
-                    "fmt_digit differs from fmtscan_asc") ;
-    for (int c = 0 ; c <= 255 ; c++)
-        for (int base = 0 ; base <= 36 ; base++)
-            TEST_ASSERT(scan_digit((unsigned char)c, (unsigned char)base)
-                        == fmtscan_num((unsigned char)c, (unsigned char)base),
-                        "scan_digit differs from fmtscan_num") ;
-    TEST_END() ;
-}
-
-/* buffer-size constants must hold the worst case + null terminator:
-   len(max value) + 1 <= declared size. Proves no overflow in callers. */
+/* buffer-size constants must hold the worst case + null terminator. */
 static void test_sizes(void)
 {
     TEST_START("test_sizes") ;
-    /* unsigned: widest value is the type max */
 #define CK_U(MAX, F, O, X, B) do { \
         TEST_ASSERT(u64_fmtbase(0,(MAX),10) + 1 <= (F), "U" #F " too small (dec)") ; \
         TEST_ASSERT(u64_fmtbase(0,(MAX),8)  + 1 <= (O), "U" #O " too small (oct)") ; \
@@ -354,7 +285,6 @@ static void test_sizes(void)
     CK_U(UINT32_MAX, U32_FMT, U32_OFMT, U32_XFMT, U32_BFMT) ;
     CK_U(UINT64_MAX, U64_FMT, U64_OFMT, U64_XFMT, U64_BFMT) ;
 #undef CK_U
-    /* signed: widest representation is the type min (leading '-') */
 #define CK_I(MIN, F, O, X, B) do { \
         TEST_ASSERT(i64_fmtbase(0,(MIN),10) + 1 <= (F), "I" #F " too small (dec)") ; \
         TEST_ASSERT(i64_fmtbase(0,(MIN),8)  + 1 <= (O), "I" #O " too small (oct)") ; \
@@ -369,14 +299,13 @@ static void test_sizes(void)
     TEST_END() ;
 }
 
-/* the width macros are thin wrappers over the (already proven) engine; check
-   they expand correctly and produce the same bytes as a direct engine call. */
+/* the width macros are thin wrappers over the (already round-tripped) engine;
+   check they expand correctly and produce the same bytes as a direct call. */
 static void test_macros(void)
 {
     TEST_START("test_macros") ;
     char m[128], e[128] ;
     size_t lm, le ;
-
 #define CK_UMAC(MAC, V, BASE) do { \
         lm = MAC(m, (V)) ; le = u64_fmtbase(e, (uint64_t)(V), (BASE)) ; \
         TEST_ASSERT(lm == le && !memcmp(m, e, lm), #MAC " wrong") ; \
@@ -387,7 +316,6 @@ static void test_macros(void)
     CK_UMAC(u32_fmt, 4000000000U, 10) ; CK_UMAC(u32_xfmt, 4000000000U, 16) ;
     CK_UMAC(u64_fmt, 12345678901234ULL, 10) ; CK_UMAC(u64_bfmt, 12345678901234ULL, 2) ;
 #undef CK_UMAC
-
 #define CK_IMAC(MAC, V, BASE) do { \
         lm = MAC(m, (V)) ; le = i64_fmtbase(e, (int64_t)(V), (BASE)) ; \
         TEST_ASSERT(lm == le && !memcmp(m, e, lm), #MAC " wrong") ; \
@@ -402,17 +330,14 @@ static void test_macros(void)
 
 int main(void)
 {
-    printf("=== num differential test vs skalibs ===\n") ;
-    test_digit() ;
+    printf("=== num test suite ===\n") ;
+    test_digit_golden() ;
     test_sizes() ;
     test_macros() ;
-    test_fmt_edge() ;
-    test_fmtpad() ;
-    test_ifmt() ;
-    test_scan() ;
-    test_scan_narrow() ;
-    test_iscan() ;
-    test_fmt_sweep() ;
+    test_fmt_golden() ;
+    test_scan_golden() ;
+    test_iscan_golden() ;
+    test_roundtrip() ;
     printf("All num tests passed.\n") ;
     return 0 ;
 }

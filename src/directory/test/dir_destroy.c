@@ -17,8 +17,9 @@
  * is ever touched. Coverage:
  *   - full recursive removal; symlinks unlinked NOT followed (target survives);
  *   - nonexistent path is success; a single file is removed;
- *   - DIFFERENTIAL vs skalibs rm_rf on identical trees: same success/failure
- *     AND same errno (the core parity requirement);
+ *   - failure case: an unreadable sub-directory -> failure with errno EACCES
+ *     (the value was captured from a byte-exact differential run vs skalibs
+ *     rm_rf; pinned here so the test no longer links skalibs);
  *   - the design guarantee: a deep tree is removed under a LOW RLIMIT_NOFILE,
  *     which a naive "keep DIR* open per level" recursion could not do;
  *   - volume (thousands of entries) -> exercises the listing buffer growth;
@@ -37,10 +38,6 @@
 #include <sys/resource.h>
 
 #include <oblibs/directory.h>
-
-#include <skalibs/djbunix.h>     /* rm_rf */
-#include <skalibs/skamisc.h>     /* satmp */
-#include <skalibs/stralloc.h>    /* stralloc_free */
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -135,69 +132,34 @@ static void test_nonexistent_and_file(void)
     TEST_END() ;
 }
 
-/* Strict differential in the SUCCESS case. */
-static void test_differential_success(void)
+/* Failure case: an unreadable sub-directory makes the removal fail. dir_destroy
+ * must report failure with errno EACCES -- the value captured from the original
+ * differential run against skalibs rm_rf (both agreed on failure and errno). */
+static void test_failure_errno(void)
 {
-    TEST_START("test_differential_success") ;
-
-    char tgt[512], a[512], b[512] ;
-    jp(tgt, sizeof tgt, sandbox, "diff_target") ;
-    TEST_ASSERT(mkdir(tgt, 0755) == 0, "mkdir diff target") ;
-
-    jp(a, sizeof a, sandbox, "diff_a") ;
-    jp(b, sizeof b, sandbox, "diff_b") ;
-    make_tree(a, tgt) ;
-    make_tree(b, tgt) ;
-
-    int rob = dir_destroy(a) ;
-    int rsk = rm_rf(b) ;
-    stralloc_free(&satmp) ;
-
-    TEST_ASSERT(rob == 1, "oblibs success") ;
-    TEST_ASSERT(rsk >= 0, "skalibs success") ;
-    TEST_ASSERT(!exists(a) && !exists(b), "both vanished") ;
-    TEST_ASSERT(exists(tgt), "shared target survived both") ;
-
-    TEST_END() ;
-}
-
-/* Strict differential in a FAILURE case: an unreadable sub-directory makes the
- * removal fail; dir_destroy and rm_rf must agree on failure AND on errno. */
-static void test_differential_failure_errno(void)
-{
-    TEST_START("test_differential_failure_errno") ;
+    TEST_START("test_failure_errno") ;
 
     if (geteuid() == 0) { printf(" SKIP (root)\n") ; return ; }
 
-    char a[512], b[512], suba[600], subb[600] ;
+    char a[512], suba[600] ;
     jp(a, sizeof a, sandbox, "fail_a") ;
-    jp(b, sizeof b, sandbox, "fail_b") ;
-    TEST_ASSERT(mkdir(a, 0755) == 0 && mkdir(b, 0755) == 0, "mkdir roots") ;
+    TEST_ASSERT(mkdir(a, 0755) == 0, "mkdir root") ;
     jp(suba, sizeof suba, a, "locked") ;
-    jp(subb, sizeof subb, b, "locked") ;
-    TEST_ASSERT(mkdir(suba, 0755) == 0 && mkdir(subb, 0755) == 0, "mkdir subs") ;
+    TEST_ASSERT(mkdir(suba, 0755) == 0, "mkdir sub") ;
     { char q[700] ; jp(q, sizeof q, suba, "x") ; mkfile(q) ; }
-    { char q[700] ; jp(q, sizeof q, subb, "x") ; mkfile(q) ; }
-    /* remove read+exec on the sub-dirs: opendir() inside will fail with EACCES */
-    TEST_ASSERT(chmod(suba, 0000) == 0 && chmod(subb, 0000) == 0, "chmod 000") ;
+    /* remove read+exec on the sub-dir: opendir() inside will fail with EACCES */
+    TEST_ASSERT(chmod(suba, 0000) == 0, "chmod 000") ;
 
     errno = 0 ;
     int rob = dir_destroy(a) ;
     int eob = errno ;
 
-    errno = 0 ;
-    int rsk = rm_rf(b) ;
-    int esk = errno ;
-    stralloc_free(&satmp) ;
-
-    TEST_ASSERT(rob == 0, "oblibs reports failure") ;
-    TEST_ASSERT(rsk < 0, "skalibs reports failure") ;
-    TEST_ASSERT(eob == esk, "same errno as skalibs on failure") ;
-    TEST_ASSERT(eob == EACCES, "errno is EACCES") ;
+    TEST_ASSERT(rob == 0, "dir_destroy reports failure") ;
+    TEST_ASSERT(eob == EACCES, "errno is EACCES (captured from skalibs rm_rf parity)") ;
 
     /* restore perms and clean up the leftovers */
-    chmod(suba, 0755) ; chmod(subb, 0755) ;
-    TEST_ASSERT(dir_destroy(a) == 1 && dir_destroy(b) == 1, "cleanup") ;
+    chmod(suba, 0755) ;
+    TEST_ASSERT(dir_destroy(a) == 1, "cleanup") ;
 
     TEST_END() ;
 }
@@ -290,8 +252,7 @@ int main(void)
 
     test_full_removal() ;
     test_nonexistent_and_file() ;
-    test_differential_success() ;
-    test_differential_failure_errno() ;
+    test_failure_errno() ;
     test_deep_under_low_fd_limit() ;
     test_many_entries() ;
     test_awkward_names() ;

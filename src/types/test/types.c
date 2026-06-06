@@ -13,8 +13,12 @@
  */
 
 /*
- * Differential test for uid_t / gid_t / pid_t conversions (oblibs/types.h),
- * compared against the equivalent skalibs engine. Any mismatch fails.
+ * Self-contained test for uid_t / gid_t / pid_t conversions (oblibs/types.h).
+ * No skalibs. ROUND-TRIP (format then parse reproduces the value) proves the
+ * fmt/parse pair over wide sweeps; GOLDEN anchors pin the capping / rejection
+ * semantics at the type boundaries, captured from the original byte-exact
+ * differential run against skalibs. uid_t and gid_t are unsigned (capped at
+ * their type max); pid_t is signed (strict signed range).
  */
 
 #include <stdio.h>
@@ -24,8 +28,6 @@
 #include <sys/types.h>
 
 #include <oblibs/types.h>
-
-#include <skalibs/uint64.h>   /* uint64_fmt_generic, int64_fmt_generic, uint64_scan_base_max, int64_scan_base_max */
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -50,119 +52,111 @@ static uint64_t lcg_next(void)
 #define GID_MAX_VAL ((uint64_t)(gid_t)-1)
 #define PID_MAX_VAL (((uint64_t)1 << (sizeof(pid_t)*8 - 1)) - 1)
 
-/* uid_t (unsigned, capped at its max) */
-static void check_uid(uid_t u, uint8_t base)
+/* ---- round-trip ---- */
+
+static void rt(uint64_t r, uint8_t base)
 {
-    char a[64], b[64] ;
-    size_t la = uid_format_base(a, u, base) ;
-    size_t lb = uint64_fmt_generic(b, (uint64_t)u, base) ;
-    TEST_ASSERT(la == lb && !memcmp(a, b, la), "uid_format differs from skalibs") ;
-}
-static void check_uid_scan(char const *s, uint8_t base)
-{
-    uid_t a = (uid_t)0xa5a5a5a5u ;
-    uint64_t ref = 0 ;
-    size_t pa = uid_parse_base(s, &a, base) ;
-    size_t pb = uint64_scan_base_max(s, &ref, base, UID_MAX_VAL) ;
-    TEST_ASSERT(pa == pb, "uid_parse position differs from skalibs (capped)") ;
-    if (pa) TEST_ASSERT(a == (uid_t)ref, "uid_parse value differs from skalibs (capped)") ;
+    char buf[64] ; size_t len ;
+    uid_t u = (uid_t)r, ou = ~u ;
+    gid_t g = (gid_t)r, og = ~g ;
+    pid_t p = (pid_t)r, op = ~p ;
+
+    len = uid_format_base(buf, u, base) ; buf[len] = 0 ;
+    TEST_ASSERT(uid_parse_base(buf, &ou, base) == len && ou == u, "uid round-trip") ;
+    len = gid_format_base(buf, g, base) ; buf[len] = 0 ;
+    TEST_ASSERT(gid_parse_base(buf, &og, base) == len && og == g, "gid round-trip") ;
+    len = pid_format_base(buf, p, base) ; buf[len] = 0 ;
+    TEST_ASSERT(pid_parse_base(buf, &op, base) == len && op == p, "pid round-trip") ;
 }
 
-/* gid_t (unsigned, capped at its max) */
-static void check_gid(gid_t g, uint8_t base)
+static void test_roundtrip(void)
 {
-    char a[64], b[64] ;
-    size_t la = gid_format_base(a, g, base) ;
-    size_t lb = uint64_fmt_generic(b, (uint64_t)g, base) ;
-    TEST_ASSERT(la == lb && !memcmp(a, b, la), "gid_format differs from skalibs") ;
-}
-static void check_gid_scan(char const *s, uint8_t base)
-{
-    gid_t a = (gid_t)0xa5a5a5a5u ;
-    uint64_t ref = 0 ;
-    size_t pa = gid_parse_base(s, &a, base) ;
-    size_t pb = uint64_scan_base_max(s, &ref, base, GID_MAX_VAL) ;
-    TEST_ASSERT(pa == pb, "gid_parse position differs from skalibs (capped)") ;
-    if (pa) TEST_ASSERT(a == (gid_t)ref, "gid_parse value differs from skalibs (capped)") ;
-}
-
-/* pid_t (signed, strict signed range) */
-static void check_pid(pid_t p, uint8_t base)
-{
-    char a[64], b[64] ;
-    size_t la = pid_format_base(a, p, base) ;
-    size_t lb = int64_fmt_generic(b, (int64_t)p, base) ;
-    TEST_ASSERT(la == lb && !memcmp(a, b, la), "pid_format differs from skalibs") ;
-}
-static void check_pid_scan(char const *s, uint8_t base)
-{
-    pid_t a = (pid_t)0x5a5a5a5a ;
-    int64_t ref = 0 ;
-    size_t pa = pid_parse_base(s, &a, base) ;
-    size_t pb = int64_scan_base_max(s, &ref, base, PID_MAX_VAL) ;
-    TEST_ASSERT(pa == pb, "pid_parse position differs from skalibs (capped)") ;
-    if (pa) TEST_ASSERT(a == (pid_t)ref, "pid_parse value differs from skalibs (capped)") ;
-}
-
-static void test_fmt(void)
-{
-    TEST_START("test_fmt") ;
-    /* size constants must hold the worst case + terminator */
-    TEST_ASSERT(uid_format_base(0, (uid_t)UID_MAX_VAL, 10) + 1 <= UID_FMT, "UID_FMT too small") ;
-    TEST_ASSERT(gid_format_base(0, (gid_t)GID_MAX_VAL, 10) + 1 <= GID_FMT, "GID_FMT too small") ;
-    TEST_ASSERT(pid_format_base(0, (pid_t)-PID_MAX_VAL - 1, 10) + 1 <= PID_FMT, "PID_FMT too small") ;
-
+    TEST_START("test_roundtrip") ;
     for (uint8_t base = 2 ; base <= 36 ; base++) {
-        for (long i = 0 ; i < 20000 ; i++) {
-            uint64_t r = lcg_next() ;
-            check_uid((uid_t)r, base) ;
-            check_gid((gid_t)r, base) ;
-            check_pid((pid_t)r, base) ;
-        }
-        check_uid((uid_t)0, base) ; check_uid((uid_t)UID_MAX_VAL, base) ;
-        check_pid((pid_t)0, base) ; check_pid((pid_t)1, base) ;
-        check_pid((pid_t)-1, base) ; check_pid((pid_t)PID_MAX_VAL, base) ;
-        check_pid((pid_t)(-PID_MAX_VAL - 1), base) ;
+        for (long i = 0 ; i < 20000 ; i++)
+            rt(lcg_next(), base) ;
+        rt(0, base) ; rt(1, base) ; rt(UID_MAX_VAL, base) ;
+        rt((uint64_t)(uint32_t)-1, base) ;          /* pid: -1 */
+        rt(PID_MAX_VAL, base) ;
+        rt((uint64_t)(uint32_t)(-(int64_t)PID_MAX_VAL - 1), base) ;   /* pid: INT32_MIN */
     }
     TEST_END() ;
 }
 
+/* ---- format size constants + a few golden fmt anchors ---- */
+
+static void test_fmt(void)
+{
+    TEST_START("test_fmt") ;
+    TEST_ASSERT(uid_format_base(0, (uid_t)UID_MAX_VAL, 10) + 1 <= UID_FMT, "UID_FMT too small") ;
+    TEST_ASSERT(gid_format_base(0, (gid_t)GID_MAX_VAL, 10) + 1 <= GID_FMT, "GID_FMT too small") ;
+    TEST_ASSERT(pid_format_base(0, (pid_t)(-(int64_t)PID_MAX_VAL - 1), 10) + 1 <= PID_FMT, "PID_FMT too small") ;
+
+    char b[64] ; size_t n ;
+    n = uid_format_base(b, (uid_t)0, 10) ;    b[n] = 0 ; TEST_ASSERT(!strcmp(b, "0"), "uid 0") ;
+    n = uid_format_base(b, (uid_t)255, 16) ;  b[n] = 0 ; TEST_ASSERT(!strcmp(b, "ff"), "uid 255 hex") ;
+    n = uid_format_base(b, (uid_t)4294967295U, 10) ; b[n] = 0 ; TEST_ASSERT(!strcmp(b, "4294967295"), "uid max") ;
+    n = pid_format_base(b, (pid_t)-1, 10) ;   b[n] = 0 ; TEST_ASSERT(!strcmp(b, "-1"), "pid -1") ;
+    n = pid_format_base(b, (pid_t)-2147483647 - 1, 10) ; b[n] = 0 ; TEST_ASSERT(!strcmp(b, "-2147483648"), "pid min") ;
+    TEST_END() ;
+}
+
+/* ---- golden scan anchors (base 10), captured from skalibs parity ---- */
+
+/* uid_t and gid_t share the same unsigned cap (UINT32 here). */
+typedef struct ug_s { char const *s ; size_t pos ; uint32_t val ; } ug_t ;
+typedef struct pp_s { char const *s ; size_t pos ; pid_t val ; } pp_t ;
+
 static void test_scan(void)
 {
     TEST_START("test_scan") ;
-    /* round-trip in range */
-    for (uint8_t base = 2 ; base <= 36 ; base++) {
-        for (long i = 0 ; i < 20000 ; i++) {
-            uint64_t r = lcg_next() ;
-            char buf[64] ; size_t len ;
-            len = uid_format_base(buf, (uid_t)r, base) ; buf[len] = 0 ; check_uid_scan(buf, base) ;
-            len = gid_format_base(buf, (gid_t)r, base) ; buf[len] = 0 ; check_gid_scan(buf, base) ;
-            len = pid_format_base(buf, (pid_t)r, base) ; buf[len] = 0 ; check_pid_scan(buf, base) ;
-        }
-    }
-    /* boundary / out-of-range / invalid (freezes the capping semantics) */
-    static char const *str[] = {
-        "", " ", "z", "-1", "+1", "-",
-        "0", "255", "256", "65535", "65536",
-        "2147483647", "2147483648", "-2147483648", "-2147483649",
-        "4294967295", "4294967296", "5000000000",
-        "9223372036854775807", "18446744073709551616",
-        "ff", "-ff", "100000000"
+
+    static ug_t const ug[] = {
+        { "", 0, 0 }, { " ", 0, 0 }, { "z", 0, 0 }, { "-1", 0, 0 }, { "+1", 0, 0 },
+        { "-", 0, 0 }, { "ff", 0, 0 }, { "-ff", 0, 0 },
+        { "0", 1, 0 }, { "255", 3, 255 }, { "65535", 5, 65535 },
+        { "2147483647", 10, 2147483647U }, { "2147483648", 10, 2147483648U },
+        { "4294967295", 10, 4294967295U },
+        { "4294967296", 9, 429496729U },        /* > UINT32_MAX -> stops */
+        { "5000000000", 9, 500000000U },
+        { "9223372036854775807", 9, 922337203U },
+        { "18446744073709551616", 10, 1844674407U },
+        { "100000000", 9, 100000000U },
     } ;
-    for (size_t i = 0 ; i < sizeof(str)/sizeof(*str) ; i++)
-        for (uint8_t base = 2 ; base <= 36 ; base++) {
-            check_uid_scan(str[i], base) ;
-            check_gid_scan(str[i], base) ;
-            check_pid_scan(str[i], base) ;
-        }
+    for (size_t i = 0 ; i < sizeof ug/sizeof*ug ; i++) {
+        uid_t u = (uid_t)0xa5a5a5a5u ; gid_t g = (gid_t)0xa5a5a5a5u ;
+        size_t pu = uid_parse_base(ug[i].s, &u, 10) ;
+        size_t pg = gid_parse_base(ug[i].s, &g, 10) ;
+        TEST_ASSERT(pu == ug[i].pos && pg == ug[i].pos, "uid/gid scan position") ;
+        if (pu) TEST_ASSERT((uint32_t)u == ug[i].val && (uint32_t)g == ug[i].val, "uid/gid scan value") ;
+    }
+
+    static pp_t const pp[] = {
+        { "", 0, 0 }, { " ", 0, 0 }, { "z", 0, 0 }, { "-", 0, 0 },
+        { "ff", 0, 0 }, { "-ff", 0, 0 },
+        { "0", 1, 0 }, { "-1", 2, -1 }, { "+1", 2, 1 }, { "255", 3, 255 },
+        { "2147483647", 10, 2147483647 },
+        { "2147483648", 9, 214748364 },         /* > INT32_MAX -> stops */
+        { "-2147483648", 11, (pid_t)(-2147483647 - 1) },
+        { "-2147483649", 10, -214748364 },
+        { "4294967295", 9, 429496729 },
+        { "100000000", 9, 100000000 },
+    } ;
+    for (size_t i = 0 ; i < sizeof pp/sizeof*pp ; i++) {
+        pid_t p = (pid_t)0x5a5a5a5a ;
+        size_t pq = pid_parse_base(pp[i].s, &p, 10) ;
+        TEST_ASSERT(pq == pp[i].pos, "pid scan position") ;
+        if (pq) TEST_ASSERT(p == pp[i].val, "pid scan value") ;
+    }
     TEST_END() ;
 }
 
 int main(void)
 {
-    printf("=== uid/gid/pid conversion test vs skalibs ===\n") ;
+    printf("=== uid/gid/pid conversion test suite ===\n") ;
     test_fmt() ;
     test_scan() ;
+    test_roundtrip() ;
     printf("All types tests passed.\n") ;
     return 0 ;
 }

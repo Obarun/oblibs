@@ -12,11 +12,11 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-/* Tests for the oblibs clock module, the tai/djbtime replacement used for log
- * timestamps. Differential against skalibs for recent times (>= 2017, where
- * skalibs' leap table yields the same +37 offset as our CLOCK_TAI_UTC constant):
- * both the TAI64N '@hex' stamp and the local ISO stamp must match skalibs
- * byte-for-byte. Plus a TZ=UTC fixed case for a fully deterministic assertion. */
+/* Tests for the oblibs clock module (tai/djbtime replacement for log stamps).
+ * The expected TAI64N '@hex' and local ISO strings were CAPTURED from a
+ * byte-exact differential run against skalibs (timestamp_fmt / localtmn_fmt)
+ * and are now pinned as literals, so the test is self-contained (no skalibs).
+ * TZ is forced to UTC so the local stamps are deterministic. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,9 +24,6 @@
 #include <time.h>
 
 #include <oblibs/clock.h>
-
-#include <skalibs/tai.h>       /* tain, tain_from_timespec_sysclock, timestamp_fmt, TIMESTAMP */
-#include <skalibs/djbtime.h>   /* localtmn, localtmn_from_tain, localtmn_fmt, LOCALTMN_FMT */
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -40,69 +37,62 @@
 #define TEST_START(name) printf("Running %s...", name)
 #define TEST_END() printf(" PASS\n")
 
-/* Compare oblibs vs skalibs formatting for a given (sec, nano), sec >= 2017. */
-static void check(time_t sec, long nano)
+/* Golden table captured from skalibs (offset +37, == our CLOCK_TAI_UTC). */
+typedef struct gold_s { time_t sec ; long nano ; char const *tai ; char const *local ; } gold_t ;
+
+static gold_t const gold[] = {
+    { 1483228800, 0,         "@40000000586846a500000000", "2017-01-01 00:00:00.000000000" },
+    { 1483228800, 1,         "@40000000586846a500000001", "2017-01-01 00:00:00.000000001" },
+    { 1483228800, 123456789, "@40000000586846a5075bcd15", "2017-01-01 00:00:00.123456789" },
+    { 1483228800, 999999999, "@40000000586846a53b9ac9ff", "2017-01-01 00:00:00.999999999" },
+    { 1483228800, 500000000, "@40000000586846a51dcd6500", "2017-01-01 00:00:00.500000000" },
+    { 1700000000, 0,         "@400000006553f12500000000", "2023-11-14 22:13:20.000000000" },
+    { 1700000000, 1,         "@400000006553f12500000001", "2023-11-14 22:13:20.000000001" },
+    { 1700000000, 123456789, "@400000006553f125075bcd15", "2023-11-14 22:13:20.123456789" },
+    { 1700000000, 999999999, "@400000006553f1253b9ac9ff", "2023-11-14 22:13:20.999999999" },
+    { 1700000000, 500000000, "@400000006553f1251dcd6500", "2023-11-14 22:13:20.500000000" },
+    { 2000000000, 0,         "@400000007735942500000000", "2033-05-18 03:33:20.000000000" },
+    { 2000000000, 1,         "@400000007735942500000001", "2033-05-18 03:33:20.000000001" },
+    { 2000000000, 123456789, "@4000000077359425075bcd15", "2033-05-18 03:33:20.123456789" },
+    { 2000000000, 999999999, "@40000000773594253b9ac9ff", "2033-05-18 03:33:20.999999999" },
+    { 2000000000, 500000000, "@40000000773594251dcd6500", "2033-05-18 03:33:20.500000000" },
+} ;
+
+static void test_golden(void)
 {
-    struct timespec ts ;
-    ts.tv_sec = sec ;
-    ts.tv_nsec = nano ;
+    TEST_START("test_golden") ;
 
-    tain x ;
-    TEST_ASSERT(tain_from_timespec_sysclock(&x, &ts), "skalibs tain build") ;
+    for (size_t i = 0 ; i < sizeof gold / sizeof *gold ; i++) {
+        struct timespec ts = { .tv_sec = gold[i].sec, .tv_nsec = gold[i].nano } ;
 
-    char a[CLOCK_TAI64N_LEN + 1], b[TIMESTAMP + 1] ;
-    clock_tai64n_fmt(a, &ts) ;
-    size_t lb = timestamp_fmt(b, &x) ;
-    b[lb] = 0 ;
-    TEST_ASSERT(!strcmp(a, b), "TAI64N stamp matches skalibs") ;
+        char a[CLOCK_TAI64N_LEN + 1] ;
+        size_t la = clock_tai64n_fmt(a, &ts) ;
+        TEST_ASSERT(la == CLOCK_TAI64N_LEN, "tai64n length") ;
+        TEST_ASSERT(!strcmp(a, gold[i].tai), "tai64n stamp matches captured skalibs output") ;
 
-    char d[CLOCK_LOCAL_LEN + 1], c[LOCALTMN_FMT + 1] ;
-    clock_local_fmt(d, &ts) ;
-    localtmn l ;
-    localtmn_from_tain(&l, &x, 1) ;
-    size_t lc = localtmn_fmt(c, &l) ;
-    c[lc] = 0 ;
-    TEST_ASSERT(!strcmp(d, c), "local stamp matches skalibs") ;
-}
-
-/* Deterministic, TZ-independent: known UTC instant -> exact string. */
-static void test_fixed_utc(void)
-{
-    TEST_START("test_fixed_utc") ;
-
-    struct timespec ts ;
-    ts.tv_sec = 1700000000 ;   /* 2023-11-14 22:13:20 UTC */
-    ts.tv_nsec = 123456789 ;
-
-    char d[CLOCK_LOCAL_LEN + 1] ;
-    size_t n = clock_local_fmt(d, &ts) ;
-    TEST_ASSERT(n == CLOCK_LOCAL_LEN, "local length") ;
-    TEST_ASSERT(!strcmp(d, "2023-11-14 22:13:20.123456789"), "fixed UTC local stamp") ;
-
-    char a[CLOCK_TAI64N_LEN + 1] ;
-    size_t m = clock_tai64n_fmt(a, &ts) ;
-    TEST_ASSERT(m == CLOCK_TAI64N_LEN, "tai64n length") ;
-    TEST_ASSERT(a[0] == '@', "tai64n starts with @") ;
-    /* exact TAI64N bytes are covered byte-for-byte by test_differential vs skalibs */
+        char d[CLOCK_LOCAL_LEN + 1] ;
+        size_t ld = clock_local_fmt(d, &ts) ;
+        TEST_ASSERT(ld == CLOCK_LOCAL_LEN, "local length") ;
+        TEST_ASSERT(!strcmp(d, gold[i].local), "local stamp matches captured skalibs output") ;
+    }
 
     TEST_END() ;
 }
 
-static void test_differential(void)
+/* clock_now must succeed and produce well-formed, self-consistent stamps. */
+static void test_now(void)
 {
-    TEST_START("test_differential") ;
+    TEST_START("test_now") ;
 
-    static time_t const secs[] = { 1483228800, 1700000000, 1750000000, 2000000000 } ;
-    static long const nanos[] = { 0, 1, 123456789, 999999999, 500000000 } ;
-
-    for (size_t i = 0 ; i < sizeof secs / sizeof *secs ; i++)
-        for (size_t j = 0 ; j < sizeof nanos / sizeof *nanos ; j++)
-            check(secs[i], nanos[j]) ;
-
-    /* and "now" */
     struct timespec now ;
     TEST_ASSERT(clock_now(&now), "clock_now") ;
-    check(now.tv_sec, now.tv_nsec) ;
+
+    char a[CLOCK_TAI64N_LEN + 1] ;
+    TEST_ASSERT(clock_tai64n_fmt(a, &now) == CLOCK_TAI64N_LEN, "now tai64n length") ;
+    TEST_ASSERT(a[0] == '@', "now tai64n starts with @") ;
+
+    char d[CLOCK_LOCAL_LEN + 1] ;
+    TEST_ASSERT(clock_local_fmt(d, &now) == CLOCK_LOCAL_LEN, "now local length") ;
 
     TEST_END() ;
 }
@@ -121,8 +111,8 @@ int main(void)
 
     printf("=== clock test suite ===\n\n") ;
 
-    test_fixed_utc() ;
-    test_differential() ;
+    test_golden() ;
+    test_now() ;
     test_constant() ;
 
     printf("\nAll tests passed.\n") ;
