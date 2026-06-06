@@ -19,7 +19,6 @@
 #include <signal.h>
 
 #include <oblibs/log.h>
-
 #include <oblibs/sse.h>
 
 // (syscall for portability)

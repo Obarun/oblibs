@@ -12,8 +12,6 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/sbl.h>
-
 #include <string.h>
 #include <stdint.h>
 #include <fcntl.h>
@@ -21,6 +19,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <oblibs/sbl.h>
 #include <oblibs/types.h>
 #include <oblibs/string.h>
 #include <oblibs/directory.h>

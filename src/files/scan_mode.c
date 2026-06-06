@@ -15,7 +15,6 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#include <oblibs/files.h>
 #include <oblibs/types.h>
 
 ssize_t scan_mode (char const *str, mode_t mode)

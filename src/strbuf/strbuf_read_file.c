@@ -12,14 +12,13 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/strbuf.h>
-
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
 #include <oblibs/io.h>
+#include <oblibs/strbuf.h>
 
 int strbuf_read_file(strbuf *sb, char const *path)
 {

@@ -15,8 +15,6 @@
 #include <sys/types.h>
 #include <string.h>
 
-#include <oblibs/string.h>
-
 ssize_t get_rstrlen_until(char const *str,char const *search)
 {
     int i ;

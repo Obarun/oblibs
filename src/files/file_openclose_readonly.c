@@ -12,14 +12,13 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-
-#include <oblibs/files.h>
-#include <oblibs/io.h>
-
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>
+
+#include <oblibs/files.h>
+#include <oblibs/io.h>
 
 int file_openclose_readonly(char *buffile, char const *filename, size_t buffsize)
 {

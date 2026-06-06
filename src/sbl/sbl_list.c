@@ -12,11 +12,12 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/sbl.h>
-
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
+
+#include <oblibs/sbl.h>
+#include <oblibs/strbuf.h>
 
 int sbl_addb(strbuf *sb, char const *s, size_t n)
 {

@@ -13,10 +13,9 @@
  */
 
 #include <sys/types.h>
+#include <string.h>
 
-#include <oblibs/string.h>
-
-ssize_t get_rlen_until(const char *str, char const end,size_t from)
+ssize_t get_rlen_until(const char *str, char const end, size_t from)
 {
     int i ;
     size_t len,f ;

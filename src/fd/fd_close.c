@@ -16,8 +16,6 @@
  * https://git.skarnet.org/cgi-bin/cgit.cgi/skalibs/tree/src/libstddjb/fd_close.c
  * under license ISC. All credits go to Laurent Bercot, author of this function. */
 
-#include <oblibs/fd.h>
-
 #include <errno.h>
 #include <unistd.h>
 

@@ -12,7 +12,6 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>

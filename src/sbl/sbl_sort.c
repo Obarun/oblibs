@@ -12,11 +12,10 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/sbl.h>
-
 #include <string.h>
 
 #include <oblibs/string.h>
+#include <oblibs/sbl.h>
 
 int sbl_sort(strbuf *sb)
 {

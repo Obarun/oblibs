@@ -30,12 +30,11 @@
  * The single narrowing: oblibs only ever builds entries with n in {0,1}, but
  * the n-value cross-product machinery is kept for that equivalence. */
 
-#include <oblibs/subst.h>
-
 #include <string.h>
 
 #include <oblibs/strbuf.h>
 #include <oblibs/genbuf.h>
+#include <oblibs/subst.h>
 
 /* Internal cursor over a pending substitution inside the current word. */
 typedef struct subsu_s

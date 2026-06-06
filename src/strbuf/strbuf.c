@@ -12,13 +12,13 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/strbuf.h>
-
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <stdint.h>
 #include <sys/uio.h>
+
+#include <oblibs/strbuf.h>
 
 int strbuf_reserve(strbuf *sb, size_t n)
 {

@@ -16,12 +16,12 @@
  * <- sbl.
  */
 
-#include <oblibs/sbl.h>
-
 #include <string.h>
 #include <errno.h>
 
 #include <oblibs/lexer.h>
+#include <oblibs/strbuf.h>
+#include <oblibs/sbl.h>
 
 int sbl_clean_string(strbuf *sb, char const *string)
 {

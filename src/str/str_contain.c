@@ -14,8 +14,6 @@
 
 #include <string.h>
 
-#include <oblibs/string.h>
-
 int str_contain(char const *str, char const *search)
 {
     if (!*str || !*search) return 0 ;

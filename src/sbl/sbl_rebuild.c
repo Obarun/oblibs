@@ -12,9 +12,10 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/sbl.h>
-
 #include <string.h>
+
+#include <oblibs/sbl.h>
+#include <oblibs/strbuf.h>
 
 /* Replace the list with its elements joined by @sep (one byte). When @keeplast
  * is 0 the trailing separator is dropped. The result is a single C string whose

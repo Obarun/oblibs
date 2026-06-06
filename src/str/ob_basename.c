@@ -13,6 +13,7 @@
  * */
 
 #include <errno.h>
+
 #include <oblibs/string.h>
 
 int ob_basename(char *dst,char const *path)

@@ -15,8 +15,6 @@
 #include <sys/types.h>
 #include <string.h>
 
-#include <oblibs/string.h>
-
 ssize_t get_len_until(const char *str, char const end)
 {
     unsigned int i ;
