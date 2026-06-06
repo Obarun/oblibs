@@ -21,18 +21,6 @@ fs = import('fs')
 # Compiler setup
 cc = meson.get_compiler('c')
 
-# Define dependency checks
-# Common include and library paths
-default_include_dirs = [get_option('prefix') / get_option('includedir')]
-default_lib_dirs = [get_option('prefix') / get_option('libdir')]
-user_include_dirs = get_option('with-include-dir')
-user_staticlib_dirs = get_option('with-staticlib-dir')
-user_dynamiclib_dirs = get_option('with-dynamiclib-dir')
-
-# Combine default and user-provided paths
-include_dirs = default_include_dirs + user_include_dirs
-lib_dirs = default_lib_dirs + user_staticlib_dirs + user_dynamiclib_dirs
-
 # Special case for default_options
 INCLUDEDIR = get_option('prefix') / get_option('includedir') / 'oblibs'
 
@@ -76,33 +64,11 @@ if cc.has_link_argument('-Wl,--hash-style=both')
   shared_link_args += ['-Wl,--hash-style=both']
 endif
 
-static_link_args = get_option('enable-static-deps') ? ['-static', '-Wl,--gc-sections'] : []
+static_link_args = get_option('enable-static-executable') ? ['-static', '-Wl,--gc-sections'] : []
 exe_link_args = []
 if get_option('enable-static-executable')
   exe_link_args += ['-static']
 endif
-
-# Add include paths
-foreach inc : get_option('with-include-dir')
-  if inc != '' and fs.is_dir(inc) and inc != meson.project_source_root() / 'src/include'
-    add_project_arguments('-I' + inc, language: 'c')
-  endif
-endforeach
-
-# Add library paths
-foreach lib : get_option('with-staticlib-dir')
-  if lib != '' and fs.is_dir(lib)
-    shared_link_args += ['-L' + lib]
-    static_link_args += ['-L' + lib]
-    exe_link_args += ['-L' + lib]
-  endif
-endforeach
-foreach dynlib : get_option('with-dynamiclib-dir')
-  if dynlib != '' and fs.is_dir(dynlib)
-    shared_link_args += ['-L' + dynlib]
-    exe_link_args += ['-L' + dynlib]
-  endif
-endforeach
 
 # Verify static libc availability if enable-static-executable is true
 if get_option('enable-static-executable')
@@ -120,12 +86,6 @@ endif
 # Validate options to avoid conflicts
 if get_option('enable-static-executable') and get_option('enable-shared')
   error('Cannot enable both enable-static-executable and enable-shared')
-endif
-if get_option('enable-static-deps') and get_option('enable-shared')
-  error('Cannot enable both enable-static-deps and enable-shared')
-endif
-if get_option('enable-static-deps') and not get_option('enable-static')
-  error('enable-static-deps requires enable-static to build liboblibs.a')
 endif
 
 # Include directories

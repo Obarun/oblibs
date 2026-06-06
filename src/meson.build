@@ -21,7 +21,7 @@ soversion_ob = meson.project_version()
 libob_shared = []
 libob_static = []
 is_shared = get_option('enable-shared')
-is_static = get_option('enable-static') or get_option('enable-static-deps')
+is_static = get_option('enable-static')
 
 if is_shared
   libob_shared = shared_library('oblibs',

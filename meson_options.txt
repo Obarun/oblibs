@@ -8,21 +8,6 @@ type: 'boolean',
 value: false,
 description: 'Build and run tests')
 
-option('with-include-dir',
-type: 'array',
-value: [],
-description: 'Additional include directories')
-
-option('with-staticlib-dir',
-type: 'array',
-value: [],
-description: 'Additional static library directories')
-
-option('with-dynamiclib-dir',
-type: 'array',
-value: [],
-description: 'Additional shared library directories')
-
 option('enable-shared',
 type: 'boolean',
 value: true,
@@ -32,11 +17,6 @@ option('enable-static',
 type: 'boolean',
 value: false,
 description: 'Build static libraries for static linking')
-
-option('enable-static-deps',
-type: 'boolean',
-value: false,
-description: 'Prefer static linking for all dependencies (e.g., skalibs, s6), reducing runtime dependencies (requires enable-static=true)')
 
 option('enable-static-executable',
 type: 'boolean',
