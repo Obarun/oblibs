@@ -19,14 +19,13 @@
 #include <oblibs/environ.h>
 
 #include <skalibs/stralloc.h>
-#include <skalibs/env.h>
 
 uint8_t environ_create_environ(char const **nenvp, char const *const *env, stralloc *modifs)
 {
     size_t elen = environ_length(env) ;
     size_t n = elen + 1 + sastr_nelement(modifs) ;
 
-    if (!env_merge(nenvp, n , env, elen, modifs->s, modifs->len))
+    if (!environ_merge(nenvp, n , env, elen, modifs->s, modifs->len))
         return 0 ;
 
     return 1 ;

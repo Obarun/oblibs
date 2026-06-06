@@ -20,8 +20,6 @@
 
 #include <oblibs/string.h>
 
-#include <skalibs/env.h>
-
 size_t environ_merge (char const **v, size_t vmax, char const *const *envp, size_t envlen, char const *modifs, size_t modiflen)
 {
   size_t vlen = envlen ;
