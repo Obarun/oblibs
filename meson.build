@@ -20,7 +20,6 @@ fs = import('fs')
 
 # Versioning
 version_skalibs = '>=2.14.3.0'
-version_execline = '>=2.9.6.1'
 
 # Compiler setup
 cc = meson.get_compiler('c')
@@ -48,20 +47,8 @@ dep_skalibs = declare_dependency(
   include_directories: include_dirs
 )
 
-# Dependency: execline
-execline_lib = cc.find_library('execline', dirs: lib_dirs, static: get_option('enable-static-deps'), required: false)
-execline_header = cc.has_header('execline.h', args: ['-I', include_dirs], required: false)
-if not execline_lib.found() or not execline_header
-  error('execline ' + version_execline + ' not found. Ensure libexecline and execline/execline.h are installed, or specify paths with with-include-dir and with-staticlib-dir/with-dynamiclib-dir.')
-endif
-dep_execline = declare_dependency(
-  dependencies: execline_lib,
-  include_directories: include_dirs
-)
-
 # Define global dependencies
 skalibs_dep = dep_skalibs
-execline_dep = dep_execline
 
 # Special case for default_options
 INCLUDEDIR = get_option('prefix') / get_option('includedir') / 'oblibs'
@@ -169,7 +156,7 @@ if get_option('with-pkgconfig')
   # Generate and install pkg-config file for liboblibs
   private_libs = []
   if get_option('enable-static') or get_option('enable-static-deps')
-    private_libs += ['-lskalibs', '-lexecline']
+    private_libs += ['-lskalibs']
   endif
 
   pkg = import('pkgconfig')

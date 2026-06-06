@@ -29,7 +29,6 @@ if is_shared
     include_directories: incdir,
     dependencies: [
       skalibs_dep,
-      execline_dep,
     ],
     install: true,
     install_dir: get_option('libdir'),
@@ -48,7 +47,6 @@ if is_static
     include_directories: incdir,
     dependencies: [
       skalibs_dep,
-      execline_dep,
     ],
     install: true,
     install_dir: lib_static_path,
@@ -65,8 +63,7 @@ libob_dep = declare_dependency(
   include_directories: incdir,
   link_with: get_option('enable-shared') ? libob_shared : libob_static,
   dependencies: [
-    skalibs_dep,
-    execline_dep
+    skalibs_dep
   ]
 )
 

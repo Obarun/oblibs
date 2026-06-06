@@ -24,9 +24,23 @@
 #include <oblibs/lexer.h>
 
 #include <skalibs/stralloc.h>
-#include <skalibs/genalloc.h>
 
-#include <execline/execline.h>
+#include <oblibs/subst.h>
+
+/* Is @name (a C string) one of the NUL-separated names already in @names?
+ * Native replacement for the single sastr_cmp(...) == -1 check, since the
+ * substitution context now stores names in a strbuf, not a stralloc. */
+static int name_present(strbuf const *names, const char *name)
+{
+    size_t i = 0 ;
+    while (i < names->len) {
+        const char *p = names->s + i ;
+        if (!strcmp(p, name))
+            return 1 ;
+        i += strlen(p) + 1 ;
+    }
+    return 0 ;
+}
 
 static int dollar_find(stack *regex, const char *line)
 {
@@ -55,7 +69,7 @@ static int dollar_find(stack *regex, const char *line)
      return 0 ;
 }
 
-static int dollar_recursive(stack *value, const char *key, const char *old, size_t olen, exlsn_t *info, elsubst_t *blah)
+static int dollar_recursive(stack *value, const char *key, const char *old, size_t olen, subst_t *info, subst_entry_t *blah)
 {
     size_t klen = strlen(key) ;
     _alloc_sa_(sa) ;
@@ -85,7 +99,7 @@ static int dollar_recursive(stack *value, const char *key, const char *old, size
     return 1 ;
 }
 
-static int dollar_replace(stralloc *old, const char *line, const char *mkey, exlsn_t *info, elsubst_t *blah)
+static int dollar_replace(stralloc *old, const char *line, const char *mkey, subst_t *info, subst_entry_t *blah)
 {
 
     int r ;
@@ -182,15 +196,14 @@ static int dollar_replace(stralloc *old, const char *line, const char *mkey, exl
     return 1 ;
 }
 
-uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
+uint8_t environ_substitute(stralloc *modifs, subst_t *info)
 {
     if (!modifs->len)
         return 1 ;
 
     size_t pos = 0 ;
     uint8_t unexport = 0 ;
-    eltransforminfo_t si = ELTRANSFORMINFO_ZERO ;
-    elsubst_t blah ;
+    subst_entry_t blah ;
     _alloc_sa_(new) ;
     _alloc_stk_(regex, modifs->len + 1) ;
 
@@ -233,9 +246,9 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
         blah.var = info->vars.len ;
         blah.value = info->values.len ;
 
-        if (sastr_cmp(&info->vars, mkey.s) == -1) {
+        if (!name_present(&info->vars, mkey.s)) {
 
-            if (!stralloc_catb(&info->vars, mkey.s, mkey.len + 1)) {
+            if (!strbuf_catb(&info->vars, mkey.s, mkey.len + 1)) {
                 info->vars.len = blah.var ;
                 info->values.len = blah.value ;
                 return 0 ;
@@ -244,7 +257,7 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
 
         if (unexport) {
 
-            if (!stralloc_catb(&info->modifs, mkey.s, mkey.len + 1)) {
+            if (!strbuf_catb(&info->modifs, mkey.s, mkey.len + 1)) {
                 info->vars.len = blah.var ;
                 info->values.len = blah.value ;
                 return (errno = EOVERFLOW, 0) ;
@@ -266,25 +279,25 @@ uint8_t environ_substitute(stralloc *modifs, exlsn_t *info)
 
         } else {
 
-            int r ;
             unexport = (nval.s[0] == VAR_UNEXPORT) ? 1 : 0 ;
-            if (!stralloc_cats(&info->values, nval.s + unexport)) {
+            if (!strbuf_cats(&info->values, nval.s + unexport)) {
                 info->vars.len = blah.var ;
                 info->values.len = blah.value ;
                 return (errno = EOVERFLOW, 0) ;
             }
 
-            r = el_transform(&info->values, blah.value, &si) ;
-            if (r < 0) {
+            /* el_transform with a zero eltransforminfo only NUL-terminates the
+             * value and yields a single value (n=1); reproduce that directly. */
+            if (!strbuf_terminate(&info->values)) {
                 info->vars.len = blah.var ;
                 info->values.len = blah.value ;
-                return 0 ;
+                return (errno = EOVERFLOW, 0) ;
             }
 
-            blah.n = r ;
+            blah.n = 1 ;
         }
 
-        if (!genalloc_append(elsubst_t, &info->data, &blah)) {
+        if (!genbuf_append(subst_entry_t, &info->data, &blah)) {
             info->vars.len = blah.var ;
             info->values.len = blah.value ;
             return 0 ;

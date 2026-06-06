@@ -8,14 +8,14 @@
 
 void compare(stralloc *sa, const char *a, const char *b)
 {
-    exlsn_t info = EXLSN_ZERO ;
+    subst_t info = SUBST_ZERO ;
     sa->len = 0 ;
     assert(environ_merge_string(sa, a) == 1) ;
     assert(environ_substitute(sa, &info) == 1) ;
     assert(environ_rebuild(sa) == 1) ;
     assert(stralloc_0(sa) == 1) ;
     assert(strcmp(sa->s, b) == 0) ;
-    exlsn_free(&info) ;
+    subst_free(&info) ;
 }
 
 void basic()

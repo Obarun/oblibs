@@ -19,30 +19,13 @@
 
 #include <oblibs/stack.h>
 #include <oblibs/lexer.h>
+#include <oblibs/subst.h>
 #include <skalibs/stralloc.h>
-#include <skalibs/genalloc.h>
-
-#include <execline/execline.h>
 
 #define MAXVAR  50
 #define MAXFILE 20
 #define MAXENV 8191
 #define VAR_UNEXPORT '!'
-
-typedef struct exlsn_s exlsn_t, *exlsn_t_ref ;
-struct exlsn_s
-{
-  stralloc vars ;
-  stralloc values ;
-  genalloc data ; // array of elsubst
-  stralloc modifs ;
-} ;
-
-#define EXLSN_ZERO { \
-    .vars = STRALLOC_ZERO, .values = STRALLOC_ZERO, \
-    .data = GENALLOC_ZERO, .modifs = STRALLOC_ZERO }
-
-extern void exlsn_free (exlsn_t *) ;
 
 /** Please POSIX */
 extern char **environ ;
@@ -65,7 +48,7 @@ extern uint8_t environ_parse_file(stack *stk, const char *file) ;
 /** Substitute value of @key with @val into @envp
  * @Return 1 on success
  * @Return 0 on fail*/
-extern uint8_t environ_substitute(stralloc *modifs, exlsn_t *info) ;
+extern uint8_t environ_substitute(stralloc *modifs, subst_t *info) ;
 
 /** Extract the key (meaning everything before '=') from @str,
  * removing " \t\r\n" characters.
