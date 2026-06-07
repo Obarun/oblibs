@@ -58,4 +58,12 @@ extern int file_write_unsafe_g(char const *file,char const *content) ;
  * @Return 1 on success
  * @Return 0 on fail */
 extern int file_read(strbuf *sb,char const *dir,char const *file) ;
+
+/** Copy the regular-file contents of @src into @dst, creating/truncating @dst
+ * with mode @mode. Direct copy, not atomic: @dst is truncated up front, so a
+ * mid-copy failure leaves a partial @dst. Native replacement for skalibs
+ * filecopy_unsafe.
+ * @Return 1 on success
+ * @Return 0 on fail and set errno */
+extern int file_copy(char const *src, char const *dst, mode_t mode) ;
 #endif
