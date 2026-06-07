@@ -93,7 +93,7 @@ int socket_unsetfd_flags(int fd, int flags) ;
  *
  * @see socket_setfd
  */
-#define socket_set_coe(fd) socket_setfd(fd, FD_CLOEXEC)
+#define socket_set_coe(fd) socket_setfd_flags(fd, FD_CLOEXEC)
 
 /**
  * @brief Set the non-blocking I/O flag (`O_NONBLOCK`) on a file descriptor.
