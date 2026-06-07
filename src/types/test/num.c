@@ -30,6 +30,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <errno.h>
+#include <signal.h>
 
 #include <oblibs/types.h>
 
@@ -374,6 +375,115 @@ static void test_scan_strict_golden(void)
     TEST_END() ;
 }
 
+static void test_sig_parse_golden(void)
+{
+    TEST_START("test_sig_parse_golden") ;
+
+    int sig ;
+
+    /* exhaustive: every name the table can hold, checked bare AND "SIG"-prefixed,
+     * against the system SIGxxx macros as an independent oracle. The #ifdef set
+     * MUST match sig_parse.c, else a name present here but absent there would fall
+     * through to the numeric scan and fail. Catches a typo in the ported table. */
+    static struct { char const *name ; int num ; } const tab[] = {
+        { "ABRT", SIGABRT }, { "ALRM", SIGALRM }, { "BUS", SIGBUS }, { "CHLD", SIGCHLD },
+#ifdef SIGCLD
+        { "CLD", SIGCLD },
+#endif
+        { "CONT", SIGCONT },
+#ifdef SIGEMT
+        { "EMT", SIGEMT },
+#endif
+        { "FPE", SIGFPE }, { "HUP", SIGHUP }, { "ILL", SIGILL },
+#ifdef SIGINFO
+        { "INFO", SIGINFO },
+#endif
+        { "INT", SIGINT },
+#ifdef SIGIO
+        { "IO", SIGIO },
+#endif
+#ifdef SIGIOT
+        { "IOT", SIGIOT },
+#endif
+        { "KILL", SIGKILL },
+#ifdef SIGLOST
+        { "LOST", SIGLOST },
+#endif
+        { "PIPE", SIGPIPE },
+#ifdef SIGPOLL
+        { "POLL", SIGPOLL },
+#endif
+#ifdef SIGPROF
+        { "PROF", SIGPROF },
+#endif
+#ifdef SIGPWR
+        { "PWR", SIGPWR },
+#endif
+        { "QUIT", SIGQUIT }, { "SEGV", SIGSEGV },
+#ifdef SIGSTKFLT
+        { "STKFLT", SIGSTKFLT },
+#endif
+        { "STOP", SIGSTOP },
+#ifdef SIGSYS
+        { "SYS", SIGSYS },
+#endif
+        { "TERM", SIGTERM },
+#ifdef SIGTRAP
+        { "TRAP", SIGTRAP },
+#endif
+        { "TSTP", SIGTSTP }, { "TTIN", SIGTTIN }, { "TTOU", SIGTTOU },
+#ifdef SIGUNUSED
+        { "UNUSED", SIGUNUSED },
+#endif
+#ifdef SIGURG
+        { "URG", SIGURG },
+#endif
+        { "USR1", SIGUSR1 }, { "USR2", SIGUSR2 },
+#ifdef SIGVTALRM
+        { "VTALRM", SIGVTALRM },
+#endif
+#ifdef SIGWINCH
+        { "WINCH", SIGWINCH },
+#endif
+#ifdef SIGXCPU
+        { "XCPU", SIGXCPU },
+#endif
+#ifdef SIGXFSZ
+        { "XFSZ", SIGXFSZ },
+#endif
+    } ;
+    char pfx[16] ;
+    for (size_t i = 0 ; i < sizeof tab / sizeof *tab ; i++) {
+        size_t n = strlen(tab[i].name) ;
+        sig = -1 ;
+        TEST_ASSERT(sig_parse(tab[i].name, &sig) == n && sig == tab[i].num, tab[i].name) ;
+        memcpy(pfx, "SIG", 3) ; memcpy(pfx + 3, tab[i].name, n + 1) ;
+        sig = -1 ;
+        TEST_ASSERT(sig_parse(pfx, &sig) == n + 3 && sig == tab[i].num, "SIG-prefixed name") ;
+    }
+
+    /* case-insensitivity (bare and prefixed) */
+    sig = -1 ; TEST_ASSERT(sig_parse("term", &sig) == 4 && sig == SIGTERM, "lowercase \"term\"") ;
+    sig = -1 ; TEST_ASSERT(sig_parse("sigterm", &sig) == 7 && sig == SIGTERM, "lowercase \"sigterm\"") ;
+    sig = -1 ; TEST_ASSERT(sig_parse("SiGkIlL", &sig) == 7 && sig == SIGKILL, "mixed case \"SiGkIlL\"") ;
+
+    /* strict decimal number, bare and prefixed */
+    sig = -1 ; TEST_ASSERT(sig_parse("15", &sig) == 2 && sig == 15, "number \"15\"") ;
+    sig = -1 ; TEST_ASSERT(sig_parse("9", &sig) == 1 && sig == 9, "number \"9\"") ;
+    sig = -1 ; TEST_ASSERT(sig_parse("SIG15", &sig) == 5 && sig == 15, "prefixed number \"SIG15\"") ;
+
+    /* rejections: return 0 AND leave *sig untouched */
+    char const *bad[] = {
+        "", "SIG", "bogus", "TERMx", "SIGSIGTERM", "SIGbogus", "15x", " 15", "sig", "TER",
+    } ;
+    for (size_t i = 0 ; i < sizeof bad / sizeof *bad ; i++) {
+        sig = 0x5EED ;
+        TEST_ASSERT(sig_parse(bad[i], &sig) == 0 && sig == 0x5EED, bad[i]) ;
+    }
+
+    TEST_END() ;
+}
+
 int main(void)
 {
     printf("=== num test suite ===\n") ;
@@ -384,6 +494,7 @@ int main(void)
     test_scan_golden() ;
     test_iscan_golden() ;
     test_scan_strict_golden() ;
+    test_sig_parse_golden() ;
     test_roundtrip() ;
     printf("All num tests passed.\n") ;
     return 0 ;

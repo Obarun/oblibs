@@ -124,6 +124,20 @@ extern char fmt_digit(unsigned char v) ;
  */
 extern unsigned char scan_digit(unsigned char c, unsigned char base) ;
 
+/**
+ * @brief Parse a signal specifier into its number. Native replacement for
+ * skalibs sig0_scan.
+ *
+ * Accepts three forms: a signal name ("TERM", case-insensitive), a strict
+ * decimal number ("15", the whole string must be the number), or either of
+ * these prefixed with "SIG" ("SIGTERM", "SIG15").
+ * @param s    Source text.
+ * @param sig  Result, written only on success.
+ * @return Number of characters consumed (the whole length on success), 0 if
+ *         @s is not a valid signal specifier.
+ */
+extern size_t sig_parse(char const *s, int *sig) ;
+
 /* convenience macros: format in a given base */
 
 #define u64_fmt(s, x)   u64_fmtbase((s), (x), 10)
