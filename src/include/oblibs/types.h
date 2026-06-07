@@ -481,7 +481,4 @@ static inline size_t pid_parse_base(char const *s, pid_t *p, uint8_t base)
  * otherwise @Return 0 */
 extern mode_t get_flags(mode_t mode, mode_t stmode) ;
 
-static inline void errno_restore_(const int *e) { errno = *e ; }
-#define ERRNO_SAFE int errno_safe_ __attribute__((cleanup(errno_restore_))) = errno
-
 #endif

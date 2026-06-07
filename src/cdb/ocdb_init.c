@@ -76,9 +76,10 @@ int ocdb_init_at(ocdb *c, int dirfd, char const *path)
 
 void ocdb_free(ocdb *c)
 {
-    ERRNO_SAFE ;
+    int e = errno ;
     if (c->map) {
         munmap((void *)c->map, c->size) ;
         c->map = 0 ;
     }
+    errno = e ;
 }
