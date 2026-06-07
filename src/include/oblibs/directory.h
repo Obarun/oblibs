@@ -64,4 +64,13 @@ extern void dir_unslash(char *path) ;
  * @Return 1 on success, 0 on failure (errno set). */
 extern int dir_destroy (char const *dir) ;
 
+/** Recursively copy the filesystem hierarchy at @src to @dst (cp -a semantics),
+ * preserving type, mode and ownership. Handles regular file, directory, fifo,
+ * symlink (copied verbatim, never followed) and device nodes. @dst directory
+ * may already exist. Each directory listing is read fully and the directory
+ * closed before recursing, so no directory handle is held open across the
+ * recursion. Native replacement for skalibs hiercopy.
+ * @Return 1 on success, 0 on failure (errno set). */
+extern int tree_copy (char const *src, char const *dst) ;
+
 #endif
