@@ -35,7 +35,6 @@
 #define OB_IO_MESSAGE_H
 
 #include <sys/types.h>
-#include <sys/uio.h>
 
 #include <oblibs/io_rb.h>
 

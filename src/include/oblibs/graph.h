@@ -72,7 +72,6 @@
 #define OB_GRAPH_H
 
 #include <stddef.h>
-#include <stdio.h> // only for graph_show
 #include <stdint.h>
 #include <stdbool.h>
 

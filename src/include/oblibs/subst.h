@@ -27,7 +27,6 @@
 #ifndef OB_SUBST_H
 #define OB_SUBST_H
 
-#include <sys/types.h>
 #include <stddef.h>
 
 #include <oblibs/strbuf.h>

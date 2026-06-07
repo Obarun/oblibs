@@ -15,9 +15,8 @@
 #ifndef OB_LOG_H
 #define OB_LOG_H
 
-#include <errno.h>
 #include <stddef.h>
-#include <stdarg.h>
+#include <stdio.h>
 
 #include <oblibs/attributes.h>
 
@@ -647,8 +646,6 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
  *
  *
  */
-
-#include <stdio.h>
 
 #define LOG_FMTBUF_SIZE 1024
 

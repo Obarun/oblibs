@@ -17,14 +17,15 @@
 #ifndef OB_SSE_H
 #define OB_SSE_H
 
-#include <fcntl.h>
-#include <string.h>
-#include <sys/epoll.h>
+#include <errno.h>
+#include <stddef.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <time.h>
 #include <stdint.h>
+#include <sys/epoll.h>
 #include <sys/signalfd.h>
+#include <sys/types.h>
 
 #include <oblibs/queue.h>
 #include <oblibs/hash.h>

@@ -16,12 +16,15 @@
 #define OB_LINUX_H
 
 #include <stdint.h>
-#include <sys/inotify.h>
-#include <oblibs/hash.h>
-#include <signal.h>
-#include <sys/signalfd.h>
 #include <limits.h> // NAME_MAX
 #include <stdbool.h>
+#include <signal.h>
+#include <sys/inotify.h>
+#include <sys/signalfd.h>
+#include <sys/types.h>
+
+
+#include <oblibs/hash.h>
 
 extern int lx_signalfd_init(void) ;
 extern ssize_t lx_signalfd_read(struct signalfd_siginfo *si) ;

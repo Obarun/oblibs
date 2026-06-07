@@ -27,7 +27,6 @@
 #ifndef OB_CLOCK_H
 #define OB_CLOCK_H
 
-#include <sys/types.h>
 #include <sys/time.h>
 #include <stdint.h>
 #include <time.h>

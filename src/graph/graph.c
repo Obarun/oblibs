@@ -413,21 +413,21 @@ void graph_show(graph *g)
     vertex_t *s = NULL, *tmp = NULL ;
     log_1_warn("[DEBUG]: ") ;
     HASH_ITER(hh, g->vertexes, s, tmp) {
-        printf("%s:%i -> ", s->name, s->index) ;
+        flog_1_warn("%s:%i -> ", s->name, s->index) ;
         if (s->ndepends) {
             vertex_t *list[s->ndepends] ;
             graph_get_edge(g, s, list, false) ;
             for (uint32_t pos = 0 ; pos < s->ndepends ; pos++)
-                printf("%s:%i ", list[pos]->name, list[pos]->index) ;
+                flog_1_warn("%s:%i ", list[pos]->name, list[pos]->index) ;
         }
 
-        printf("\n%s:%i <- ", s->name, s->index) ;
+        flog_1_warn("\n%s:%i <- ", s->name, s->index) ;
         if (s->nrequiredby) {
             vertex_t *list[s->nrequiredby] ;
             graph_get_edge(g, s, list, true) ;
             for (uint32_t pos = 0 ; pos < s->nrequiredby ; pos++)
-                printf("%s:%i ", list[pos]->name, list[pos]->index) ;
+                flog_1_warn("%s:%i ", list[pos]->name, list[pos]->index) ;
         }
-        printf("\n") ;
+        log_1_warn("\n") ;
     }
 }

@@ -24,15 +24,11 @@
 #ifndef OB_SSE_STREAM_H
 #define OB_SSE_STREAM_H
 
-#include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <sys/uio.h>
-#include <sys/socket.h>
 #include <sys/types.h>
 
-#include <oblibs/rbuffer.h>
-#include <oblibs/socket.h>
 #include <oblibs/sse.h>
 #include <oblibs/io_rb.h>
 

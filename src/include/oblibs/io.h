@@ -15,6 +15,7 @@
 #ifndef OB_IO_H
 #define OB_IO_H
 
+#include <errno.h>
 #include <stddef.h>
 #include <sys/types.h>
 #include <sys/uio.h>

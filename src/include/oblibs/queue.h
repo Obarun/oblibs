@@ -65,6 +65,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #define NPLUS 8
 

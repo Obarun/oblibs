@@ -27,6 +27,7 @@
 #define OB_IO_RB_H
 
 #include <stddef.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <sys/uio.h>
 #include <sys/types.h>

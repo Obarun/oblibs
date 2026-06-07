@@ -33,6 +33,7 @@
 
 #include <oblibs/sse_stream.h>
 #include <oblibs/io_message.h>
+#include <oblibs/io_rb.h>
 
 /**
  * @brief Callback invoked when a complete message has been received.

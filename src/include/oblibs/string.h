@@ -15,9 +15,8 @@
 #ifndef OB_STRING_H
 #define OB_STRING_H
 
+#include <stddef.h>
 #include <sys/types.h>
-#include <stdarg.h>
-#include <stdint.h>
 
 #include <oblibs/ostream.h>
 #include <oblibs/strbuf.h>

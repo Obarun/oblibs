@@ -28,9 +28,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <sys/uio.h>
 #include <errno.h>
-#include <sys/stat.h>
+#include <sys/uio.h>
 
 /**
  * @struct rbuffer_s

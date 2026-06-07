@@ -15,6 +15,7 @@
 #ifndef OB_ENVIRON_H
 #define OB_ENVIRON_H
 
+#include <stdint.h>
 #include <sys/types.h>
 
 #include <oblibs/strbuf.h>

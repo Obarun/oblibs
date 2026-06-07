@@ -13,6 +13,7 @@
  */
 
 #include <string.h>
+#include <errno.h>
 
 #include <oblibs/strbuf.h>
 #include <oblibs/lexer.h>
