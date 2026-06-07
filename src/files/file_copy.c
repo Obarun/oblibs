@@ -30,7 +30,7 @@ int file_copy(char const *src, char const *dst, mode_t mode)
 
     int d = io_open_mode(dst, O_WRONLY | O_CREAT | O_TRUNC, mode) ;
     if (d < 0) {
-        fd_close(s) ;
+        close_fd(s) ;
         return 0 ;
     }
 
@@ -45,12 +45,12 @@ int file_copy(char const *src, char const *dst, mode_t mode)
             goto err ;
     }
 
-    fd_close(d) ;
-    fd_close(s) ;
+    close_fd(d) ;
+    close_fd(s) ;
     return 1 ;
 
  err:
-    fd_close(d) ;
-    fd_close(s) ;
+    close_fd(d) ;
+    close_fd(s) ;
     return 0 ;
 }

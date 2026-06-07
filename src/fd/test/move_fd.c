@@ -1,5 +1,5 @@
 /*
- * fd_move.c
+ * move_fd.c
  *
  * Copyright (c) 2026 Eric Vidal <eric@obarun.org>
  *
@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-/* Non-regression test for the oblibs-native fd_move, drop-in replacement for
- * skalibs' fd_move. Pins down the contract: the source is duplicated onto the
+/* Non-regression test for the oblibs-native move_fd, drop-in replacement for
+ * skalibs' move_fd. Pins down the contract: the source is duplicated onto the
  * target then closed, errno is preserved on the success path, and the to==from
  * special case clears the close-on-exec flag instead of duplicating. */
 
@@ -58,8 +58,8 @@ static void test_move_success(void)
     TEST_ASSERT(close(to) == 0, "close(to) failed") ;   /* ... now free again */
 
     errno = EXDEV ;                 /* sentinel: success path must restore it */
-    int r = fd_move(to, from) ;
-    TEST_ASSERT(r == 0, "fd_move should succeed") ;
+    int r = move_fd(to, from) ;
+    TEST_ASSERT(r == 0, "move_fd should succeed") ;
     TEST_ASSERT(errno == EXDEV, "errno not preserved on success") ;
 
     TEST_ASSERT(fcntl(to, F_GETFD) >= 0, "target fd should be valid") ;
@@ -70,7 +70,7 @@ static void test_move_success(void)
 }
 
 /* to == from: no dup, the close-on-exec flag is cleared (this exercises the
- * corrected io_uncoe under the hood). */
+ * corrected uncloexec_fd under the hood). */
 static void test_move_same_fd_clears_cloexec(void)
 {
     TEST_START("test_move_same_fd_clears_cloexec") ;
@@ -79,8 +79,8 @@ static void test_move_same_fd_clears_cloexec(void)
     TEST_ASSERT(fd >= 0, "open /dev/null failed") ;
     TEST_ASSERT(fcntl(fd, F_GETFD) & FD_CLOEXEC, "cloexec should be set after O_CLOEXEC open") ;
 
-    int r = fd_move(fd, fd) ;
-    TEST_ASSERT(r == 0, "fd_move(fd, fd) should succeed") ;
+    int r = move_fd(fd, fd) ;
+    TEST_ASSERT(r == 0, "move_fd(fd, fd) should succeed") ;
     TEST_ASSERT(fcntl(fd, F_GETFD) >= 0, "fd should still be valid") ;
     TEST_ASSERT(!(fcntl(fd, F_GETFD) & FD_CLOEXEC), "cloexec should be cleared") ;
 
@@ -90,7 +90,7 @@ static void test_move_same_fd_clears_cloexec(void)
 
 int main(void)
 {
-    printf("=== fd_move test suite ===\n\n") ;
+    printf("=== move_fd test suite ===\n\n") ;
 
     test_move_success() ;
     test_move_same_fd_clears_cloexec() ;

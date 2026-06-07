@@ -43,13 +43,13 @@ int dir_beabsolute(char *dst,char const *dir)
     }
     char *p = getcwd(dst,dirlen) ;
     if (!p) goto err ;
-    if (fd_chdir(fd) < 0) goto err ;
-    fd_close(fd) ;
+    if (chdir_fd(fd) < 0) goto err ;
+    close_fd(fd) ;
     errno = e ;
     auto_strings(dst, p, "/", file ? dir : 0) ;
     return 1 ;
     err:
-        fd_close(fd) ;
+        close_fd(fd) ;
         errno = e ;
         return 0 ;
 }

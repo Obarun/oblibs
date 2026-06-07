@@ -1,5 +1,5 @@
 /*
- * fd_chdir.c
+ * chdir_fd.c
  *
  * Copyright (c) 2026 Eric Vidal <eric@obarun.org>
  *
@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-/* Non-regression test for the oblibs-native fd_chdir, drop-in replacement for
- * skalibs' fd_chdir. Pins down the contract: the cwd really moves to the
+/* Non-regression test for the oblibs-native chdir_fd, drop-in replacement for
+ * skalibs' chdir_fd. Pins down the contract: the cwd really moves to the
  * directory the fd refers to, errno is preserved on success, and a failure
  * (invalid fd) returns -1 with errno set (EBADF) -- i.e. not preserved. */
 
@@ -39,7 +39,7 @@
 #define TEST_START(name) printf("Running %s...", name)
 #define TEST_END() printf(" PASS\n")
 
-/* Opening "/" then cd'ing elsewhere, fd_chdir must bring us back to "/",
+/* Opening "/" then cd'ing elsewhere, chdir_fd must bring us back to "/",
  * leaving a non-zero errno untouched. */
 static void test_chdir_success(void)
 {
@@ -51,13 +51,13 @@ static void test_chdir_success(void)
     TEST_ASSERT(chdir("/tmp") == 0, "chdir /tmp failed") ;
 
     errno = EXDEV ;                 /* sentinel: a successful call must keep it */
-    int r = fd_chdir(root) ;
-    TEST_ASSERT(r == 0, "fd_chdir should succeed") ;
+    int r = chdir_fd(root) ;
+    TEST_ASSERT(r == 0, "chdir_fd should succeed") ;
     TEST_ASSERT(errno == EXDEV, "errno not preserved on success") ;
 
     char cwd[4096] ;
     TEST_ASSERT(getcwd(cwd, sizeof cwd) != NULL, "getcwd failed") ;
-    TEST_ASSERT(strcmp(cwd, "/") == 0, "cwd is not / after fd_chdir") ;
+    TEST_ASSERT(strcmp(cwd, "/") == 0, "cwd is not / after chdir_fd") ;
 
     close(root) ;
     TEST_END() ;
@@ -70,8 +70,8 @@ static void test_chdir_invalid_fd(void)
     TEST_START("test_chdir_invalid_fd") ;
 
     errno = 0 ;
-    int r = fd_chdir(-1) ;
-    TEST_ASSERT(r == -1, "fd_chdir(-1) should fail") ;
+    int r = chdir_fd(-1) ;
+    TEST_ASSERT(r == -1, "chdir_fd(-1) should fail") ;
     TEST_ASSERT(errno == EBADF, "errno should be EBADF on invalid fd") ;
 
     TEST_END() ;
@@ -79,7 +79,7 @@ static void test_chdir_invalid_fd(void)
 
 int main(void)
 {
-    printf("=== fd_chdir test suite ===\n\n") ;
+    printf("=== chdir_fd test suite ===\n\n") ;
 
     test_chdir_success() ;
     test_chdir_invalid_fd() ;

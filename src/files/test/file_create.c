@@ -13,7 +13,7 @@
  */
 
 /* Non-regression test for the oblibs-native file_create_empty
- * (io_open_mode + close), which dropped skalibs' open3 / fd_close. Covers
+ * (io_open_mode + close), which dropped skalibs' open3 / close_fd. Covers
  * creation (mode, empty, regular), the O_EXCL refusal, the dst-must-be-absolute
  * guard, the trailing-slash handling, and errno preservation on success. */
 

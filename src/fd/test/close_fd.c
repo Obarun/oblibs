@@ -1,5 +1,5 @@
 /*
- * fd_close.c
+ * close_fd.c
  *
  * Copyright (c) 2026 Eric Vidal <eric@obarun.org>
  *
@@ -12,8 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-/* Non-regression test for the oblibs-native fd_close, the drop-in replacement
- * for skalibs' fd_close. oblibs keeps the very same symbol name, so the two
+/* Non-regression test for the oblibs-native close_fd, the drop-in replacement
+ * for skalibs' close_fd. oblibs keeps the very same symbol name, so the two
  * implementations cannot be linked side by side and called distinctly in one
  * translation unit -- the test therefore pins down skalibs' exact contract
  * instead: the descriptor is really closed, and errno is preserved across the
@@ -50,7 +50,7 @@ static int fd_is_closed(int fd)
 }
 
 /* A valid open fd is actually closed, and a non-zero errno set beforehand is
- * left untouched (the whole point of fd_close over a plain close()). */
+ * left untouched (the whole point of close_fd over a plain close()). */
 static void test_success_preserves_errno(void)
 {
     TEST_START("test_success_preserves_errno") ;
@@ -59,8 +59,8 @@ static void test_success_preserves_errno(void)
     TEST_ASSERT(fd >= 0, "open /dev/null failed") ;
 
     errno = EXDEV ;            /* sentinel: must survive the close */
-    fd_close(fd) ;
-    TEST_ASSERT(errno == EXDEV, "errno not preserved across fd_close") ;
+    close_fd(fd) ;
+    TEST_ASSERT(errno == EXDEV, "errno not preserved across close_fd") ;
 
     /* now the errno check is done, we may clobber it to probe the fd */
     TEST_ASSERT(fd_is_closed(fd), "fd was not actually closed") ;
@@ -69,7 +69,7 @@ static void test_success_preserves_errno(void)
 }
 
 /* Closing an already-invalid fd makes the underlying close() fail with EBADF,
- * yet fd_close must still restore the caller's errno rather than leak EBADF. */
+ * yet close_fd must still restore the caller's errno rather than leak EBADF. */
 static void test_invalid_fd_preserves_errno(void)
 {
     TEST_START("test_invalid_fd_preserves_errno") ;
@@ -79,12 +79,12 @@ static void test_invalid_fd_preserves_errno(void)
     TEST_ASSERT(close(fd) == 0, "manual close failed") ;   /* fd now invalid */
 
     errno = EXDEV ;
-    fd_close(fd) ;             /* internal close() fails EBADF, must be hidden */
+    close_fd(fd) ;             /* internal close() fails EBADF, must be hidden */
     TEST_ASSERT(errno == EXDEV, "errno not preserved on already-closed fd") ;
 
     errno = EXDEV ;
-    fd_close(-1) ;            /* clearly invalid */
-    TEST_ASSERT(errno == EXDEV, "errno not preserved on fd_close(-1)") ;
+    close_fd(-1) ;            /* clearly invalid */
+    TEST_ASSERT(errno == EXDEV, "errno not preserved on close_fd(-1)") ;
 
     TEST_END() ;
 }
@@ -98,7 +98,7 @@ static void test_zero_errno_stays_zero(void)
     TEST_ASSERT(fd >= 0, "open /dev/null failed") ;
 
     errno = 0 ;
-    fd_close(fd) ;
+    close_fd(fd) ;
     TEST_ASSERT(errno == 0, "errno should remain 0") ;
 
     TEST_END() ;
@@ -106,7 +106,7 @@ static void test_zero_errno_stays_zero(void)
 
 int main(void)
 {
-    printf("=== fd_close test suite ===\n\n") ;
+    printf("=== close_fd test suite ===\n\n") ;
 
     test_success_preserves_errno() ;
     test_invalid_fd_preserves_errno() ;

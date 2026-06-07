@@ -1,5 +1,5 @@
 /*
- * io_uncoe.c
+ * cloexec_fd.c
  *
  * Copyright (c) 2024-2025 Eric Vidal <eric@obarun.org>
  *
@@ -14,10 +14,12 @@
 
 #include <fcntl.h>
 
-int io_uncoe(int fd)
+#include <oblibs/fd.h>
+
+int cloexec_fd(int fd)
 {
     int f = fcntl(fd, F_GETFD) ;
-    if (f < 0 || fcntl(fd, F_SETFD, f & ~FD_CLOEXEC) < 0)
+    if (f < 0 || fcntl(fd, F_SETFD, f | FD_CLOEXEC) < 0)
         return 0 ;
 
     return 1 ;

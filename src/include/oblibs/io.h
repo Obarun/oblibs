@@ -36,8 +36,6 @@
  */
 #define error_isagain(e) (((e) == EAGAIN) || ((e) == EWOULDBLOCK))
 
-extern int io_coe(int fd) ;
-extern int io_uncoe(int fd) ;
 extern int io_setfl(int fd, int flags) ;
 extern int io_unsetfl(int fd, int flags) ;
 extern int io_set_block(int fd) ;

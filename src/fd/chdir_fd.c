@@ -1,5 +1,5 @@
 /*
- * fd_chdir.c
+ * chdir_fd.c
  *
  * Copyright (c) 2026 Eric Vidal <eric@obarun.org>
  *
@@ -13,7 +13,7 @@
  */
 
 /** This function comes from:
- * https://git.skarnet.org/cgi-bin/cgit.cgi/skalibs/tree/src/libstddjb/fd_chdir.c
+ * https://git.skarnet.org/cgi-bin/cgit.cgi/skalibs/tree/src/libstddjb/chdir_fd.c
  * under license ISC. All credits go to Laurent Bercot, author of this function. */
 
 #include <errno.h>
@@ -21,7 +21,7 @@
 
 #include <oblibs/fd.h>
 
-int fd_chdir(int fd)
+int chdir_fd(int fd)
 {
     int e = errno ;
     int r ;

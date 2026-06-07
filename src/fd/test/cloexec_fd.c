@@ -1,5 +1,5 @@
 /*
- * io_coe.c
+ * cloexec_fd.c
  *
  * Copyright (c) 2026 Eric Vidal <eric@obarun.org>
  *
@@ -12,7 +12,7 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-/* Non-regression test for io_coe / io_uncoe. These act on the close-on-exec
+/* Non-regression test for cloexec_fd / uncloexec_fd. These act on the close-on-exec
  * descriptor flag (FD_CLOEXEC, via F_GETFD/F_SETFD) -- NOT on the file status
  * flags. The test verifies the flag is really set then cleared as observed
  * through F_GETFD, and that both return 0 (failure) on a bad fd. */
@@ -24,7 +24,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include <oblibs/io.h>
+#include <oblibs/fd.h>
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -47,11 +47,11 @@ static void test_coe_uncoe_roundtrip(void)
     TEST_ASSERT(fd >= 0, "open /dev/null failed") ;
     TEST_ASSERT(!(fcntl(fd, F_GETFD) & FD_CLOEXEC), "cloexec should start clear") ;
 
-    TEST_ASSERT(io_coe(fd) == 1, "io_coe should succeed") ;
-    TEST_ASSERT(fcntl(fd, F_GETFD) & FD_CLOEXEC, "io_coe must set FD_CLOEXEC") ;
+    TEST_ASSERT(cloexec_fd(fd) == 1, "cloexec_fd should succeed") ;
+    TEST_ASSERT(fcntl(fd, F_GETFD) & FD_CLOEXEC, "cloexec_fd must set FD_CLOEXEC") ;
 
-    TEST_ASSERT(io_uncoe(fd) == 1, "io_uncoe should succeed") ;
-    TEST_ASSERT(!(fcntl(fd, F_GETFD) & FD_CLOEXEC), "io_uncoe must clear FD_CLOEXEC") ;
+    TEST_ASSERT(uncloexec_fd(fd) == 1, "uncloexec_fd should succeed") ;
+    TEST_ASSERT(!(fcntl(fd, F_GETFD) & FD_CLOEXEC), "uncloexec_fd must clear FD_CLOEXEC") ;
 
     close(fd) ;
     TEST_END() ;
@@ -61,15 +61,15 @@ static void test_bad_fd(void)
 {
     TEST_START("test_bad_fd") ;
 
-    TEST_ASSERT(io_coe(-1) == 0, "io_coe(-1) should fail") ;
-    TEST_ASSERT(io_uncoe(-1) == 0, "io_uncoe(-1) should fail") ;
+    TEST_ASSERT(cloexec_fd(-1) == 0, "cloexec_fd(-1) should fail") ;
+    TEST_ASSERT(uncloexec_fd(-1) == 0, "uncloexec_fd(-1) should fail") ;
 
     TEST_END() ;
 }
 
 int main(void)
 {
-    printf("=== io_coe / io_uncoe test suite ===\n\n") ;
+    printf("=== cloexec_fd / uncloexec_fd test suite ===\n\n") ;
 
     test_coe_uncoe_roundtrip() ;
     test_bad_fd() ;

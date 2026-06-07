@@ -13,9 +13,9 @@
  */
 
 /* Non-regression test for the oblibs-native file_openclose_readonly
- * (io_open + io_allread + close), which dropped skalibs' fd_close. Covers the
+ * (io_open + io_allread + close), which dropped skalibs' close_fd. Covers the
  * full-read semantics (file larger/smaller/equal to the buffer, empty file),
- * errno preservation on success (the fd_close -> close replacement), and the
+ * errno preservation on success (the close_fd -> close replacement), and the
  * error paths (missing file, real read error). */
 
 #include <stdio.h>

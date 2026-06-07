@@ -54,7 +54,7 @@ int ocdb_init(ocdb *c, char const *path)
         return 0 ;
 
     int r = ocdb_init_fromfd(c, fd) ;
-    fd_close(fd) ;
+    close_fd(fd) ;
 
     return r ;
 }
@@ -69,7 +69,7 @@ int ocdb_init_at(ocdb *c, int dirfd, char const *path)
     else return 0 ;
 
     r = ocdb_init_fromfd(c, fd) ;
-    fd_close(fd) ;
+    close_fd(fd) ;
 
     return r ;
 }

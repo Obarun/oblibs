@@ -1,5 +1,5 @@
 /*
- * fd_close.c
+ * copy_fd.c
  *
  * Copyright (c) 2026 Eric Vidal <eric@obarun.org>
  *
@@ -12,18 +12,24 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-/** This function comes from:
- * https://git.skarnet.org/cgi-bin/cgit.cgi/skalibs/tree/src/libstddjb/fd_close.c
- * under license ISC. All credits go to Laurent Bercot, author of this function. */
-
-#include <errno.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <oblibs/fd.h>
 
-void fd_close(int fd)
+int copy_fd(int to, int from)
 {
     int e = errno ;
-    close(fd) ;
-    errno = e ;
+    int r ;
+
+    if (to == from)
+        return (errno = EINVAL, -1) ;
+
+    do r = dup2(from, to) ;
+    while (r == -1 && errno == EINTR) ;
+
+    if (r >= 0)
+        errno = e ;   /* preserve errno on success */
+
+    return r ;
 }

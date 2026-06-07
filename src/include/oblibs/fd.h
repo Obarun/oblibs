@@ -15,56 +15,75 @@
 #ifndef OB_FD_H
 #define OB_FD_H
 
-/**
- * @brief Closes a file descriptor without disturbing `errno`.
+/*
+ * File-descriptor lifecycle helpers: closing, moving, copying, changing
+ * directory through one, toggling close-on-exec, and making sure the standard
+ * descriptors are open. These are the oblibs-native replacements for the slice
+ * of skalibs `djbunix` that 66 uses (`fd_close`/`fd_chdir`/`fd_move`/`fd_copy`/
+ * `fd_sanitize`, `coe`/`uncoe`).
  *
- * Equivalent of a plain `close(fd)` save that the current value of `errno`
- * is preserved across the call: it is read before `close()` and restored
- * afterwards. The return value of `close()` is intentionally ignored.
+ * Naming: `<action>_fd` (e.g. close_fd), because a descriptor is a plain `int`,
+ * not an ADT -- a free verb reads better than a pseudo-method, and it sidesteps
+ * the skalibs symbol names (no link collision while libskarnet is still linked).
  *
- * Use this in cleanup / error paths where a meaningful `errno` has already
- * been set and must survive the descriptor teardown (e.g. before reporting
- * the error of the operation that actually failed). When you care about the
- * outcome of the close itself, call `close()` directly and check it.
- *
- * This is the oblibs-native replacement for skalibs' `fd_close`; it keeps the
- * exact same name and signature so it acts as a drop-in.
- *
- * @param fd The file descriptor to close.
+ * Two properties run through the module: on *success* `errno` is preserved
+ * (read before, restored after) so a call can sit in a cleanup path without
+ * clobbering it; and the interruptible syscalls (`fchdir`, `dup2`) retry on
+ * `EINTR`.
  */
-extern void fd_close(int fd) ;
 
 /**
- * @brief Changes the working directory to the one referred to by `fd`.
- *
- * Wrapper around `fchdir()` that retries on `EINTR`. On success the value of
- * `errno` is preserved (read before the call, restored after); on failure the
- * `errno` set by `fchdir()` is left in place and -1 is returned.
- *
- * This is the oblibs-native replacement for skalibs' `fd_chdir`; it keeps the
- * exact same name and signature so it acts as a drop-in.
- *
- * @param fd A file descriptor referring to a directory.
- * @return 0 on success, -1 on error (with `errno` set).
+ * @brief Closes @fd without disturbing `errno` (the `close()` return is ignored).
+ * Use it in cleanup/error paths where a meaningful `errno` must survive the
+ * teardown; when you care about the close outcome, call `close()` directly.
+ * Replaces skalibs `fd_close`.
  */
-extern int fd_chdir(int fd) ;
+extern void close_fd(int fd) ;
 
 /**
- * @brief Moves the descriptor `from` onto the number `to`.
- *
- * Duplicates `from` onto `to` with `dup2()` (retrying on `EINTR`) then closes
- * `from`, so that the open file description previously reachable through `from`
- * is now reachable through `to` only, with its close-on-exec flag cleared. If
- * `to == from`, no duplication happens and the close-on-exec flag of `to` is
- * simply cleared. On success `errno` is preserved across the call.
- *
- * This is the oblibs-native replacement for skalibs' `fd_move`; it keeps the
- * exact same name and signature so it acts as a drop-in.
- *
- * @param to   The target descriptor number.
- * @param from The source descriptor.
- * @return 0 on success, -1 on error (with `errno` set).
+ * @brief `fchdir(fd)` with `EINTR` retry; @fd must be a directory. `errno` is
+ * preserved on success. Replaces skalibs `fd_chdir`.
+ * @return 0 on success, -1 on error (`errno` set).
  */
-extern int fd_move(int to, int from) ;
+extern int chdir_fd(int fd) ;
+
+/**
+ * @brief Moves descriptor @from onto the number @to: `dup2` (EINTR-retried) then
+ * `close(from)`, so the description is reachable through @to only, close-on-exec
+ * cleared. `to == from` just clears @to's close-on-exec. `errno` preserved on
+ * success. Replaces skalibs `fd_move`.
+ * @return 0 on success, -1 on error (`errno` set).
+ */
+extern int move_fd(int to, int from) ;
+
+/**
+ * @brief Duplicates @from onto the number @to (both stay open): `dup2`
+ * (EINTR-retried), @to sharing @from's open file description, close-on-exec
+ * cleared. `to == from` is rejected with `EINVAL`. `errno` preserved on success.
+ * Replaces skalibs `fd_copy`.
+ * @return @to (>= 0) on success, -1 on error (`errno` set).
+ */
+extern int copy_fd(int to, int from) ;
+
+/**
+ * @brief Ensures the standard descriptors 0, 1 and 2 are open, opening
+ * `/dev/null` on any that is closed (read-only for 0, write-only for 1 and 2);
+ * already-open descriptors are left untouched. Guards against a later `open()`
+ * silently grabbing a standard descriptor number. Replaces skalibs `fd_sanitize`.
+ * @return 1 on success, 0 on error (`errno` set).
+ */
+extern int ensure_stdfds(void) ;
+
+/**
+ * @brief Sets the close-on-exec flag on @fd (`EINTR`-safe). Replaces skalibs `coe`.
+ * @return 1 on success, 0 on error (`errno` set).
+ */
+extern int cloexec_fd(int fd) ;
+
+/**
+ * @brief Clears the close-on-exec flag on @fd (`EINTR`-safe). Replaces skalibs `uncoe`.
+ * @return 1 on success, 0 on error (`errno` set).
+ */
+extern int uncloexec_fd(int fd) ;
 
 #endif

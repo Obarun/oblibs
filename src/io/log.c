@@ -212,13 +212,13 @@ void redir_fd(int fd,char const *file)
             log_dieusys(LOG_EXIT_SYS, "open_read: ", file) ;
         }
         fdmodif = io_open_mode(file, flags, 0666) ;
-        fd_close(fdr) ;
+        close_fd(fdr) ;
     }
     if (fdmodif == -1) {
             REDIRFD_1 = REDIRFD_2 = 0 ;
             log_dieusys(LOG_EXIT_SYS, "open: ", file) ;
     }
-    if (fd_move(fd, fdmodif) == -1)
+    if (move_fd(fd, fdmodif) == -1)
     {
         REDIRFD_1 = REDIRFD_2 = 0 ;
         flog_dieusys(LOG_EXIT_SYS, "move fd %d to fd: %d", fdmodif, fd) ;

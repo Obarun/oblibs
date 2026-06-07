@@ -1,5 +1,5 @@
 /*
- * fd_move.c
+ * move_fd.c
  *
  * Copyright (c) 2026 Eric Vidal <eric@obarun.org>
  *
@@ -13,24 +13,23 @@
  */
 
 /** This function comes from:
- * https://git.skarnet.org/cgi-bin/cgit.cgi/skalibs/tree/src/libstddjb/fd_move.c
+ * https://git.skarnet.org/cgi-bin/cgit.cgi/skalibs/tree/src/libstddjb/move_fd.c
  * under license ISC. All credits go to Laurent Bercot, author of this function. */
 
 #include <errno.h>
 #include <unistd.h>
 
 #include <oblibs/fd.h>
-#include <oblibs/io.h>
 
-int fd_move(int to, int from)
+int move_fd(int to, int from)
 {
     int e = errno ;
     int r ;
-    if (to == from) return io_uncoe(to) ? 0 : -1 ;
+    if (to == from) return uncloexec_fd(to) ? 0 : -1 ;
     do r = dup2(from, to) ;
     while (r == -1 && errno == EINTR) ;
     if (r < 0) return r ;
     errno = e ;
-    fd_close(from) ;
+    close_fd(from) ;
     return 0 ;
 }
