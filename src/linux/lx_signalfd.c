@@ -17,9 +17,14 @@
  * */
 
 #include <errno.h>
+#include <stddef.h>
 #include <signal.h>
+#include <unistd.h>
 #include <sys/signalfd.h>
+#include <sys/types.h>
+
 #include <oblibs/io.h>
+#include <oblibs/linux.h>
 
 struct lx_signalfd_s
 {

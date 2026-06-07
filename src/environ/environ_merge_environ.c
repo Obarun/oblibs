@@ -12,6 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <stdint.h>
+#include <stddef.h>
 #include <errno.h>
 #include <string.h>
 

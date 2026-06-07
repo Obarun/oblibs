@@ -13,6 +13,7 @@
  * */
 
 #include <errno.h>
+#include <string.h>
 
 #include <oblibs/string.h>
 

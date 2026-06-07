@@ -12,7 +12,7 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <string.h>
+#include <stdint.h>
 #include <errno.h>
 #include <sys/types.h>
 

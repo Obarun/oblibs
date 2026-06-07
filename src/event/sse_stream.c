@@ -14,12 +14,15 @@
 
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
-#include <sys/socket.h>
+#include <fcntl.h>
 #include <sys/uio.h>
 
 #include <oblibs/rbuffer.h>
 #include <oblibs/socket.h>
+#include <oblibs/io.h>
 #include <oblibs/sse.h>
 #include <oblibs/sse_stream.h>
 #include <oblibs/io_rb.h>

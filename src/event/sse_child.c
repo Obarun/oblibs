@@ -13,6 +13,8 @@
  */
 
 #include <errno.h>
+#include <string.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <sys/syscall.h> // For syscall(SYS_pidfd_open)
 #include <unistd.h>

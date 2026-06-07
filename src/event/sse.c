@@ -16,6 +16,7 @@
 #include <stdint.h>     // For uint32_t, uint64_t
 #include <errno.h>      // For errno, EINVAL, EPERM, EBADF, EAGAIN
 #include <string.h>     // For memset, strerror
+#include <stdlib.h>     // For malloc, free, realloc
 #include <sys/epoll.h>  // For epoll_create1, epoll_ctl, epoll_wait, struct epoll_event, EPOLL_CLOEXEC
 #include <sys/select.h> // For select, fd_set, FD_ZERO, FD_SET
 #include <sys/ioctl.h>  // For ioctl, FIONREAD

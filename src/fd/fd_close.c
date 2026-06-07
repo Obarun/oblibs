@@ -19,6 +19,8 @@
 #include <errno.h>
 #include <unistd.h>
 
+#include <oblibs/fd.h>
+
 void fd_close(int fd)
 {
     int e = errno ;

@@ -15,10 +15,11 @@
  * under license ISC. All credits go to Laurent Bercot authors of these functions.
  */
 
+#include <stddef.h>
 #include <string.h>
-#include <errno.h>
 
 #include <oblibs/string.h>
+#include <oblibs/environ.h>
 
 size_t environ_merge (char const **v, size_t vmax, char const *const *envp, size_t envlen, char const *modifs, size_t modiflen)
 {

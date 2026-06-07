@@ -15,8 +15,6 @@
  * opt_cmd_t tables, so the option declaration is the single source of truth.
  */
 
-#include <string.h>
-
 #include <oblibs/opt.h>
 #include <oblibs/strbuf.h>
 

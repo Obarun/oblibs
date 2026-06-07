@@ -15,9 +15,8 @@
 #include <time.h>
 #include <stdbool.h>
 #include <string.h>
-#include <stdint.h>
 #include <stdlib.h>
-#include <unistd.h>
+
 #include <oblibs/bits.h>
 #include <oblibs/log.h>
 

@@ -14,9 +14,12 @@
 
 #include <errno.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/inotify.h>
-#include <sys/types.h>
 
 #include <oblibs/hash.h>
 #include <oblibs/linux.h>

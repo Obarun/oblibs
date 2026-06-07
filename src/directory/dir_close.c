@@ -15,6 +15,8 @@
 #include <errno.h>
 #include <dirent.h>
 
+#include <oblibs/directory.h>
+
 void dir_close(DIR *dir)
 {
     int e = errno ;

@@ -12,13 +12,15 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/clock.h>
-#include <oblibs/types.h>
-
+#include <stddef.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <time.h>
+#include <sys/time.h>
 #include <errno.h>
+
+#include <oblibs/clock.h>
+#include <oblibs/types.h>
 
 int clock_now(struct timespec *ts)
 {

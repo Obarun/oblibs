@@ -30,6 +30,8 @@
  * The single narrowing: oblibs only ever builds entries with n in {0,1}, but
  * the n-value cross-product machinery is kept for that equivalence. */
 
+#include <stddef.h>
+#include <sys/types.h>
 #include <string.h>
 
 #include <oblibs/strbuf.h>

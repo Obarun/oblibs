@@ -13,6 +13,7 @@
  */
 
 #include <errno.h>
+#include <stdint.h>
 
 #include <oblibs/linux.h>
 #include <oblibs/log.h>

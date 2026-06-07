@@ -14,6 +14,8 @@
 
 #include <sys/socket.h>
 
+#include <oblibs/socket.h>
+
 int socketunix_getucred(int fd, struct ucred *cred)
 {
     socklen_t len = sizeof(*cred) ;

@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include <oblibs/string.h>
+#include <oblibs/directory.h>
 
 int dir_is_child(char const *parent, char const *child)
 {

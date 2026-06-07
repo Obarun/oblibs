@@ -12,6 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <stdint.h>
+#include <stddef.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h> // getenv
@@ -21,7 +23,7 @@
 #include <oblibs/log.h>
 #include <oblibs/string.h>
 #include <oblibs/lexer.h>
-
+#include <oblibs/genbuf.h>
 #include <oblibs/subst.h>
 
 /* Is @name (a C string) one of the NUL-separated names already in @names? */

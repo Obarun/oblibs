@@ -16,8 +16,10 @@
  * under license ISC. All credits go to Laurent Bercot authors of these functions.
  * These functions was modified by Eric Vidal <eric@obarun.org> to terminate the array with NULL*/
 
+#include <stddef.h>
 #include <string.h>
 #include <errno.h>
+
 #include <oblibs/environ.h>
 
 int environ_make(char const **v, size_t argc, char const *s, size_t len)

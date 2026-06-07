@@ -19,6 +19,8 @@
 #include <errno.h>
 #include <unistd.h>
 
+#include <oblibs/fd.h>
+
 int fd_chdir(int fd)
 {
     int e = errno ;

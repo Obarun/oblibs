@@ -12,9 +12,12 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <stdint.h>
+#include <stddef.h>
 #include <errno.h>
 
 #include <oblibs/strbuf.h>
+#include <oblibs/environ.h>
 
 uint8_t environ_import_arguments(strbuf *modifs, char const *const *environ, size_t len)
 {

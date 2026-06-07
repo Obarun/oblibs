@@ -13,11 +13,12 @@
  */
 
 #include <unistd.h>
-#include <string.h>
+#include <stddef.h>
 #include <errno.h>
 #include <stdint.h>
 #include <fcntl.h>
 
+#include <oblibs/directory.h>
 #include <oblibs/string.h>
 #include <oblibs/fd.h>
 #include <oblibs/io.h>

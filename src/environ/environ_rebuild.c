@@ -12,9 +12,12 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <stdint.h>
+#include <stddef.h>
 #include <string.h>
 
 #include <oblibs/sbl.h>
+#include <oblibs/environ.h>
 
 uint8_t environ_rebuild(strbuf *sb)
 {

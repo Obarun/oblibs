@@ -12,11 +12,14 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <stdint.h>
+#include <stddef.h>
 #include <string.h>
 #include <errno.h>
 
 #include <oblibs/lexer.h>
 #include <oblibs/strbuf.h>
+#include <oblibs/environ.h>
 
 uint8_t environ_search_key(strbuf *sb, const char *str, const char *key, lexer_config *cfg)
 {

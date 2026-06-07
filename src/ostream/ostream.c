@@ -14,6 +14,7 @@
 
 #include <oblibs/ostream.h>
 
+#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 #include <sys/uio.h>

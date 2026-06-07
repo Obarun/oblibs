@@ -14,8 +14,9 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <string.h>
 #include <errno.h>
+
+#include <oblibs/directory.h>
 
 int dir_create (char const *dst, mode_t mode)
 {

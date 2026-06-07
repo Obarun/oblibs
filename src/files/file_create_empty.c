@@ -19,6 +19,7 @@
 #include <fcntl.h>
 
 #include <oblibs/io.h>
+#include <oblibs/files.h>
 
 int file_create_empty (char const *dst, char const *name,mode_t mode)
 {

@@ -12,11 +12,10 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
 
-#include <oblibs/io.h>
+#include <oblibs/socket.h>
 
 int socket_private(int domain, int type, int protocol, unsigned int flags)
 {

@@ -15,10 +15,12 @@
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <oblibs/bits.h>
 #include <oblibs/string.h>
 #include <oblibs/sbl.h>
+#include <oblibs/strbuf.h>
 #include <oblibs/log.h>
 
 #include <oblibs/sse.h>

@@ -16,11 +16,11 @@
  * https://git.skarnet.org/cgi-bin/cgit.cgi/skalibs/tree/src/libstddjb/fd_move.c
  * under license ISC. All credits go to Laurent Bercot, author of this function. */
 
-#include <oblibs/fd.h>
-#include <oblibs/io.h>
-
 #include <errno.h>
 #include <unistd.h>
+
+#include <oblibs/fd.h>
+#include <oblibs/io.h>
 
 int fd_move(int to, int from)
 {

@@ -13,6 +13,9 @@
  */
 
 #include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include <sys/timerfd.h>
 #include <time.h>
 

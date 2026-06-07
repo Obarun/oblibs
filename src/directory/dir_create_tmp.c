@@ -12,10 +12,11 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <stdlib.h>
+
+#include <oblibs/directory.h>
 #include <oblibs/string.h>
 #include <oblibs/strbuf.h>
-
-#include <stdlib.h>
 
 char *dir_create_tmp(strbuf *sb, char const *dst, char const *tname)
 {

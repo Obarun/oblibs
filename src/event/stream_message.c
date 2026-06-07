@@ -14,7 +14,7 @@
 
 #include <errno.h>
 #include <string.h>
-#include <sys/types.h>
+#include <stddef.h>
 #include <sys/uio.h>
 
 #include <oblibs/sse_stream.h>

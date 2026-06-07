@@ -14,6 +14,8 @@
 
 #include <string.h>
 
+#include <oblibs/directory.h>
+
 void dir_unslash (char *path)
 {
     size_t len = strlen (path) ;

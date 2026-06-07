@@ -12,10 +12,13 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <stdint.h>
+#include <stddef.h>
 #include <string.h>
 
 #include <oblibs/lexer.h>
 #include <oblibs/strbuf.h>
+#include <oblibs/environ.h>
 
 uint8_t environ_get_key(strbuf *sb, const char *str)
 {

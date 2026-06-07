@@ -12,6 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  * */
 
+#include <string.h>
+
 #include <oblibs/string.h>
 
 int ob_dirname(char *dst,char const *path)

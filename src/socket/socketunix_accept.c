@@ -13,13 +13,11 @@
  */
 
 
-#include <stddef.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include <oblibs/log.h>
 #include <oblibs/socket.h>
 
 int socketunix_accept(int s, unsigned int flags)

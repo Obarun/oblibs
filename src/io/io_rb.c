@@ -12,15 +12,15 @@
  * except according to the terms contained in the LICENSE file.
  */
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
+#include <unistd.h>
 #include <sys/uio.h>
+#include <sys/socket.h>
 #include <errno.h>
 #include <string.h>
-#include <sys/socket.h>
 
 #include <oblibs/rbuffer.h>
-#include <oblibs/sse.h>
 #include <oblibs/io.h>
 #include <oblibs/io_rb.h>
 

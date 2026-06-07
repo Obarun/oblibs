@@ -12,8 +12,9 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <string.h>
 #include <stdint.h>
+#include <stddef.h>
+#include <string.h>
 
 #include <oblibs/log.h>
 #include <oblibs/strbuf.h>

@@ -13,7 +13,9 @@
  */
 
 #include <errno.h>
-#include <signal.h> // strsignal
+#include <string.h>
+#include <stdlib.h>
+#include <signal.h>
 
 #include <oblibs/linux.h>
 #include <oblibs/log.h>

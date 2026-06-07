@@ -14,7 +14,6 @@
 
 #include <string.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <sys/un.h> // socket in Unix
 #include <sys/socket.h>
 
