@@ -16,6 +16,8 @@
 #include <grp.h>
 #include <errno.h>
 
+#include <oblibs/account.h>
+
 int get_gidbygroup(char const *name, gid_t *gid)
 {
     int e = errno ;

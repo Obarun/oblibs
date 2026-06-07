@@ -13,7 +13,7 @@
  */
 
 #include <stdint.h>
-#include <string.h>
+
 #include <oblibs/bits.h>
 
 bitset32_t bitset32_init(uint32_t len)

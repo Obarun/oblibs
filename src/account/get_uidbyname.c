@@ -12,11 +12,11 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/account.h>
-
 #include <sys/types.h>
 #include <pwd.h>
 #include <errno.h>
+
+#include <oblibs/account.h>
 
 int get_uidbyname(char const *name,uid_t *uid)
 {
