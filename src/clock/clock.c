@@ -13,6 +13,7 @@
  */
 
 #include <oblibs/clock.h>
+#include <oblibs/types.h>
 
 #include <stdio.h>
 #include <stdint.h>
@@ -117,18 +118,16 @@ void clock_to_timeval(struct timeval *tv, struct timespec const *ts)
 
 void clock_pack(char *s, struct timespec const *ts)
 {
-    uint64_t sec = (uint64_t)ts->tv_sec ;
-    uint32_t nano = (uint32_t)ts->tv_nsec ;
-    for (int i = 7 ; i >= 0 ; i--) { s[i] = (char)(sec & 0xff) ; sec >>= 8 ; }
-    for (int i = 3 ; i >= 0 ; i--) { s[8 + i] = (char)(nano & 0xff) ; nano >>= 8 ; }
+    u64_pack_big(s, (uint64_t)ts->tv_sec) ;
+    u32_pack_big(s + 8, (uint32_t)ts->tv_nsec) ;
 }
 
 void clock_unpack(char const *s, struct timespec *ts)
 {
-    uint64_t sec = 0 ;
-    uint32_t nano = 0 ;
-    for (int i = 0 ; i < 8 ; i++) sec = (sec << 8) | (unsigned char)s[i] ;
-    for (int i = 0 ; i < 4 ; i++) nano = (nano << 8) | (unsigned char)s[8 + i] ;
+    uint64_t sec ;
+    uint32_t nano ;
+    u64_unpack_big(s, &sec) ;
+    u32_unpack_big(s + 8, &nano) ;
     ts->tv_sec = (time_t)sec ;
     ts->tv_nsec = (long)nano ;
 }

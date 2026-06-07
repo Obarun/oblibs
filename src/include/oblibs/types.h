@@ -138,6 +138,54 @@ extern unsigned char scan_digit(unsigned char c, unsigned char base) ;
  */
 extern size_t sig_parse(char const *s, int *sig) ;
 
+/* byte packing: integer <-> fixed-width big/little-endian byte buffer.
+ *
+ * The byte order in the buffer is fixed (big- or little-endian), independent of
+ * the host endianness — the on-disk/wire format stays identical on every target.
+ * Done by explicit byte shifting (no host-endianness macro, no sysdeps). Native
+ * replacement for skalibs uintN_pack_big / uintN_unpack_big and uint32_pack. */
+
+static inline void u32_pack_big(char *s, uint32_t u)
+{
+    s[0] = (char)(u >> 24) ; s[1] = (char)(u >> 16) ;
+    s[2] = (char)(u >> 8) ;  s[3] = (char)u ;
+}
+
+static inline void u32_unpack_big(char const *s, uint32_t *u)
+{
+    *u = ((uint32_t)(unsigned char)s[0] << 24) | ((uint32_t)(unsigned char)s[1] << 16)
+       | ((uint32_t)(unsigned char)s[2] << 8)  |  (uint32_t)(unsigned char)s[3] ;
+}
+
+static inline void u64_pack_big(char *s, uint64_t u)
+{
+    s[0] = (char)(u >> 56) ; s[1] = (char)(u >> 48) ;
+    s[2] = (char)(u >> 40) ; s[3] = (char)(u >> 32) ;
+    s[4] = (char)(u >> 24) ; s[5] = (char)(u >> 16) ;
+    s[6] = (char)(u >> 8) ;  s[7] = (char)u ;
+}
+
+static inline void u64_unpack_big(char const *s, uint64_t *u)
+{
+    *u = ((uint64_t)(unsigned char)s[0] << 56) | ((uint64_t)(unsigned char)s[1] << 48)
+       | ((uint64_t)(unsigned char)s[2] << 40) | ((uint64_t)(unsigned char)s[3] << 32)
+       | ((uint64_t)(unsigned char)s[4] << 24) | ((uint64_t)(unsigned char)s[5] << 16)
+       | ((uint64_t)(unsigned char)s[6] << 8)  |  (uint64_t)(unsigned char)s[7] ;
+}
+
+/* little-endian (skalibs uint32_pack / uint32_unpack) */
+static inline void u32_pack(char *s, uint32_t u)
+{
+    s[0] = (char)u ;        s[1] = (char)(u >> 8) ;
+    s[2] = (char)(u >> 16) ; s[3] = (char)(u >> 24) ;
+}
+
+static inline void u32_unpack(char const *s, uint32_t *u)
+{
+    *u =  (uint32_t)(unsigned char)s[0]        | ((uint32_t)(unsigned char)s[1] << 8)
+       | ((uint32_t)(unsigned char)s[2] << 16) | ((uint32_t)(unsigned char)s[3] << 24) ;
+}
+
 /* convenience macros: format in a given base */
 
 #define u64_fmt(s, x)   u64_fmtbase((s), (x), 10)

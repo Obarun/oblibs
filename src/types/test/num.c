@@ -484,6 +484,93 @@ static void test_sig_parse_golden(void)
     TEST_END() ;
 }
 
+static void test_pack_golden(void)
+{
+    TEST_START("test_pack_golden") ;
+
+    unsigned char buf[8] ;
+    uint32_t u32 ; uint64_t u64 ;
+
+    /* byte order, several patterns (high byte 0x00 / 0x80 / 0xFF): big-endian is
+     * the exact bytes, little-endian is the reverse. A single pattern would not
+     * catch a wrong shift amount; these do. */
+    struct { uint32_t v ; unsigned char be[4] ; } const g32[] = {
+        { 0x01020304U, { 0x01, 0x02, 0x03, 0x04 } },
+        { 0x000000FFU, { 0x00, 0x00, 0x00, 0xFF } },
+        { 0x80000000U, { 0x80, 0x00, 0x00, 0x00 } },
+        { 0xDEADBEEFU, { 0xDE, 0xAD, 0xBE, 0xEF } },
+        { 0xFFFFFFFFU, { 0xFF, 0xFF, 0xFF, 0xFF } },
+    } ;
+    for (size_t i = 0 ; i < sizeof g32 / sizeof *g32 ; i++) {
+        u32_pack_big((char *)buf, g32[i].v) ;
+        TEST_ASSERT(memcmp(buf, g32[i].be, 4) == 0, "u32_pack_big byte order") ;
+        u32_pack((char *)buf, g32[i].v) ;
+        TEST_ASSERT(buf[0]==g32[i].be[3] && buf[1]==g32[i].be[2]
+                 && buf[2]==g32[i].be[1] && buf[3]==g32[i].be[0],
+                    "u32_pack (little) byte order") ;
+    }
+
+    /* u64 big-endian byte order golden */
+    u64_pack_big((char *)buf, 0x0102030405060708ULL) ;
+    { unsigned char const be[8] = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08 } ;
+      TEST_ASSERT(memcmp(buf, be, 8) == 0, "u64_pack_big byte order") ; }
+
+    /* unpack from a hand-built buffer: exact value expected. The high-bit byte is
+     * placed in an INTERMEDIATE position so the parasitic sign bits stay inside
+     * the word -- these genuinely FAIL if the (unsigned char) cast is dropped
+     * (a byte in the top position would mask the bug, its sign bits being shifted
+     * out; verified by mutation). */
+    { unsigned char const b[4] = { 0x00,0x80,0x00,0x00 } ;
+      u32_unpack_big((char *)b, &u32) ; TEST_ASSERT(u32 == 0x00800000U, "u32_unpack_big no sign-ext (mid 0x80)") ; }
+    { unsigned char const b[4] = { 0x12,0xFF,0x34,0x56 } ;
+      u32_unpack_big((char *)b, &u32) ; TEST_ASSERT(u32 == 0x12FF3456U, "u32_unpack_big no sign-ext (mid 0xFF)") ; }
+    { unsigned char const b[4] = { 0x00,0x00,0x80,0x00 } ;
+      u32_unpack((char *)b, &u32) ; TEST_ASSERT(u32 == 0x00800000U, "u32_unpack (little) no sign-ext (mid 0x80)") ; }
+    { unsigned char const b[8] = { 0x00,0x80,0x00,0x00,0x00,0x00,0x00,0x00 } ;
+      u64_unpack_big((char *)b, &u64) ; TEST_ASSERT(u64 == 0x0080000000000000ULL, "u64_unpack_big no sign-ext (mid 0x80)") ; }
+    { unsigned char const b[8] = { 0x12,0x34,0xFF,0x56,0x78,0x9A,0xBC,0xDE } ;
+      u64_unpack_big((char *)b, &u64) ; TEST_ASSERT(u64 == 0x1234FF56789ABCDEULL, "u64_unpack_big no sign-ext (mid 0xFF)") ; }
+
+    /* cross big/little: pack_big then unpack(little) yields the byte-swapped
+     * value -> proves the two orders are genuinely distinct (not both little). */
+    for (size_t i = 0 ; i < sizeof g32 / sizeof *g32 ; i++) {
+        uint32_t v = g32[i].v, sw ;
+        uint32_t expect = (v << 24) | ((v & 0xFF00U) << 8) | ((v >> 8) & 0xFF00U) | (v >> 24) ;
+        u32_pack_big((char *)buf, v) ; u32_unpack((char *)buf, &sw) ;
+        TEST_ASSERT(sw == expect, "cross big->little == bswap32") ;
+    }
+
+    /* boundaries: pack then unpack is the identity */
+    uint32_t b32[] = { 0U, 0xFFFFFFFFU, 0x80000000U, 1U } ;
+    for (size_t i = 0 ; i < sizeof b32 / sizeof *b32 ; i++) {
+        uint32_t v ;
+        u32_pack_big((char *)buf, b32[i]) ; u32_unpack_big((char *)buf, &v) ;
+        TEST_ASSERT(v == b32[i], "u32 big round-trip boundary") ;
+        u32_pack((char *)buf, b32[i]) ; u32_unpack((char *)buf, &v) ;
+        TEST_ASSERT(v == b32[i], "u32 little round-trip boundary") ;
+    }
+    uint64_t b64[] = { 0ULL, 0xFFFFFFFFFFFFFFFFULL, 0x8000000000000000ULL, 1ULL } ;
+    for (size_t i = 0 ; i < sizeof b64 / sizeof *b64 ; i++) {
+        uint64_t v ;
+        u64_pack_big((char *)buf, b64[i]) ; u64_unpack_big((char *)buf, &v) ;
+        TEST_ASSERT(v == b64[i], "u64 big round-trip boundary") ;
+    }
+
+    /* deterministic sweep */
+    for (int i = 0 ; i < 4096 ; i++) {
+        uint64_t x = lcg_next() ;
+        uint32_t v32 ; uint64_t v64 ;
+        u32_pack_big((char *)buf, (uint32_t)x) ; u32_unpack_big((char *)buf, &v32) ;
+        TEST_ASSERT(v32 == (uint32_t)x, "u32 big sweep") ;
+        u32_pack((char *)buf, (uint32_t)x) ; u32_unpack((char *)buf, &v32) ;
+        TEST_ASSERT(v32 == (uint32_t)x, "u32 little sweep") ;
+        u64_pack_big((char *)buf, x) ; u64_unpack_big((char *)buf, &v64) ;
+        TEST_ASSERT(v64 == x, "u64 big sweep") ;
+    }
+
+    TEST_END() ;
+}
+
 int main(void)
 {
     printf("=== num test suite ===\n") ;
@@ -495,6 +582,7 @@ int main(void)
     test_iscan_golden() ;
     test_scan_strict_golden() ;
     test_sig_parse_golden() ;
+    test_pack_golden() ;
     test_roundtrip() ;
     printf("All num tests passed.\n") ;
     return 0 ;
