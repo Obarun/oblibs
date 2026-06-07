@@ -20,7 +20,8 @@
 #include <oblibs/opt.h>
 #include <oblibs/strbuf.h>
 
-#define OPT_HELP_COL 24  /* left-column width before the description text */
+#define OPT_HELP_INDENT 4  /* leading spaces before each entry */
+#define OPT_HELP_GAP    2  /* spaces between the left column and the description */
 
 /* Build the left column of one option ("-t, --tree TREE") into @col,
  * NUL-terminated; @col->len then includes the trailing NUL. */
@@ -41,6 +42,22 @@ static uint8_t opt_left_col(strbuf *col, opt_t const *o)
             return 0 ;
     if (o->arg == OPT_REQUIRED && o->argname)
         if (!strbuf_cats(col, " ") || !strbuf_cats(col, o->argname))
+            return 0 ;
+
+    return strbuf_terminate(col) ;
+}
+
+/* Build the left column of a sub-command ("name", or "name operands" when the
+ * node documents positional operands) into @col, NUL-terminated; @col->len then
+ * includes the trailing NUL. */
+static uint8_t opt_sub_left_col(strbuf *col, opt_cmd_t const *s)
+{
+    col->len = 0 ;
+
+    if (!strbuf_cats(col, s->name))
+        return 0 ;
+    if (s->operands && *s->operands)
+        if (!strbuf_cats(col, " ") || !strbuf_cats(col, s->operands))
             return 0 ;
 
     return strbuf_terminate(col) ;
@@ -89,6 +106,10 @@ uint8_t opt_usage(strbuf *out, char const *prog, opt_cmd_t const *cmd)
             return 0 ;
     }
 
+    if (cmd->operands && *cmd->operands)
+        if (!strbuf_cats(out, " ") || !strbuf_cats(out, cmd->operands))
+            return 0 ;
+
     if (!strbuf_terminate(out))
         return 0 ;
     out->len-- ;
@@ -104,6 +125,26 @@ uint8_t opt_help(strbuf *out, char const *prog, opt_cmd_t const *cmd)
         if (!strbuf_cats(out, "\n") || !strbuf_cats(out, cmd->help) || !strbuf_cats(out, "\n"))
             return 0 ;
 
+    /* Pass 1: widest left column across options AND sub-commands, so every
+     * description aligns even when one entry overruns a fixed column width. */
+    size_t maxw = 0 ;
+    for (size_t i = 0 ; i < cmd->nopts ; i++) {
+        _alloc_strbuf_(col, 64) ;
+        if (!opt_left_col(&col, &cmd->opts[i]))
+            return 0 ;
+        size_t printable = col.len ? col.len - 1 : 0 ;
+        if (printable > maxw) maxw = printable ;
+    }
+    for (size_t i = 0 ; i < cmd->nsub ; i++) {
+        _alloc_strbuf_(col, 64) ;
+        if (!opt_sub_left_col(&col, &cmd->sub[i]))
+            return 0 ;
+        size_t printable = col.len ? col.len - 1 : 0 ;
+        if (printable > maxw) maxw = printable ;
+    }
+    size_t width = OPT_HELP_INDENT + maxw + OPT_HELP_GAP ;
+
+    /* Pass 2: emit, aligning all descriptions on `width`. */
     if (cmd->nopts && cmd->opts) {
 
         if (!strbuf_cats(out, "\noptions:\n"))
@@ -118,7 +159,7 @@ uint8_t opt_help(strbuf *out, char const *prog, opt_cmd_t const *cmd)
 
             if (!strbuf_cats(out, "    ") || !strbuf_cats(out, col.s))
                 return 0 ;
-            if (!opt_pad(out, 4 + printable, OPT_HELP_COL))
+            if (!opt_pad(out, OPT_HELP_INDENT + printable, width))
                 return 0 ;
             if (cmd->opts[i].help)
                 if (!strbuf_cats(out, cmd->opts[i].help))
@@ -135,9 +176,14 @@ uint8_t opt_help(strbuf *out, char const *prog, opt_cmd_t const *cmd)
 
         for (size_t i = 0 ; i < cmd->nsub ; i++) {
 
-            if (!strbuf_cats(out, "    ") || !strbuf_cats(out, cmd->sub[i].name))
+            _alloc_strbuf_(col, 64) ;
+            if (!opt_sub_left_col(&col, &cmd->sub[i]))
                 return 0 ;
-            if (!opt_pad(out, 4 + strlen(cmd->sub[i].name), OPT_HELP_COL))
+            size_t printable = col.len ? col.len - 1 : 0 ;
+
+            if (!strbuf_cats(out, "    ") || !strbuf_cats(out, col.s))
+                return 0 ;
+            if (!opt_pad(out, OPT_HELP_INDENT + printable, width))
                 return 0 ;
             if (cmd->sub[i].help)
                 if (!strbuf_cats(out, cmd->sub[i].help))

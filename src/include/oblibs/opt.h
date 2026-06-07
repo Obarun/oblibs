@@ -120,6 +120,8 @@ typedef struct opt_cmd_s opt_cmd_t ;
 struct opt_cmd_s {
     char const         *name ;       /* "tree", "create" */
     char const         *help ;       /* one-line description for the parent's help */
+    char const         *operands ;   /* positional operands shown in usage, e.g.
+                                      * "service..." ; 0 = none */
     opt_t const        *opts ;       /* options recognised at this level (may be 0) */
     size_t              nopts ;
     opt_on_option_fn   *on_option ;  /* applies an option of this level (may be 0) */

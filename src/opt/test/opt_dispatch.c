@@ -167,6 +167,58 @@ static void test_help_root(void)
     TEST_END() ;
 }
 
+/* opt_usage appends cmd->operands last (after "command [ args ]" when present) */
+static void test_usage_operands(void)
+{
+    TEST_START("test_usage_operands") ;
+
+    static opt_t const fopt[] = {
+        { .id = 'f', .shortname = 'f', .longname = "field", .arg = OPT_REQUIRED, .argname = "FIELD", .help = "a field" },
+    } ;
+    static opt_cmd_t const leaf = {
+        .name = "read", .help = "read it", .operands = "service...",
+        .opts = fopt, .nopts = OPT_COUNT(fopt), .fn = &do_create,
+    } ;
+    static opt_cmd_t const rnode = {
+        .name = "66", .help = "x", .operands = "service...|tree",
+        .opts = hopt, .nopts = OPT_COUNT(hopt), .sub = tree_sub, .nsub = OPT_COUNT(tree_sub),
+    } ;
+
+    _alloc_strbuf_(sb, 128) ;
+    TEST_ASSERT(opt_usage(&sb, "read", &leaf), "opt_usage (leaf) ok") ;
+    TEST_ASSERT(!strcmp(sb.s, "usage: read [ -f FIELD ] service..."),
+                "operands appended on a leaf") ;
+
+    _alloc_strbuf_(sb2, 128) ;
+    TEST_ASSERT(opt_usage(&sb2, "66", &rnode), "opt_usage (routing) ok") ;
+    TEST_ASSERT(!strcmp(sb2.s, "usage: 66 [ -h ] command [ args ] service...|tree"),
+                "operands appended after 'command [ args ]'") ;
+
+    TEST_END() ;
+}
+
+/* opt_help lists a sub-command's operands in the "commands:" section */
+static void test_help_operands(void)
+{
+    TEST_START("test_help_operands") ;
+
+    static opt_cmd_t const leaves[] = {
+        { .name = "read", .help = "read it", .operands = "service",
+          .opts = hopt, .nopts = OPT_COUNT(hopt), .fn = &do_create },
+    } ;
+    static opt_cmd_t const r = {
+        .name = "tool", .help = "x",
+        .opts = hopt, .nopts = OPT_COUNT(hopt),
+        .sub = leaves, .nsub = OPT_COUNT(leaves),
+    } ;
+
+    _alloc_strbuf_(h, 256) ;
+    TEST_ASSERT(opt_help(&h, "tool", &r), "opt_help ok") ;
+    TEST_ASSERT(strstr(h.s, "read service") != 0, "sub-command operands in commands section") ;
+
+    TEST_END() ;
+}
+
 int main(void)
 {
     test_nested_route() ;
@@ -174,6 +226,8 @@ int main(void)
     test_unknown_command() ;
     test_unknown_subcommand() ;
     test_help_root() ;
+    test_usage_operands() ;
+    test_help_operands() ;
     printf("\nAll opt_dispatch tests passed.\n") ;
     return 0 ;
 }
