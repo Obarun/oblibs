@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include <oblibs/types.h>
 
@@ -328,6 +329,51 @@ static void test_macros(void)
     TEST_END() ;
 }
 
+/* Strict scan: the whole string must be the number. Golden ret/value/errno
+   captured from a byte-exact differential against skalibs uint0_scan / uid0_scan
+   (ret + errno), pinned here so the test stays self-contained (no skalibs). */
+static void test_scan_strict_golden(void)
+{
+    TEST_START("test_scan_strict_golden") ;
+
+    uint32_t u32 ; uint64_t u64 ; uid_t uid ;
+
+    /* full-string success: returns the consumed length, value parsed */
+    errno = 0 ;
+    TEST_ASSERT(u32_scan_strict("42", &u32) == 2 && u32 == 42, "strict u32 \"42\"") ;
+    TEST_ASSERT(u32_scan_strict("0", &u32) == 1 && u32 == 0, "strict u32 \"0\"") ;
+    TEST_ASSERT(u32_scan_strict("4294967295", &u32) == 10 && u32 == 4294967295U, "strict u32 max") ;
+    TEST_ASSERT(u64_scan_strict("18446744073709551615", &u64) == 20
+                && u64 == 18446744073709551615ULL, "strict u64 max") ;
+
+    /* octal via the _base form (the single uint0_oscan site) */
+    TEST_ASSERT(u32_scan_strict_base("007", &u32, 8) == 3 && u32 == 7, "strict u32 octal \"007\"") ;
+    TEST_ASSERT(u32_scan_strict_base("10", &u32, 8) == 2 && u32 == 8, "strict u32 octal \"10\"") ;
+    errno = 0 ;
+    TEST_ASSERT(u32_scan_strict_base("8", &u32, 8) == 0 && errno == EINVAL, "strict octal rejects '8'") ;
+
+    /* trailing character -> failure, errno EINVAL */
+    errno = 0 ; TEST_ASSERT(u32_scan_strict("42x", &u32) == 0 && errno == EINVAL, "strict rejects trailing alpha") ;
+    errno = 0 ; TEST_ASSERT(u32_scan_strict("3 ", &u32) == 0 && errno == EINVAL, "strict rejects trailing space") ;
+    errno = 0 ; TEST_ASSERT(u32_scan_strict("1000:", &u32) == 0 && errno == EINVAL, "strict rejects trailing colon") ;
+    errno = 0 ; TEST_ASSERT(u32_scan_strict("", &u32) == 0 && errno == EINVAL, "strict rejects empty") ;
+    errno = 0 ; TEST_ASSERT(u32_scan_strict(" 3", &u32) == 0 && errno == EINVAL, "strict rejects leading space") ;
+
+    /* overflow: a valid digit beyond the type's range -> failure, errno ERANGE */
+    errno = 0 ; TEST_ASSERT(u32_scan_strict("4294967296", &u32) == 0 && errno == ERANGE, "strict u32 overflow ERANGE") ;
+    errno = 0 ; TEST_ASSERT(u64_scan_strict("18446744073709551616", &u64) == 0 && errno == ERANGE, "strict u64 overflow ERANGE") ;
+
+    /* contrast with the permissive scan: it accepts a partial parse */
+    TEST_ASSERT(u32_scan("42x", &u32) == 2, "permissive u32 accepts partial \"42x\"") ;
+    TEST_ASSERT(u32_scan_strict("42x", &u32) == 0, "strict u32 rejects the same input") ;
+
+    /* uid/gid strict */
+    TEST_ASSERT(uid_parse_strict("1000", &uid) == 4 && uid == 1000, "strict uid \"1000\"") ;
+    errno = 0 ; TEST_ASSERT(uid_parse_strict("1000:", &uid) == 0 && errno == EINVAL, "strict uid rejects \"1000:\"") ;
+
+    TEST_END() ;
+}
+
 int main(void)
 {
     printf("=== num test suite ===\n") ;
@@ -337,6 +383,7 @@ int main(void)
     test_fmt_golden() ;
     test_scan_golden() ;
     test_iscan_golden() ;
+    test_scan_strict_golden() ;
     test_roundtrip() ;
     printf("All num tests passed.\n") ;
     return 0 ;

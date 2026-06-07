@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <errno.h>
 
 /* ===========================================================================
  * Integer <-> string conversion, self-contained (no skalibs dependency).
@@ -225,6 +226,58 @@ static inline size_t u8_scan_base(char const *s, uint8_t *u, uint8_t base)
 #define u8_xscan(s, u)   u8_scan_base((s), (u), 16)
 #define u8_bscan(s, u)   u8_scan_base((s), (u), 2)
 
+/* strict scan: the WHOLE string must be a valid base-`base` number.
+ *
+ * Unlike uN_scan (which stops at the first non-digit and reports a partial
+ * success), these succeed only when the number is followed by the terminating
+ * NUL. Use them to validate a complete token, e.g. an option argument ("3" ok,
+ * "3x" rejected). Native replacement for skalibs uintN0_scan / uint0_scan,
+ * SCANB0 semantics: on a trailing character return 0 with errno == ERANGE if it
+ * is a valid digit that overflowed the type, ERANGE/EINVAL otherwise.
+ * @return the consumed length (== the number's length) on success, 0 on failure. */
+
+static inline size_t u64_scan_strict_base(char const *s, uint64_t *u, uint8_t base)
+{
+    size_t pos = u64_scan_base(s, u, base) ;
+    if (!pos) return (errno = EINVAL, 0) ;
+    if (!s[pos]) return pos ;
+    errno = scan_digit((unsigned char)s[pos], base) < base ? ERANGE : EINVAL ;
+    return 0 ;
+}
+
+static inline size_t u32_scan_strict_base(char const *s, uint32_t *u, uint8_t base)
+{
+    size_t pos = u32_scan_base(s, u, base) ;
+    if (!pos) return (errno = EINVAL, 0) ;
+    if (!s[pos]) return pos ;
+    errno = scan_digit((unsigned char)s[pos], base) < base ? ERANGE : EINVAL ;
+    return 0 ;
+}
+
+static inline size_t u16_scan_strict_base(char const *s, uint16_t *u, uint8_t base)
+{
+    size_t pos = u16_scan_base(s, u, base) ;
+    if (!pos) return (errno = EINVAL, 0) ;
+    if (!s[pos]) return pos ;
+    errno = scan_digit((unsigned char)s[pos], base) < base ? ERANGE : EINVAL ;
+    return 0 ;
+}
+
+static inline size_t u8_scan_strict_base(char const *s, uint8_t *u, uint8_t base)
+{
+    size_t pos = u8_scan_base(s, u, base) ;
+    if (!pos) return (errno = EINVAL, 0) ;
+    if (!s[pos]) return pos ;
+    errno = scan_digit((unsigned char)s[pos], base) < base ? ERANGE : EINVAL ;
+    return 0 ;
+}
+
+/* decimal convenience; for another base (e.g. octal) use the *_strict_base forms */
+#define u64_scan_strict(s, u)  u64_scan_strict_base((s), (u), 10)
+#define u32_scan_strict(s, u)  u32_scan_strict_base((s), (u), 10)
+#define u16_scan_strict(s, u)  u16_scan_strict_base((s), (u), 10)
+#define u8_scan_strict(s, u)   u8_scan_strict_base((s), (u), 10)
+
 /* buffer sizes: maximum characters for a width, base (excludes terminator) */
 
 #define U64_FMT 21
@@ -304,6 +357,25 @@ static inline size_t gid_parse_base(char const *s, gid_t *g, uint8_t base)
     return n ;
 }
 
+/* strict variants: the whole string must be the number (skalibs uid0_scan /
+ * gid0_scan). @see u32_scan_strict_base for the semantics. */
+static inline size_t uid_parse_strict_base(char const *s, uid_t *u, uint8_t base)
+{
+    size_t pos = uid_parse_base(s, u, base) ;
+    if (!pos) return (errno = EINVAL, 0) ;
+    if (!s[pos]) return pos ;
+    errno = scan_digit((unsigned char)s[pos], base) < base ? ERANGE : EINVAL ;
+    return 0 ;
+}
+static inline size_t gid_parse_strict_base(char const *s, gid_t *g, uint8_t base)
+{
+    size_t pos = gid_parse_base(s, g, base) ;
+    if (!pos) return (errno = EINVAL, 0) ;
+    if (!s[pos]) return pos ;
+    errno = scan_digit((unsigned char)s[pos], base) < base ? ERANGE : EINVAL ;
+    return 0 ;
+}
+
 /* pid_t : signed, scanned within the type's strict signed range [PID_MIN, PID_MAX] */
 static inline size_t pid_format_base(char *s, pid_t p, uint8_t base)
 {
@@ -320,8 +392,10 @@ static inline size_t pid_parse_base(char const *s, pid_t *p, uint8_t base)
 /* decimal convenience; for another base use the *_base forms above */
 #define uid_format(s, u) uid_format_base((s), (u), 10)
 #define uid_parse(s, u)  uid_parse_base((s), (u), 10)
+#define uid_parse_strict(s, u) uid_parse_strict_base((s), (u), 10)
 #define gid_format(s, g) gid_format_base((s), (g), 10)
 #define gid_parse(s, g)  gid_parse_base((s), (g), 10)
+#define gid_parse_strict(s, g) gid_parse_strict_base((s), (g), 10)
 #define pid_format(s, p) pid_format_base((s), (p), 10)
 #define pid_parse(s, p)  pid_parse_base((s), (p), 10)
 
