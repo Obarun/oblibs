@@ -24,7 +24,7 @@ int scan_uidlist(char const *str, uid_t *array)
     size_t pos = 0 ;
     uid_t uid, nuser ;
 
-    _alloc_strbuf_(tmp, strlen(str)) ;
+    _alloc_sbl_(tmp, strlen(str)) ;
 
     r = uid = 0 ;
     nuser = array[0] ;

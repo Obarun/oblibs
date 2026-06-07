@@ -12,13 +12,12 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <oblibs/account.h>
-
 #include <sys/types.h>
 #include <grp.h>
 #include <errno.h>
 
 #include <oblibs/strbuf.h>
+#include <oblibs/account.h>
 
 int get_groupbygid(gid_t gid,strbuf *name)
 {
