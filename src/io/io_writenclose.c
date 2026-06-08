@@ -25,7 +25,7 @@ int io_writenclose(int fd, char const *s, size_t len)
         return 0 ;
 
     int r = io_allwrite(fd, (char *)s, len) == len ;
-    close_fd(fd) ;        /* close_fd preserves errno (set by io_allwrite on failure) */
+    close_fd(fd) ; /* close_fd preserves errno (set by io_allwrite on failure) */
 
     return r ;
 }

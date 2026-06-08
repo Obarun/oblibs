@@ -16,8 +16,7 @@
 #define OB_FILES_H
 
 #include <sys/types.h>
-
-#include <oblibs/strbuf.h>
+#include <stddef.h>
 
 /** Scan if @str has the corresponding @mode
  * @Return 1 on success
@@ -30,34 +29,48 @@ extern ssize_t scan_mode(char const *str, mode_t mode) ;
  * @Return -1 on failure and set errno*/
 extern ssize_t file_get_size(const char* filename) ;
 
-/** open @filename with read only permissions and write it on @buffile
- * of lenght @buffsize
- * @Return an fd in case of success
- * @Return -1 on fail and set errno*/
-extern int file_openclose_readonly(char *buffile, char const *filename, size_t buffsize) ;
-
 /** Create an empty @name file at @dst directory with mode @mode
  * @Return 1 on success
  * @Return 0 on fail and set errno*/
 extern int file_create_empty (char const *dst, char const *name,mode_t mode) ;
 
-/** Write @name at @dst with @content as content
- * The previous contents of @name are destroyed even if the function fails
+/* --- Read/write a whole file, by path ---------------------------------------
+ *
+ * Thin wrappers over the generic io_readnclose / io_writenclose primitives
+ * (io.h): they open @file, transfer, and close. The common open flags are fixed
+ * (O_CLOEXEC included). For an uncommon flag set, compose the primitive with
+ * io_open() directly, e.g.:
+ *   io_writenclose(io_open_mode(f, O_WRONLY|O_APPEND|O_CREAT|O_CLOEXEC, 0644), s, n) ;
+ *
+ * To read a file into a growable buffer instead of a fixed one, use
+ * strbuf_read_file() (strbuf.h).
+ */
+
+/** Read up to @n bytes of the regular file @file into @buf (O_RDONLY|O_CLOEXEC).
+ * @Return the number of bytes read (0..n); a file shorter than @n yields a
+ *         partial count, not an error.
+ * @Return -1 on error (errno set). */
+extern ssize_t file_read(char const *file, char *buf, size_t n) ;
+
+/** Write the @len bytes of @content to @file, creating/truncating it
+ * (O_WRONLY|O_TRUNC|O_CREAT|O_CLOEXEC, mode 0666 & ~umask). Not atomic: @file is
+ * truncated up front, so a mid-write failure leaves a partial @file.
  * @Return 1 on success
  * @Return 0 on fail and set errno */
-extern int file_write_unsafe(char const *dst,char const *name,char const *content,size_t contlen) ;
+extern int file_write(char const *file, char const *content, size_t len) ;
 
-/** Same as file_write_unsafe but file also contain the dst
+/** Like file_write but atomic: write @content to a temporary in the same
+ * directory then rename() it onto @file, so @file appears all-or-nothing and a
+ * failure leaves any previous @file untouched.
  * @Return 1 on success
- * @Return 0 on fail and set errno*/
-extern int file_write_unsafe_g(char const *file,char const *content) ;
+ * @Return 0 on fail and set errno */
+extern int file_write_atomic(char const *file, char const *content, size_t len) ;
 
-/** Append @sb with the contents of the regular file @file found in directory
- * @dir (i.e. read @dir/@file). For an already-complete path, use
- * strbuf_read_file() directly.
- * @Return 1 on success
- * @Return 0 on fail */
-extern int file_read(strbuf *sb,char const *dir,char const *file) ;
+/** file_read of @dir/@name (composes @dir "/" @name). */
+extern ssize_t file_read_at(char const *dir, char const *name, char *buf, size_t n) ;
+
+/** file_write of @dir/@name (composes @dir "/" @name). */
+extern int file_write_at(char const *dir, char const *name, char const *content, size_t len) ;
 
 /** Copy the regular-file contents of @src into @dst, creating/truncating @dst
  * with mode @mode. Direct copy, not atomic: @dst is truncated up front, so a

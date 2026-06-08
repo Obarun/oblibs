@@ -25,7 +25,7 @@ ssize_t io_readnclose(int fd, char *s, size_t n)
         return -1 ;
 
     size_t r = io_allread(fd, s, n) ;
-    close_fd(fd) ;        /* close_fd preserves errno (set by io_allread on short read) */
+    close_fd(fd) ; /* close_fd preserves errno (set by io_allread on short read) */
 
     if (r < n && errno != EPIPE)   /* short read not caused by EOF = real error */
         return -1 ;

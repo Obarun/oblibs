@@ -12,22 +12,19 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-/* Non-regression test for strbuf_read_file / file_read (io_open + io_allread):
- * read a regular file into a strbuf, appended at sb->len, NUL-terminated (len
- * excludes the NUL), with rollback on error. Checked against a known ground
- * truth (the bytes written by the test itself). */
+/* Tests for the path readers: file_read (read up to n bytes into a fixed buffer,
+ * O_CLOEXEC, returns the byte count; a short file is a partial count, not an
+ * error) and file_read_at (dir/name join). Round-tripped with file_write. */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
 #include <oblibs/files.h>
-#include <oblibs/strbuf.h>
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -58,132 +55,81 @@ static void path_in(char *out, char const *name)
     memcpy(out + dl + 1, name, nl + 1) ;
 }
 
-static void writefile(char const *path, char const *buf, size_t len)
+/* read exactly n bytes when the file holds exactly n. */
+static void test_read_exact(void)
 {
-    int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644) ;
-    TEST_ASSERT(fd >= 0, "open for write failed") ;
-    size_t put = 0 ;
-    while (put < len) {
-        ssize_t w = write(fd, buf + put, len - put) ;
-        TEST_ASSERT(w >= 0, "write failed") ;
-        put += (size_t)w ;
-    }
-    close(fd) ;
-}
-
-/* Case 1: content == ground truth, and parity with skalibs openreadfileclose. */
-static void test_content(void)
-{
-    TEST_START("test_content") ;
+    TEST_START("test_read_exact") ;
 
     size_t const sizes[] = { 0, 13, 5000 } ;
     char pat[5000] ;
     fill_pattern(pat, sizeof pat) ;
-
-    char path[64] ;
-    path_in(path, "data") ;
+    char p[64] ;
+    path_in(p, "data") ;
 
     for (size_t i = 0 ; i < sizeof(sizes)/sizeof(*sizes) ; i++) {
         size_t n = sizes[i] ;
-        writefile(path, pat, n) ;
-
-        strbuf res = STRBUF_ZERO ;
-        TEST_ASSERT(file_read(&res, tdir, "data") == 1, "file_read failed") ;
-        TEST_ASSERT(res.len == n, "wrong length") ;
-        TEST_ASSERT(memcmp(res.s, pat, n) == 0, "content != ground truth") ;
-        TEST_ASSERT(res.s[res.len] == 0, "result not NUL-terminated past len") ;
-        strbuf_free(&res) ;
+        TEST_ASSERT(file_write(p, pat, n) == 1, "seed write failed") ;
+        char rb[5000] ;
+        ssize_t r = file_read(p, rb, sizeof rb) ;
+        TEST_ASSERT(r == (ssize_t)n, "wrong byte count") ;
+        TEST_ASSERT(memcmp(rb, pat, n) == 0, "content mismatch") ;
     }
-
+    unlink(p) ;
     TEST_END() ;
 }
 
-/* Case 2: append into a non-empty buffer preserves the existing prefix. */
-static void test_append(void)
+/* a file shorter than the buffer yields the partial count, not -1. */
+static void test_short_file(void)
 {
-    TEST_START("test_append") ;
-
-    char const *content = "file body" ;
-    char path[64] ;
-    path_in(path, "data") ;
-    writefile(path, content, strlen(content)) ;
-
-    strbuf sa = STRBUF_ZERO ;
-    char const *prefix = "PREFIX:" ;
-    TEST_ASSERT(strbuf_cats(&sa, prefix), "seed prefix failed") ;
-    size_t base = sa.len ;
-
-    TEST_ASSERT(file_read(&sa, tdir, "data") == 1, "file_readputsa failed") ;
-    TEST_ASSERT(sa.len == base + strlen(content), "wrong appended length") ;
-    TEST_ASSERT(memcmp(sa.s, prefix, base) == 0, "prefix clobbered") ;
-    TEST_ASSERT(memcmp(sa.s + base, content, strlen(content)) == 0, "appended content wrong") ;
-
-    strbuf_free(&sa) ;
+    TEST_START("test_short_file") ;
+    char p[64] ;
+    path_in(p, "short") ;
+    TEST_ASSERT(file_write(p, "hello", 5) == 1, "seed write failed") ;
+    char rb[64] ;
+    ssize_t r = file_read(p, rb, sizeof rb) ;
+    TEST_ASSERT(r == 5, "short file should give partial count, not -1") ;
+    TEST_ASSERT(memcmp(rb, "hello", 5) == 0, "content mismatch") ;
+    unlink(p) ;
     TEST_END() ;
 }
 
-/* Case 3: missing file -> 0, ENOENT, buffer restored. */
+/* file_read_at composes dir/name. */
+static void test_read_at(void)
+{
+    TEST_START("test_read_at") ;
+    char const data[] = "x\0yz" ;   /* embedded NUL, len 4 */
+    TEST_ASSERT(file_write_at(tdir, "at", data, 4) == 1, "seed write_at failed") ;
+    char rb[16] ;
+    ssize_t r = file_read_at(tdir, "at", rb, sizeof rb) ;
+    TEST_ASSERT(r == 4, "wrong byte count") ;
+    TEST_ASSERT(memcmp(rb, data, 4) == 0, "content mismatch") ;
+    char p[64] ; path_in(p, "at") ; unlink(p) ;
+    TEST_END() ;
+}
+
+/* a missing file yields -1 (open failure propagates through io_readnclose). */
 static void test_missing(void)
 {
     TEST_START("test_missing") ;
-
-    /* wasnull branch: fresh buffer must end up freed (s == NULL) */
-    strbuf fresh = STRBUF_ZERO ;
+    char rb[16] ;
     errno = 0 ;
-    TEST_ASSERT(file_read(&fresh, tdir, "nope") == 0, "should fail on missing file") ;
+    TEST_ASSERT(file_read_at(tdir, "nope", rb, sizeof rb) == -1, "missing file should give -1") ;
     TEST_ASSERT(errno == ENOENT, "errno should be ENOENT") ;
-    TEST_ASSERT(fresh.s == NULL, "fresh buffer should be freed") ;
-
-    /* non-null branch: len must be restored to base, prefix preserved */
-    strbuf sa = STRBUF_ZERO ;
-    TEST_ASSERT(strbuf_cats(&sa, "KEEP"), "seed failed") ;
-    size_t base = sa.len ;
-    errno = 0 ;
-    TEST_ASSERT(file_read(&sa, tdir, "nope") == 0, "should fail on missing file") ;
-    TEST_ASSERT(errno == ENOENT, "errno should be ENOENT") ;
-    TEST_ASSERT(sa.len == base, "len should be restored to base") ;
-    TEST_ASSERT(memcmp(sa.s, "KEEP", base) == 0, "prefix should be preserved") ;
-    strbuf_free(&sa) ;
-
     TEST_END() ;
-}
-
-/* Case 4: non-regular target (a directory) -> 0, ENOENT (scan_mode S_IFREG fails). */
-static void test_not_regular(void)
-{
-    TEST_START("test_not_regular") ;
-
-    strbuf sa = STRBUF_ZERO ;
-    errno = 0 ;
-    /* tdir itself is a directory, read it via its parent */
-    TEST_ASSERT(file_read(&sa, "/", "tmp") == 0, "should fail on a directory") ;
-    TEST_ASSERT(errno == ENOENT, "errno should be ENOENT") ;
-    strbuf_free(&sa) ;
-
-    TEST_END() ;
-}
-
-static void cleanup(void)
-{
-    char p[64] ;
-    path_in(p, "data") ;
-    unlink(p) ;
-    rmdir(tdir) ;
 }
 
 int main(void)
 {
     TEST_ASSERT(mkdtemp(tdir) != NULL, "mkdtemp failed") ;
 
-    printf("=== file_readputsa differential test suite ===\n\n") ;
+    printf("=== file_read / file_read_at test suite ===\n\n") ;
 
-    test_content() ;
-    test_append() ;
+    test_read_exact() ;
+    test_short_file() ;
+    test_read_at() ;
     test_missing() ;
-    test_not_regular() ;
 
-    cleanup() ;
-
+    rmdir(tdir) ;
     printf("\nAll tests passed.\n") ;
     return 0 ;
 }

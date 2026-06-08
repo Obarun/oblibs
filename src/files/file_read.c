@@ -12,16 +12,14 @@
  * except according to the terms contained in the LICENSE file./
  */
 
-#include <string.h>
+#include <sys/types.h>
+#include <stddef.h>
+#include <fcntl.h>
 
-#include <oblibs/string.h>
 #include <oblibs/files.h>
-#include <oblibs/strbuf.h>
+#include <oblibs/io.h>
 
-int file_read(strbuf *sb, char const *dir, char const *file)
+ssize_t file_read(char const *file, char *buf, size_t n)
 {
-    _alloc_strbuf_(p, strlen(dir) + 1 + strlen(file)) ;
-    if (!auto_strbuf(&p, dir, "/", file))
-        return 0 ;
-    return strbuf_read_file(sb, p.s) ;
+    return io_readnclose(io_open(file, O_RDONLY | O_CLOEXEC), buf, n) ;
 }
