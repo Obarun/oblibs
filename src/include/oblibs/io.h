@@ -193,4 +193,31 @@ extern size_t io_allwrite(int fd, char *store, size_t len) ;
  */
 extern size_t io_allwritev(int fd, struct iovec const *iov, int iovcnt) ;
 
+/**
+ * @brief Read up to `n` bytes from a BLOCKING `fd` into `s`, then **close** `fd`.
+ *
+ * The generic "consume a whole fd" primitive: it transfers with io_allread() and
+ * always closes `fd` (success or failure). Tolerant of `fd < 0`, so it composes
+ * directly with io_open(): `io_readnclose(io_open(path, O_RDONLY|O_CLOEXEC), s, n)`
+ * -- an open failure propagates as -1 without a separate check. Works on any fd
+ * (file, pipe, socket); for a path, use file_read() (files.h).
+ *
+ * @return Number of bytes read (0..n). EOF before `n` yields the partial count
+ *         (not an error). Returns -1 on a real read error or if `fd < 0`
+ *         (`errno` set / preserved from the failed open).
+ */
+extern ssize_t io_readnclose(int fd, char *s, size_t n) ;
+
+/**
+ * @brief Write all `len` bytes of `s` to a BLOCKING `fd`, then **close** `fd`.
+ *
+ * The generic "fill a whole fd" primitive: io_allwrite() then always close `fd`.
+ * Tolerant of `fd < 0` (returns 0), so it composes with io_open_mode():
+ * `io_writenclose(io_open_mode(path, flags, mode), s, len)`. Works on any fd.
+ *
+ * @return 1 if all `len` bytes were written, 0 otherwise (`errno` set on I/O
+ *         error; 0 also when `fd < 0`).
+ */
+extern int io_writenclose(int fd, char const *s, size_t len) ;
+
 #endif
