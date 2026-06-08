@@ -14,6 +14,7 @@
 
 #include <oblibs/stream.h>
 
+#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/uio.h>
@@ -32,14 +33,18 @@ int istream_init(istream *o, int fd, void *storage, size_t size)
     return 1 ;
 }
 
-/* Pull one chunk from the fd into the ring buffer. Returns the raw io_readv
- * result: >0 bytes buffered, 0 on EOF, -1 on error. Called only when the buffer
- * has free room, so wiovec never reports full here. */
-static ssize_t istream_fill(istream *o)
+size_t istream_getnofill(istream *o, char *s, size_t len)
+{
+    return rbuffer_read(&o->rb, s, len) ;
+}
+
+ssize_t istream_fill(istream *o)
 {
     struct iovec v[2] ;
     unsigned int n = rbuffer_wiovec(&o->rb, v) ;
-    ssize_t r = io_readv(o->fd, v, (int)n) ;
+    if (!n)
+        return (errno = ENOBUFS, -1) ;   // buffer already full: nothing can be read in
+    ssize_t r = io_readv(o->fd, v, (int)n) ;   // EINTR retried internally
     if (r > 0)
         rbuffer_wadvance(&o->rb, (size_t)r) ;
     return r ;
@@ -50,14 +55,15 @@ ssize_t istream_get(istream *o, char *s, size_t len)
     size_t w = 0 ;
 
     while (w < len) {
-        w += rbuffer_read(&o->rb, s + w, len - w) ;   // drain buffered bytes
+        w += istream_getnofill(o, s + w, len - w) ;   // drain buffered bytes
         if (w >= len)
             break ;
-        ssize_t r = istream_fill(o) ;                 // buffer empty: refill
-        if (r < 0)
-            return -1 ;
+        ssize_t r = istream_fill(o) ;                 // buffer empty: one read
+        if (r > 0)
+            continue ;
         if (!r)
-            break ;                                   // EOF
+            break ;       // EOF -> return the short count gathered so far
+        return -1 ;       // read error, or would-block on a non-blocking fd (errno set)
     }
     return (ssize_t)w ;
 }

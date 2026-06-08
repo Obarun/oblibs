@@ -19,7 +19,9 @@
  *   - ostream (write side): bytes accumulate in the ring buffer and are drained
  *     to the fd with io_allwritev.
  *   - istream (read side): bytes are pulled from the fd into the ring buffer in
- *     chunks and handed out on demand. Targets BLOCKING fds, like io_all*.
+ *     chunks and handed out on demand. istream_get is a blocking convenience;
+ *     istream_fill + istream_getnofill are the building blocks for non-blocking,
+ *     event-loop-driven reads (poll/iopause).
  */
 
 #ifndef OB_STREAM_H
@@ -143,23 +145,64 @@ struct istream_s
  * @brief Initialize an input stream over `fd` using caller-provided storage.
  *
  * @param o       The stream to initialize.
- * @param fd      The source file descriptor (blocking).
+ * @param fd      The source file descriptor.
  * @param storage Backing buffer (must outlive the stream), at least 2 bytes.
  * @param size    Size of `storage`. Effective capacity is `size - 1`.
  * @return 1 on success, 0 on failure (errno == EINVAL on bad arguments).
  */
 extern int istream_init(istream *o, int fd, void *storage, size_t size) ;
 
-/**
- * @brief Read up to `len` bytes from the stream into `s`.
+/*
+ * Three layers, pick the one that fits the fd:
  *
- * Drains whatever is already buffered, then refills from the fd as needed,
- * looping until `len` bytes have been delivered or the fd reaches EOF. EINTR is
- * handled internally. Bytes pulled from the fd beyond `len` stay buffered for
- * the next call.
+ *   - istream_get      : blocking convenience. "Give me up to len bytes."
+ *   - istream_fill +   : the building blocks. Drive them from your event loop
+ *     istream_getnofill  for a non-blocking fd (poll/iopause): fill when the fd
+ *                        signals readable, getnofill to hand buffered bytes out.
+ *
+ * istream_fill is the only function that touches the fd; istream_getnofill never
+ * does; istream_get is fill+getnofill looped for you.
+ */
+
+/**
+ * @brief Hand out up to `len` already-buffered bytes into `s`. Never reads the fd.
+ *
+ * The non-blocking-friendly getter: it only drains what istream_fill has already
+ * pulled in, so it never blocks and never fails.
+ *
+ * @return Number of bytes copied (0 if the buffer is empty).
+ */
+extern size_t istream_getnofill(istream *o, char *s, size_t len) ;
+
+/**
+ * @brief Do exactly one read from the fd into the buffer.
+ *
+ * The only function that touches the fd. EINTR is retried internally. Call it
+ * when (and only when) you need more bytes than istream_getnofill can give -- on
+ * a non-blocking fd, typically when your event loop reports the fd readable.
+ *
+ * @return > 0 : number of bytes pulled into the buffer.
+ *           0 : EOF (the peer closed; no more data will ever come).
+ *          -1 : error, errno set. On a non-blocking fd with nothing available
+ *               right now this is EAGAIN/EWOULDBLOCK (benign: wait and retry).
+ *               ENOBUFS means the buffer is already full (drain it first).
+ */
+extern ssize_t istream_fill(istream *o) ;
+
+/**
+ * @brief Read up to `len` bytes into `s`, blocking until they arrive or EOF.
+ *
+ * The convenience layer for **blocking** fds: it loops istream_fill +
+ * istream_getnofill until `len` bytes are delivered or the fd reaches EOF.
+ * Bytes pulled beyond `len` stay buffered for the next call.
  *
  * @return Number of bytes read (0..len). A count `< len` means EOF was reached
  *         first. Returns -1 on a read error (errno set).
+ *
+ * @note Blocking-oriented. On a **non-blocking** fd a would-block surfaces as -1
+ *       with errno EAGAIN/EWOULDBLOCK (and the call may have consumed some bytes):
+ *       do not use istream_get there -- drive istream_fill + istream_getnofill
+ *       from your event loop instead.
  */
 extern ssize_t istream_get(istream *o, char *s, size_t len) ;
 
