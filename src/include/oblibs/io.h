@@ -20,10 +20,6 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 
-#ifndef O_CLOEXEC
-#define O_CLOEXEC 0x40000000
-#endif
-
 /**
  * @brief Checks if an error code represents a non-blocking I/O retry condition.
  *
