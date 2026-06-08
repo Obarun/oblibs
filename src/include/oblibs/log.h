@@ -212,15 +212,15 @@ extern void set_redirfd_2(char const *file) ;
 extern void redir_fd(int fd,char const *file) ;
 
 // main function used everywhere
-extern void log_out(char const *str[],...) ;
+extern void log_out(char const *str[]) ;
 
 // build the string before calling log_out
-extern void log_out_builder(log_dbg_info_t *db_info,int level, char const *msg[],char const *str[],...) ;
+extern void log_out_builder(log_dbg_info_t *db_info,int level, char const *msg[],char const *str[]) ;
 
 // die builder function
-extern void log_die_builder (int e,log_dbg_info_t *db_info,int level, char const *msg[],char const *str[],...) attribute_noreturn ;
-extern void log_die_nclean_builder (int e,ss_log_cleanup_func_t *cleaner,log_dbg_info_t *db_info,int level, char const *msg[],char const *str[],...) attribute_noreturn ;
-extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_t *db_info,int level,char const *msg[], char const *str[],...) ;
+extern void log_die_builder (int e,log_dbg_info_t *db_info,int level, char const *msg[],char const *str[]) attribute_noreturn ;
+extern void log_die_nclean_builder (int e,ss_log_cleanup_func_t *cleaner,log_dbg_info_t *db_info,int level, char const *msg[],char const *str[]) attribute_noreturn ;
+extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_t *db_info,int level,char const *msg[], char const *str[]) ;
 
 // let's go
 // these function only accept string as arguments
@@ -653,7 +653,7 @@ extern void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_
  * non-reentrant, non-thread-safe!
  */
 static char flog_buf[LOG_FMTBUF_SIZE];
-static char *pflog __attribute__((unused)) = flog_buf ;
+static char *pflog attribute_unused = flog_buf ;
 
 /**
  *

@@ -13,7 +13,6 @@
  */
 
 #include <errno.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -246,11 +245,9 @@ void log_clock(ostream *stream)
     ostream_puts(stream, buf) ;
 }
 
-void log_out(char const *str[],...)
+void log_out(char const *str[])
 {
     int e = errno ;
-    va_list alist ;
-    va_start(alist,str) ;
     ostream *stream_1 = SWITCH_STREAM ? ostream_2 : ostream_1 ;
     ostream *stream_2 = SWITCH_STREAM ? ostream_1 : ostream_2 ;
 
@@ -270,7 +267,7 @@ void log_out(char const *str[],...)
         ostream_puts(stream_2, *str) ;
         if (DOUBLE_OUTPUT)
             ostream_puts(stream_1, *str) ;
-        *str++ ;
+        str++ ;
     }
     if (TRAILING_NEWLINE)
     {
@@ -282,11 +279,10 @@ void log_out(char const *str[],...)
         ostream_flush(stream_2) ;
         if (DOUBLE_OUTPUT) ostream_flush(stream_1) ;
     }
-    va_end(alist) ;
     errno = e ;
 }
 
-void log_out_builder(log_dbg_info_t *db_info,int level, char const *msg[],char const *str[],...)
+void log_out_builder(log_dbg_info_t *db_info,int level, char const *msg[],char const *str[])
 {
     if ((unsigned int)level <= VERBOSITY)
     {
@@ -332,20 +328,20 @@ void log_out_builder(log_dbg_info_t *db_info,int level, char const *msg[],char c
     }
 }
 
-void log_die_builder (int e,log_dbg_info_t *db_info,int level, char const *msg[],char const *str[],...)
+void log_die_builder (int e,log_dbg_info_t *db_info,int level, char const *msg[],char const *str[])
 {
     log_out_builder(db_info,level,msg,str) ;
     _exit(e) ;
 }
 
-void log_die_nclean_builder (int e,ss_log_cleanup_func_t *cleaner,log_dbg_info_t *db_info,int level, char const *msg[],char const *str[],...)
+void log_die_nclean_builder (int e,ss_log_cleanup_func_t *cleaner,log_dbg_info_t *db_info,int level, char const *msg[],char const *str[])
 {
     if (cleaner) (*cleaner)() ;
     log_out_builder(db_info,level,msg,str) ;
     _exit(e) ;
 }
 
-void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_t *db_info,int level,char const *msg[], char const *str[],...)
+void log_warn_nclean_builder(ss_log_cleanup_func_t *cleaner,log_dbg_info_t *db_info,int level,char const *msg[], char const *str[])
 {
     if (cleaner) (*cleaner)() ;
     log_out_builder(db_info,level,msg,str) ;
