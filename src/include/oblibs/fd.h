@@ -19,8 +19,8 @@
  * File-descriptor lifecycle helpers: closing, moving, copying, changing
  * directory through one, toggling close-on-exec, and making sure the standard
  * descriptors are open. These are the oblibs-native replacements for the slice
- * of skalibs `djbunix` that 66 uses (`fd_close`/`fd_chdir`/`fd_move`/`fd_copy`/
- * `fd_sanitize`, `coe`/`uncoe`).
+ * of skalibs `djbunix` that 66 uses (`fd_close`/`fd_chdir`/`fd_move`/`fd_move2`/
+ * `fd_copy`/`fd_sanitize`, `coe`/`uncoe`).
  *
  * Naming: `<action>_fd` (e.g. close_fd), because a descriptor is a plain `int`,
  * not an ADT -- a free verb reads better than a pseudo-method, and it sidesteps
@@ -55,6 +55,17 @@ extern int chdir_fd(int fd) ;
  * @return 0 on success, -1 on error (`errno` set).
  */
 extern int move_fd(int to, int from) ;
+
+/**
+ * @brief Moves two descriptors at once: @from1 onto @to1 and @from2 onto @to2,
+ * as if `move_fd` were applied to both pairs but safe when the pairs overlap
+ * (e.g. swapping 1 and 2, where a naive sequential move would clobber a source).
+ * An overlapping source is parked with `dup` and rolled back if the second copy
+ * fails. Rejects `from1 == from2` with distinct targets, and `to1 == to2`, with
+ * `EINVAL`. `errno` preserved on success. Replaces skalibs `fd_move2`.
+ * @return 0 on success, -1 on error (`errno` set).
+ */
+extern int remap_fds(int to1, int from1, int to2, int from2) ;
 
 /**
  * @brief Duplicates @from onto the number @to (both stay open): `dup2`
