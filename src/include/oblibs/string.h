@@ -18,7 +18,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 
-#include <oblibs/ostream.h>
+#include <oblibs/stream.h>
 #include <oblibs/strbuf.h>
 
 #if !defined(nb_el)

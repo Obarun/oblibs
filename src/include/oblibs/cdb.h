@@ -18,7 +18,7 @@
 #include <stdint.h>
 
 #include <oblibs/strbuf.h>
-#include <oblibs/ostream.h>
+#include <oblibs/stream.h>
 
 /* ===========================================================================
  * cdb -- constant database (D. J. Bernstein format), self-contained (no skalibs

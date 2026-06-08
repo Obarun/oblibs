@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include <oblibs/ostream.h>
+#include <oblibs/stream.h>
 #include <oblibs/strbuf.h>
 
 void auto_string_builder(char *dest,size_t baselen, char const *str[],...)

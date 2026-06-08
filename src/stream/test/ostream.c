@@ -26,7 +26,7 @@
 #include <fcntl.h>
 #include <sys/uio.h>
 
-#include <oblibs/ostream.h>
+#include <oblibs/stream.h>
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -100,12 +100,83 @@ static void test_empty_put(void)
     TEST_END() ;
 }
 
+/* ostream_cats writes a NULL-terminated list of strings, in order. */
+static void test_cats(void)
+{
+    TEST_START("test_cats") ;
+
+    char path[] = "/tmp/oblibs_ostream_cats_XXXXXX" ;
+    int fd = mkstemp(path) ;
+    TEST_ASSERT(fd >= 0, "mkstemp failed") ;
+
+    ostream o ;
+    char storage[64] ;
+    TEST_ASSERT(ostream_init(&o, fd, storage, sizeof storage), "ostream_init") ;
+
+    TEST_ASSERT(ostream_cats(&o, "foo", "", "bar", "baz", NULL), "cats") ; /* "" skipped */
+    TEST_ASSERT(ostream_cats(&o, NULL), "cats of nothing succeeds") ;
+    TEST_ASSERT(ostream_flush(&o), "flush") ;
+
+    char const expected[] = "foobarbaz" ;
+    TEST_ASSERT(lseek(fd, 0, SEEK_SET) == 0, "lseek") ;
+    char got[32] = { 0 } ;
+    ssize_t r = read(fd, got, sizeof got) ;
+    TEST_ASSERT(r == (ssize_t)(sizeof expected - 1), "size matches") ;
+    TEST_ASSERT(memcmp(got, expected, sizeof expected - 1) == 0, "content matches") ;
+
+    close(fd) ;
+    unlink(path) ;
+    TEST_END() ;
+}
+
+/* ostream_fmt writes printf-style output, including past the stack scratch. */
+static void test_fmt(void)
+{
+    TEST_START("test_fmt") ;
+
+    char path[] = "/tmp/oblibs_ostream_fmt_XXXXXX" ;
+    int fd = mkstemp(path) ;
+    TEST_ASSERT(fd >= 0, "mkstemp failed") ;
+
+    ostream o ;
+    char storage[64] ;
+    TEST_ASSERT(ostream_init(&o, fd, storage, sizeof storage), "ostream_init") ;
+
+    TEST_ASSERT(ostream_fmt(&o, "%s=%d;", "x", 42), "fmt small") ;
+
+    /* 5000 chars: exceeds the 1024-byte stack scratch, exercises the malloc path */
+    char big[5000] ;
+    memset(big, 'Z', sizeof big - 1) ;
+    big[sizeof big - 1] = 0 ;
+    TEST_ASSERT(ostream_fmt(&o, "%s", big), "fmt big") ;
+    TEST_ASSERT(ostream_flush(&o), "flush") ;
+
+    char expected[16 + sizeof big] ;
+    int hlen = sprintf(expected, "x=42;") ;
+    memcpy(expected + hlen, big, sizeof big - 1) ;
+    size_t total = (size_t)hlen + sizeof big - 1 ;
+
+    TEST_ASSERT(lseek(fd, 0, SEEK_SET) == 0, "lseek") ;
+    char *got = malloc(total + 8) ;
+    TEST_ASSERT(got != NULL, "malloc") ;
+    ssize_t r = read(fd, got, total + 8) ;
+    TEST_ASSERT(r == (ssize_t)total, "size matches") ;
+    TEST_ASSERT(memcmp(got, expected, total) == 0, "content matches") ;
+
+    free(got) ;
+    close(fd) ;
+    unlink(path) ;
+    TEST_END() ;
+}
+
 int main(void)
 {
     printf("=== ostream test suite ===\n\n") ;
 
     test_mixed_paths() ;
     test_empty_put() ;
+    test_cats() ;
+    test_fmt() ;
 
     printf("\nAll tests passed.\n") ;
     return 0 ;

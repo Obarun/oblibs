@@ -25,7 +25,7 @@
 #include <oblibs/types.h>
 #include <oblibs/fd.h>
 #include <oblibs/io.h>
-#include <oblibs/ostream.h>
+#include <oblibs/stream.h>
 #include <oblibs/clock.h>
 #include <oblibs/attributes.h>
 

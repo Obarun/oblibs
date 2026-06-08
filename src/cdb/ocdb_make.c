@@ -19,7 +19,7 @@
 
 #include <oblibs/cdb.h>
 #include <oblibs/strbuf.h>
-#include <oblibs/ostream.h>
+#include <oblibs/stream.h>
 #include <oblibs/types.h>
 
 #include "cdb-internal.h"
