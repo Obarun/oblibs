@@ -13,6 +13,7 @@
  */
 
 #include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -243,6 +244,15 @@ void log_clock(ostream *stream)
         buf[23] = 0 ;
     }
     ostream_puts(stream, buf) ;
+}
+
+char *log_fmt(char *buf, size_t n, char const *fmt, ...)
+{
+    va_list ap ;
+    va_start(ap, fmt) ;
+    vsnprintf(buf, n, fmt, ap) ;
+    va_end(ap) ;
+    return buf ;
 }
 
 void log_out(char const *str[])
