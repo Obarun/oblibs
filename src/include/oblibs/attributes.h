@@ -28,6 +28,8 @@
 #define attribute_malloc     __attribute__((malloc))
 #define attribute_deprecated __attribute__((deprecated))
 #define attribute_weak       __attribute__((weak))
+#define attribute_sentinel   __attribute__((sentinel))
+#define attribute_format(archetype, fmt, first) __attribute__((format(archetype, fmt, first)))
 
 #else
 
@@ -38,6 +40,8 @@
 #define attribute_malloc
 #define attribute_deprecated
 #define attribute_weak
+#define attribute_sentinel
+#define attribute_format(archetype, fmt, first)
 
 #endif
 
