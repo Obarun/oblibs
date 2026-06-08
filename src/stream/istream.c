@@ -67,3 +67,24 @@ ssize_t istream_get(istream *o, char *s, size_t len)
     }
     return (ssize_t)w ;
 }
+
+int istream_getall(istream *o, char *s, size_t len, size_t *w)
+{
+    if (*w > len)
+        return (errno = EINVAL, -1) ;
+
+    while (*w < len) {
+        *w += istream_getnofill(o, s + *w, len - *w) ;   // drain buffered bytes
+        if (*w >= len)
+            break ;
+        ssize_t r = istream_fill(o) ;                    // buffer empty: one read
+        if (r > 0)
+            continue ;
+        if (!r)
+            return (errno = EPIPE, -1) ;     // EOF before len: *w holds the partial
+        if (error_isagain(errno))
+            return 0 ;                       // would-block: *w holds progress, retry later
+        return -1 ;                          // real read error (errno set)
+    }
+    return 1 ;
+}

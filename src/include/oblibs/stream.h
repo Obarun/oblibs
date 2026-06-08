@@ -153,15 +153,17 @@ struct istream_s
 extern int istream_init(istream *o, int fd, void *storage, size_t size) ;
 
 /*
- * Three layers, pick the one that fits the fd:
+ * Layers, pick the one that fits the fd:
  *
  *   - istream_get      : blocking convenience. "Give me up to len bytes."
- *   - istream_fill +   : the building blocks. Drive them from your event loop
+ *   - istream_getall   : read exactly len bytes, resumable across event-loop wakeups
+ *                        (the non-blocking-safe fixed-size read; tracks progress in *w).
+ *   - istream_fill +   : the raw building blocks. Drive them from your event loop
  *     istream_getnofill  for a non-blocking fd (poll/iopause): fill when the fd
  *                        signals readable, getnofill to hand buffered bytes out.
  *
  * istream_fill is the only function that touches the fd; istream_getnofill never
- * does; istream_get is fill+getnofill looped for you.
+ * does; istream_get and istream_getall are fill+getnofill looped for you.
  */
 
 /**
@@ -205,6 +207,24 @@ extern ssize_t istream_fill(istream *o) ;
  *       from your event loop instead.
  */
 extern ssize_t istream_get(istream *o, char *s, size_t len) ;
+
+/**
+ * @brief Read exactly `len` bytes into `s`, resumably -- the non-blocking-safe
+ * way to read a fixed-size record.
+ *
+ * Loops istream_fill + istream_getnofill, tracking progress in `*w` (the number
+ * of bytes delivered so far). Initialise `*w` to 0 before the first call; on a
+ * non-blocking fd, if it returns 0 (would-block) call it again unchanged when the
+ * fd is readable again -- it resumes from `*w` without losing bytes.
+ *
+ * @return  1 : done, `*w == len`.
+ *          0 : would-block before `len` (non-blocking fd); `*w` holds the partial,
+ *              retry later.
+ *         -1 : stream ended early or errored, `*w` holds the partial. `errno` is
+ *              EPIPE on EOF (peer closed before `len`), otherwise the read error
+ *              (EINVAL if `*w > len` on entry).
+ */
+extern int istream_getall(istream *o, char *s, size_t len, size_t *w) ;
 
 /** Predefined stream on fd 0 (stdin), with internal static storage. */
 extern istream istream_0_ ;

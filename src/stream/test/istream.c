@@ -198,6 +198,91 @@ static void test_fill_full_buffer(void)
     TEST_END() ;
 }
 
+/* istream_getall reads a fixed-size record, resumably: on a non-blocking fd a
+ * fragmented write is picked up across calls (return 0, *w holds progress), it
+ * returns 1 once complete, and -1/EPIPE if the peer closes before len. */
+static void test_getall_resumable(void)
+{
+    TEST_START("test_getall_resumable") ;
+
+    int p[2] ;
+    TEST_ASSERT(pipe(p) == 0, "pipe failed") ;
+    TEST_ASSERT(fcntl(p[0], F_SETFL, O_NONBLOCK) == 0, "set non-blocking failed") ;
+
+    istream o ;
+    char storage[16] ;
+    TEST_ASSERT(istream_init(&o, p[0], storage, sizeof storage), "istream_init") ;
+
+    char rec[5] ;
+    size_t w = 0 ;
+
+    /* nothing yet: would-block, no progress */
+    errno = 0 ;
+    TEST_ASSERT(istream_getall(&o, rec, 5, &w) == 0, "would-block -> 0") ;
+    TEST_ASSERT(w == 0, "no progress yet") ;
+
+    /* first fragment "ab": still incomplete, progress recorded */
+    TEST_ASSERT(write(p[1], "ab", 2) == 2, "write fragment 1") ;
+    TEST_ASSERT(istream_getall(&o, rec, 5, &w) == 0, "still would-block -> 0") ;
+    TEST_ASSERT(w == 2, "2 bytes of progress") ;
+
+    /* rest "cde": now complete */
+    TEST_ASSERT(write(p[1], "cde", 3) == 3, "write fragment 2") ;
+    TEST_ASSERT(istream_getall(&o, rec, 5, &w) == 1, "complete -> 1") ;
+    TEST_ASSERT(w == 5 && memcmp(rec, "abcde", 5) == 0, "record assembled") ;
+
+    /* EOF before a full next record */
+    char rec2[4] ;
+    size_t w2 = 0 ;
+    TEST_ASSERT(write(p[1], "zz", 2) == 2, "write short") ;
+    close(p[1]) ;
+    errno = 0 ;
+    TEST_ASSERT(istream_getall(&o, rec2, 4, &w2) == -1 && errno == EPIPE, "EOF before len -> -1/EPIPE") ;
+    TEST_ASSERT(w2 == 2 && memcmp(rec2, "zz", 2) == 0, "partial kept on EOF") ;
+
+    close(p[0]) ;
+    TEST_END() ;
+}
+
+/* istream_getall must assemble an exact record larger than the buffer capacity
+ * (many fill/drain cycles), and report a clean EOF afterwards. Blocking fd: no
+ * EAGAIN, so the only outcomes are complete (1) and EOF (-1/EPIPE). */
+static void test_getall_small_buffer_blocking(void)
+{
+    TEST_START("test_getall_small_buffer_blocking") ;
+
+    char const data[] = "0123456789" ;              /* 10 bytes */
+    int fd = primed_fd(data, sizeof data - 1) ;
+
+    istream o ;
+    char storage[4] ;                               /* capacity 3 < 10 */
+    TEST_ASSERT(istream_init(&o, fd, storage, sizeof storage), "istream_init") ;
+
+    char buf[10] ;
+    size_t w = 0 ;
+    TEST_ASSERT(istream_getall(&o, buf, 10, &w) == 1, "complete across many refills") ;
+    TEST_ASSERT(w == 10 && memcmp(buf, data, 10) == 0, "record assembled in order") ;
+
+    /* nothing left: a further getall hits EOF cleanly */
+    char b2[4] ;
+    size_t w2 = 0 ;
+    errno = 0 ;
+    TEST_ASSERT(istream_getall(&o, b2, 4, &w2) == -1 && errno == EPIPE, "EOF -> -1/EPIPE") ;
+    TEST_ASSERT(w2 == 0, "no bytes delivered at EOF") ;
+
+    /* already-complete request (*w == len) returns 1 without touching the fd */
+    size_t w3 = 3 ;
+    TEST_ASSERT(istream_getall(&o, b2, 3, &w3) == 1, "*w==len -> 1, no read") ;
+
+    /* invalid: *w > len -> EINVAL */
+    size_t w4 = 5 ;
+    errno = 0 ;
+    TEST_ASSERT(istream_getall(&o, b2, 3, &w4) == -1 && errno == EINVAL, "*w>len -> EINVAL") ;
+
+    close(fd) ;
+    TEST_END() ;
+}
+
 int main(void)
 {
     printf("=== istream test suite ===\n\n") ;
@@ -207,6 +292,8 @@ int main(void)
     test_get_one_by_one() ;
     test_fill_getnofill_nonblock() ;
     test_fill_full_buffer() ;
+    test_getall_resumable() ;
+    test_getall_small_buffer_blocking() ;
 
     printf("\nAll tests passed.\n") ;
     return 0 ;
