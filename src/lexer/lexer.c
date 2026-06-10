@@ -28,6 +28,11 @@ static inline uint8_t lexer_loop(lexer_config *cfg, char const *regex, size_t le
 
     if (cfg->style) {
 
+        /* a len-byte pattern cannot match when fewer than len bytes remain;
+         * guarding here also keeps the memcpy below within cfg->str. */
+        if (cfg->pos + len > cfg->slen)
+            return 0 ;
+
         int found = 0 ;
         char cmp[len + 1] ;
 
