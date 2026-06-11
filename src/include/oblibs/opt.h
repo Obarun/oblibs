@@ -153,6 +153,22 @@ extern uint8_t opt_usage(strbuf *out, char const *prog, opt_cmd_t const *cmd) ;
  *  per sub-command) for @cmd. @return 1 / 0 (errno). */
 extern uint8_t opt_help(strbuf *out, char const *prog, opt_cmd_t const *cmd) ;
 
+/** @brief Build the full help block for @cmd and write it to stdout. Wrapper
+ *  over opt_help for the common "print help and exit 0" path.
+ *  @return 0 on success, LOG_EXIT_SYS if the build failed. */
+extern int opt_emit_help(opt_cmd_t const *cmd) ;
+
+/** @brief Build the one-line usage for @cmd and write it to stderr. Wrapper
+ *  over opt_usage for the common error-path "print usage and bail" case.
+ *  @return LOG_EXIT_USER (always -- usage is an error-path output). */
+extern int opt_emit_usage(opt_cmd_t const *cmd) ;
+
+/** @brief Report an opt_scan failure: log the offending token from @st->problem
+ *  (@code selects the message: OPT_UNKNOWN vs OPT_MISSARG), then emit the usage.
+ *  Lets a manual opt_scan loop handle both error codes in one line.
+ *  @return LOG_EXIT_USER. */
+extern int opt_emit_error(opt_cmd_t const *cmd, int code, opt_scan_t const *st) ;
+
 /* ==========================================================================
  * Layer 3 -- structured option values ("k=v:k=v,v"), built on the lexer
  * ========================================================================== */

@@ -20,26 +20,7 @@
 #include <string.h>
 
 #include <oblibs/opt.h>
-#include <oblibs/strbuf.h>
-#include <oblibs/io.h>
 #include <oblibs/log.h>
-
-static int opt_emit_help(opt_cmd_t const *cmd)
-{
-    _alloc_strbuf_(sb, 512) ;
-    if (!opt_help(&sb, cmd->name, cmd) || !strbuf_cats(&sb, "\n"))
-        return LOG_EXIT_SYS ;
-    io_allwrite(1, sb.s, sb.len) ;
-    return 0 ;
-}
-
-static int opt_emit_usage(opt_cmd_t const *cmd)
-{
-    _alloc_strbuf_(sb, 256) ;
-    if (opt_usage(&sb, cmd->name, cmd) && strbuf_cats(&sb, "\n"))
-        io_allwrite(2, sb.s, sb.len) ;
-    return LOG_EXIT_USER ;
-}
 
 int opt_dispatch(int argc, char const *const *argv, opt_cmd_t const *cmd, void *data)
 {
@@ -52,14 +33,8 @@ int opt_dispatch(int argc, char const *const *argv, opt_cmd_t const *cmd, void *
         if (o == OPT_END)
             break ;
 
-        if (o == OPT_UNKNOWN) {
-            log_warn("invalid option: ", st.problem) ;
-            return opt_emit_usage(cmd) ;
-        }
-        if (o == OPT_MISSARG) {
-            log_warn("option requires an argument: ", st.problem) ;
-            return opt_emit_usage(cmd) ;
-        }
+        if (o == OPT_UNKNOWN || o == OPT_MISSARG)
+            return opt_emit_error(cmd, o, &st) ;
         if (o == OPT_ID_HELP)
             return opt_emit_help(cmd) ;
 
