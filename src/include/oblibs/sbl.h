@@ -27,6 +27,11 @@
  *    always a valid C string covering [0, len).
  *  - There is no "close" operation (unlike stack): every sbl_* function leaves
  *    the buffer in this canonical, NUL-terminated state.
+ *  - Zero/NUL policy: an element's NUL is part of the content (counted in len).
+ *    sbl_add/sbl_addb WRITE that NUL (they append a whole element), so chaining
+ *    them just works (the next append lands after the previous NUL). sbl_insert
+ *    does NOT write a NUL: it prefixes an existing element, which supplies the
+ *    closing NUL -- hence its offset must start an existing element (< len).
  *  - Iterate with FOREACH_SBL. The element count is computed on demand with
  *    sbl_count(); it is never cached in the struct.
  *
@@ -69,8 +74,12 @@ extern int sbl_addb(strbuf *sb, char const *s, size_t n) ;
  *  caller vouches that @s is NUL-terminated. @s must be non-empty. */
 #define sbl_add(sb, s) sbl_addb(sb, (s), strlen(s))
 
-/** @brief Insert @s (without its NUL) at byte @offset (0..len). The caller is
- *  responsible for offset landing on an element boundary. @return 1 / 0 (errno). */
+/** @brief Prefix the element starting at byte @offset with @s's bytes (no NUL is
+ *  written; the element's own NUL keeps the list canonical). @offset MUST be the
+ *  start of an EXISTING element: 0 <= @offset < len (e.g. from sbl_search /
+ *  sbl_element_byid). @offset == len and the empty list are rejected (EINVAL) --
+ *  use sbl_add to append a new element. @return 1 / 0 (errno: EINVAL on empty @s
+ *  or @offset >= len). */
 extern int sbl_insert(strbuf *sb, size_t offset, char const *s) ;
 
 /** @brief Remove the element starting at byte @offset (as returned by
@@ -162,8 +171,10 @@ extern int sbl_split_string_in_nline(strbuf *sb) ;
  *  all elements, rebuilding @sb. @return 1 / 0 (errno: EINVAL on bad args). */
 extern int sbl_replace(strbuf *sb, char const *regex, char const *by) ;
 
-/** @brief Split @sb into lines, sbl_replace on each, then rejoin with '\n'.
- *  @return 1 / 0. */
-extern int sbl_replace_g(strbuf *sb, char const *regex, char const *by) ;
+/** @brief Treat @sb as a '\n'-joined text blob: split it into one element per
+ *  line, sbl_replace on each, then rejoin with '\n' (trailing '\n' kept). Unlike
+ *  sbl_replace, which mutates an sbl list in place, this consumes and produces a
+ *  multi-line text buffer. @return 1 / 0. */
+extern int sbl_replace_nline(strbuf *sb, char const *regex, char const *by) ;
 
 #endif

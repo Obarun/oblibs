@@ -110,7 +110,7 @@ int sbl_replace(strbuf *sb, char const *regex, char const *by)
     return strbuf_copy(sb, &new) ;
 }
 
-int sbl_replace_g(strbuf *sb, char const *regex, char const *by)
+int sbl_replace_nline(strbuf *sb, char const *regex, char const *by)
 {
     if (!sbl_split_string_in_nline(sb) ||
         !sbl_replace(sb, regex, by))

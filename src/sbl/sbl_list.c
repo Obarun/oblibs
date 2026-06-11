@@ -77,7 +77,13 @@ ssize_t sbl_element_byid(strbuf *sb, unsigned int id)
 
 int sbl_insert(strbuf *sb, size_t offset, char const *s)
 {
-    if (!*s)
+    /* @offset must start an EXISTING element (0 <= offset < len): sbl_insert
+     * prefixes that element with @s's bytes and does NOT append a NUL -- it
+     * relies on the element's own NUL to keep the list canonical. An offset of
+     * len (or an empty list, len == 0) has no element to fasten to and would
+     * leave the inserted bytes unterminated past len -- reject it. To append a
+     * new element, use sbl_add (which writes the NUL). */
+    if (!*s || offset >= sb->len)
         return (errno = EINVAL, 0) ;
     return strbuf_insertb(sb, offset, s, strlen(s)) ;
 }

@@ -263,7 +263,7 @@ static void test_to_char(void)
     TEST_END() ;
 }
 
-/* sbl-only: insert raw bytes at an offset. */
+/* sbl-only: prefix an existing element with raw bytes at its offset. */
 static void test_insert(void)
 {
     TEST_START("test_insert") ;
@@ -277,7 +277,22 @@ static void test_insert(void)
     errno = 0 ;
     TEST_ASSERT(!sbl_insert(&sb, 0, ""), "empty insert rejected") ;
     TEST_ASSERT(errno == EINVAL, "EINVAL") ;
+    /* offset == len has no existing element to fasten to: rejected, list intact
+     * (inserting there would leave bytes unterminated past len). */
+    errno = 0 ;
+    TEST_ASSERT(!sbl_insert(&sb, sb.len, "Y"), "insert at offset==len rejected") ;
+    TEST_ASSERT(errno == EINVAL, "EINVAL at len") ;
+    TEST_ASSERT(sb.len == 7 && sb.s[sb.len - 1] == 0, "list untouched & canonical") ;
     strbuf_free(&sb) ;
+    /* empty list (len 0): offset 0 == len -> rejected, stays empty */
+    {
+        strbuf empty = STRBUF_ZERO ;
+        errno = 0 ;
+        TEST_ASSERT(!sbl_insert(&empty, 0, "Z"), "insert into empty rejected") ;
+        TEST_ASSERT(errno == EINVAL, "EINVAL on empty list") ;
+        TEST_ASSERT(empty.len == 0, "empty list stays empty") ;
+        strbuf_free(&empty) ;
+    }
     TEST_END() ;
 }
 
@@ -442,12 +457,12 @@ static void test_replace(void)
 }
 
 /* lexer-backed: split into lines, replace on each, rejoin with '\n'. */
-static void test_replace_g(void)
+static void test_replace_nline(void)
 {
-    TEST_START("test_replace_g") ;
+    TEST_START("test_replace_nline") ;
     strbuf sb = STRBUF_ZERO ;
     TEST_ASSERT(strbuf_catb(&sb, "a@b\nc@d@e\nf", strlen("a@b\nc@d@e\nf") + 1), "seed") ;
-    TEST_ASSERT(sbl_replace_g(&sb, "@", "::"), "replace_g") ;
+    TEST_ASSERT(sbl_replace_nline(&sb, "@", "::"), "replace_nline") ;
     check_cstr(&sb, "a::b\nc::d::e\nf\n") ;
     strbuf_free(&sb) ;
     TEST_END() ;
@@ -474,7 +489,7 @@ int main(void)
     test_clean_string() ;
     test_split_nline() ;
     test_replace() ;
-    test_replace_g() ;
+    test_replace_nline() ;
 
     printf("\nAll tests passed.\n") ;
     return 0 ;
