@@ -126,6 +126,11 @@ struct opt_cmd_s {
     char const         *help ;       /* one-line description for the parent's help */
     char const         *operands ;   /* positional operands shown in usage, e.g.
                                       * "service..." ; 0 = none */
+    char const         *epilog ;     /* free-form text printed by opt_help after the
+                                      * options:/commands: sections. For what the
+                                      * option table cannot model -- e.g. the meaning
+                                      * of a structured value ("-w u/U/d/D ..."), or
+                                      * the fields a "-o k,k" list accepts. 0 = none */
     opt_t const        *opts ;       /* options recognised at this level (may be 0) */
     size_t              nopts ;
     opt_on_option_fn   *on_option ;  /* applies an option of this level (may be 0) */
@@ -154,7 +159,7 @@ extern int opt_dispatch(int argc, char const *const *argv, opt_cmd_t const *cmd,
 extern uint8_t opt_usage(strbuf *out, char const *prog, opt_cmd_t const *cmd) ;
 
 /** @brief Build into @out the full help block (usage + one line per option and
- *  per sub-command) for @cmd. @return 1 / 0 (errno). */
+ *  per sub-command, then @cmd->epilog if set) for @cmd. @return 1 / 0 (errno). */
 extern uint8_t opt_help(strbuf *out, char const *prog, opt_cmd_t const *cmd) ;
 
 /** @brief Build the full help block for @cmd and write it to stdout. Wrapper

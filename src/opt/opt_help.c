@@ -208,6 +208,13 @@ uint8_t opt_help(strbuf *out, char const *prog, opt_cmd_t const *cmd)
         }
     }
 
+    /* Free-form epilog: for what the option table cannot model (the meaning of a
+     * structured value, the fields a list accepts, ...). Same shape as cmd->help:
+     * a blank line, the text verbatim, a closing newline. */
+    if (cmd->epilog && *cmd->epilog)
+        if (!strbuf_cats(out, "\n") || !strbuf_cats(out, cmd->epilog) || !strbuf_cats(out, "\n"))
+            return 0 ;
+
     if (!strbuf_terminate(out))
         return 0 ;
     out->len-- ;

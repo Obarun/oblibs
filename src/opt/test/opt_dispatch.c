@@ -278,6 +278,41 @@ static void test_all_hidden(void)
     TEST_END() ;
 }
 
+/* cmd->epilog is appended to opt_help (after the sections) but never to opt_usage */
+static void test_epilog(void)
+{
+    TEST_START("test_epilog") ;
+
+    static opt_t const opts[] = {
+        { .id = 'w', .shortname = 'w', .arg = OPT_REQUIRED, .argname = "STATE", .help = "wait for STATE" },
+    } ;
+    static opt_cmd_t const leaf = {
+        .name = "signal", .help = "send a signal", .operands = "service...",
+        .opts = opts, .nopts = OPT_COUNT(opts), .fn = &do_create,
+        .epilog =
+            "values for -w (wait until the service reaches the state):\n"
+            "    u  service is up\n"
+            "    D  service is down and ready to be brought up",
+    } ;
+
+    /* help: the epilog text is present, after the options: section */
+    _alloc_strbuf_(h, 512) ;
+    TEST_ASSERT(opt_help(&h, "signal", &leaf), "opt_help ok") ;
+    char const *opts_at = strstr(h.s, "options:") ;
+    char const *epi_at  = strstr(h.s, "values for -w") ;
+    TEST_ASSERT(epi_at != 0, "epilog present in help") ;
+    TEST_ASSERT(strstr(h.s, "D  service is down") != 0, "epilog body present") ;
+    TEST_ASSERT(opts_at != 0 && epi_at > opts_at, "epilog comes after the options section") ;
+
+    /* usage: the epilog must NOT leak into the one-line synopsis */
+    _alloc_strbuf_(u, 128) ;
+    TEST_ASSERT(opt_usage(&u, "signal", &leaf), "opt_usage ok") ;
+    TEST_ASSERT(strstr(u.s, "values for -w") == 0, "epilog absent from usage") ;
+    TEST_ASSERT(!strcmp(u.s, "usage: signal [ -w STATE ] service..."), "usage unaffected") ;
+
+    TEST_END() ;
+}
+
 int main(void)
 {
     test_nested_route() ;
@@ -289,6 +324,7 @@ int main(void)
     test_help_operands() ;
     test_hidden() ;
     test_all_hidden() ;
+    test_epilog() ;
     printf("\nAll opt_dispatch tests passed.\n") ;
     return 0 ;
 }
