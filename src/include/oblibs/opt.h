@@ -62,6 +62,10 @@ struct opt_s {
     bool         arg ;       /* OPT_NONE (false) | OPT_REQUIRED (true) */
     char const  *argname ;   /* e.g. "TREE" -- shown in help ; 0 when OPT_NONE */
     char const  *help ;      /* one-line description -- shown in help */
+    bool         hidden ;    /* true = parsable but omitted from usage/help. For an
+                              * option injected internally (re-dispatch) and not
+                              * meant for users. Distinct from help==0, which still
+                              * shows the option, just with an empty description. */
 } ;
 
 /** Re-entrant scanner state. Initialise with OPT_SCAN_ZERO before the loop. */

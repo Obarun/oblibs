@@ -85,6 +85,9 @@ uint8_t opt_usage(strbuf *out, char const *prog, opt_cmd_t const *cmd)
         opt_t const *o = &cmd->opts[i] ;
         char head[3] = { '-', o->shortname, 0 } ;
 
+        if (o->hidden)
+            continue ;
+
         if (!strbuf_cats(out, " [ "))
             return 0 ;
         if (o->shortname) {
@@ -129,6 +132,8 @@ uint8_t opt_help(strbuf *out, char const *prog, opt_cmd_t const *cmd)
      * description aligns even when one entry overruns a fixed column width. */
     size_t maxw = 0 ;
     for (size_t i = 0 ; i < cmd->nopts ; i++) {
+        if (cmd->opts[i].hidden)
+            continue ;
         _alloc_strbuf_(col, 64) ;
         if (!opt_left_col(&col, &cmd->opts[i]))
             return 0 ;
@@ -144,13 +149,23 @@ uint8_t opt_help(strbuf *out, char const *prog, opt_cmd_t const *cmd)
     }
     size_t width = OPT_HELP_INDENT + maxw + OPT_HELP_GAP ;
 
-    /* Pass 2: emit, aligning all descriptions on `width`. */
+    /* Pass 2: emit, aligning all descriptions on `width`. The "options:" header
+     * is emitted lazily, before the first VISIBLE option, so a table whose options
+     * are all hidden produces no empty section. */
     if (cmd->nopts && cmd->opts) {
 
-        if (!strbuf_cats(out, "\noptions:\n"))
-            return 0 ;
+        bool header_done = false ;
 
         for (size_t i = 0 ; i < cmd->nopts ; i++) {
+
+            if (cmd->opts[i].hidden)
+                continue ;
+
+            if (!header_done) {
+                if (!strbuf_cats(out, "\noptions:\n"))
+                    return 0 ;
+                header_done = true ;
+            }
 
             _alloc_strbuf_(col, 64) ;
             if (!opt_left_col(&col, &cmd->opts[i]))

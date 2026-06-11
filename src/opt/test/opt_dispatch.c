@@ -219,6 +219,65 @@ static void test_help_operands(void)
     TEST_END() ;
 }
 
+/* a .hidden option is omitted from usage/help but still parsable by opt_scan */
+static void test_hidden(void)
+{
+    TEST_START("test_hidden") ;
+
+    static opt_t const opts[] = {
+        { .id = 'P', .shortname = 'P', .longname = "no-propagate", .arg = OPT_NONE, .help = "internal", .hidden = true },
+        { .id = 's', .shortname = 's', .longname = "sep",          .arg = OPT_REQUIRED, .argname = "SEP", .help = "separator" },
+    } ;
+    static opt_cmd_t const leaf = {
+        .name = "enable", .help = "enable it", .operands = "service...",
+        .opts = opts, .nopts = OPT_COUNT(opts), .fn = &do_create,
+    } ;
+
+    /* usage: the hidden -P is gone, the visible -s stays */
+    _alloc_strbuf_(u, 128) ;
+    TEST_ASSERT(opt_usage(&u, "enable", &leaf), "opt_usage ok") ;
+    TEST_ASSERT(!strcmp(u.s, "usage: enable [ -s SEP ] service..."),
+                "hidden option absent from usage") ;
+
+    /* help: -P not listed, -s listed */
+    _alloc_strbuf_(h, 256) ;
+    TEST_ASSERT(opt_help(&h, "enable", &leaf), "opt_help ok") ;
+    TEST_ASSERT(strstr(h.s, "no-propagate") == 0 && strstr(h.s, "-P") == 0,
+                "hidden option absent from help") ;
+    TEST_ASSERT(strstr(h.s, "-s, --sep SEP") != 0, "visible option present in help") ;
+
+    /* but opt_scan still matches the hidden option (hidden != unparsable) */
+    char const *argv[] = { "enable", "-P", "svc", 0 } ;
+    opt_scan_t st = OPT_SCAN_ZERO ;
+    int o = opt_scan(countargv(argv), argv, opts, OPT_COUNT(opts), &st) ;
+    TEST_ASSERT(o == 'P', "hidden option still parsed by opt_scan") ;
+
+    TEST_END() ;
+}
+
+/* a table whose every option is hidden produces no "options:" section */
+static void test_all_hidden(void)
+{
+    TEST_START("test_all_hidden") ;
+
+    static opt_t const opts[] = {
+        { .id = 'x', .shortname = 'x', .arg = OPT_NONE, .help = "internal", .hidden = true },
+    } ;
+    static opt_cmd_t const leaf = {
+        .name = "free", .help = "free it", .opts = opts, .nopts = OPT_COUNT(opts), .fn = &do_create,
+    } ;
+
+    _alloc_strbuf_(h, 128) ;
+    TEST_ASSERT(opt_help(&h, "free", &leaf), "opt_help ok") ;
+    TEST_ASSERT(strstr(h.s, "options:") == 0, "no empty options section when all hidden") ;
+
+    _alloc_strbuf_(u, 128) ;
+    TEST_ASSERT(opt_usage(&u, "free", &leaf), "opt_usage ok") ;
+    TEST_ASSERT(!strcmp(u.s, "usage: free"), "usage has no brackets when all hidden") ;
+
+    TEST_END() ;
+}
+
 int main(void)
 {
     test_nested_route() ;
@@ -228,6 +287,8 @@ int main(void)
     test_help_root() ;
     test_usage_operands() ;
     test_help_operands() ;
+    test_hidden() ;
+    test_all_hidden() ;
     printf("\nAll opt_dispatch tests passed.\n") ;
     return 0 ;
 }
