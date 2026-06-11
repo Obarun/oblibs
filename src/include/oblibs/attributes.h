@@ -31,6 +31,12 @@
 #define attribute_sentinel   __attribute__((sentinel))
 #define attribute_format(archetype, fmt, first) __attribute__((format(archetype, fmt, first)))
 
+#if (defined(__GNUC__) && __GNUC__ >= 7) || (defined(__clang__) && __clang_major__ >= 4)
+#define attribute_fallthrough __attribute__((fallthrough))
+#else
+#define attribute_fallthrough ((void)0)
+#endif
+
 #else
 
 #define attribute_noreturn
@@ -42,6 +48,7 @@
 #define attribute_weak
 #define attribute_sentinel
 #define attribute_format(archetype, fmt, first)
+#define attribute_fallthrough ((void)0)
 
 #endif
 
