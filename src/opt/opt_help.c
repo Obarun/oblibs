@@ -23,7 +23,7 @@
 #define OPT_HELP_INDENT 4  /* leading spaces before each entry */
 #define OPT_HELP_GAP    2  /* spaces between the left column and the description */
 
-/* Build the left column of one option ("-t, --tree TREE") into @col,
+/* Build the left column of one option ("-t, --tree=TREE") into @col,
  * NUL-terminated; @col->len then includes the trailing NUL. */
 static uint8_t opt_left_col(strbuf *col, opt_t const *o)
 {
@@ -40,9 +40,13 @@ static uint8_t opt_left_col(strbuf *col, opt_t const *o)
     if (o->longname)
         if (!strbuf_cats(col, "--") || !strbuf_cats(col, o->longname))
             return 0 ;
-    if (o->arg == OPT_REQUIRED && o->argname)
-        if (!strbuf_cats(col, " ") || !strbuf_cats(col, o->argname))
+    if (o->arg == OPT_REQUIRED && o->argname) {
+        /* Glue the arg to the long form with '=' ("--tree=TREE"): easier to read in
+         * the list, and "--tree TREE" stays valid too. A short-only option keeps a
+         * space ("-o K=V") -- '=' is a long-option convention, not a short one. */
+        if (!strbuf_cats(col, o->longname ? "=" : " ") || !strbuf_cats(col, o->argname))
             return 0 ;
+    }
 
     return strbuf_terminate(col) ;
 }

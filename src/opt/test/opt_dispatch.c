@@ -254,7 +254,7 @@ static void test_hidden(void)
     TEST_ASSERT(opt_help(&h, "enable", &leaf), "opt_help ok") ;
     TEST_ASSERT(strstr(h.s, "no-propagate") == 0 && strstr(h.s, "-P") == 0,
                 "hidden option absent from help") ;
-    TEST_ASSERT(strstr(h.s, "-s, --sep SEP") != 0, "visible option present in help") ;
+    TEST_ASSERT(strstr(h.s, "-s, --sep=SEP") != 0, "visible option present in help (arg glued with =)") ;
 
     /* but opt_scan still matches the hidden option (hidden != unparsable) */
     char const *argv[] = { "enable", "-P", "svc", 0 } ;
@@ -361,6 +361,28 @@ static void test_help_full_path(void)
     TEST_END() ;
 }
 
+/* required-arg rendering in options:: a long form glues the arg with '=', a
+ * short-only option keeps a space ('=' is a long-option convention). */
+static void test_option_arg_render(void)
+{
+    TEST_START("test_option_arg_render") ;
+
+    static opt_t const opts[] = {
+        { .id = 't', .shortname = 't', .longname = "tree", .arg = OPT_REQUIRED, .argname = "TREE", .help = "x" },
+        { .id = 'o', .shortname = 'o', .longname = 0,      .arg = OPT_REQUIRED, .argname = "K=V",  .help = "y" },
+    } ;
+    static opt_cmd_t const leaf = {
+        .name = "c", .help = "c", .opts = opts, .nopts = OPT_COUNT(opts), .fn = &do_create,
+    } ;
+
+    _alloc_strbuf_(h, 256) ;
+    TEST_ASSERT(opt_help(&h, "c", &leaf), "opt_help ok") ;
+    TEST_ASSERT(strstr(h.s, "-t, --tree=TREE") != 0, "long form glues arg with =") ;
+    TEST_ASSERT(strstr(h.s, "-o K=V") != 0, "short-only option keeps a space") ;
+
+    TEST_END() ;
+}
+
 int main(void)
 {
     test_nested_route() ;
@@ -374,6 +396,7 @@ int main(void)
     test_all_hidden() ;
     test_epilog() ;
     test_help_full_path() ;
+    test_option_arg_render() ;
     printf("\nAll opt_dispatch tests passed.\n") ;
     return 0 ;
 }
