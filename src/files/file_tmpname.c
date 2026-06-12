@@ -17,7 +17,7 @@
 
 #include <oblibs/files.h>
 
-int file_tmpname (char *x, size_t n)
+int file_tmpname(char *x, size_t n)
 {
     static char const a[] =
         "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_" ;

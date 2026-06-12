@@ -86,5 +86,5 @@ extern int file_copy(char const *src, char const *dst, mode_t mode) ;
  * name-generation half of skalibs mkfiletemp.
  * @Return 1 on success
  * @Return 0 on fail and set errno (getrandom error) */
-extern int file_tmpname (char *x, size_t n) ;
+extern int file_tmpname(char *x, size_t n) ;
 #endif

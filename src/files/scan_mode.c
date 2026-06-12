@@ -17,7 +17,7 @@
 
 #include <oblibs/types.h>
 
-ssize_t scan_mode (char const *str, mode_t mode)
+ssize_t scan_mode(char const *str, mode_t mode)
 {
     struct stat st ;
     if (stat(str,&st) == -1) return 0 ;

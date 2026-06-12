@@ -17,7 +17,7 @@
 
 #include <oblibs/process.h>
 
-pid_t process_wait (pid_t pid, int *wstat)
+pid_t process_wait(pid_t pid, int *wstat)
 {
     pid_t r ;
     do r = waitpid(pid, wstat, 0) ;
