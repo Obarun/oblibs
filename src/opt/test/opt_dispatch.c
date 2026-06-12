@@ -198,7 +198,8 @@ static void test_usage_operands(void)
     TEST_END() ;
 }
 
-/* opt_help lists a sub-command's operands in the "commands:" section */
+/* the parent's "commands:" index lists sub-command NAMES only (no operands);
+ * the operands show up in each sub-command's own usage line (opt_usage). */
 static void test_help_operands(void)
 {
     TEST_START("test_help_operands") ;
@@ -213,9 +214,17 @@ static void test_help_operands(void)
         .sub = leaves, .nsub = OPT_COUNT(leaves),
     } ;
 
+    /* parent help: "read" present in the index, but NOT "read service" */
     _alloc_strbuf_(h, 256) ;
     TEST_ASSERT(opt_help(&h, "tool", &r), "opt_help ok") ;
-    TEST_ASSERT(strstr(h.s, "read service") != 0, "sub-command operands in commands section") ;
+    TEST_ASSERT(strstr(h.s, "read") != 0, "sub-command name in commands index") ;
+    TEST_ASSERT(strstr(h.s, "read service") == 0, "operands NOT in commands index") ;
+
+    /* the sub-command's own usage line still carries its operands */
+    _alloc_strbuf_(u, 128) ;
+    TEST_ASSERT(opt_usage(&u, "tool read", &leaves[0]), "opt_usage ok") ;
+    TEST_ASSERT(!strcmp(u.s, "usage: tool read [ -h ] service"),
+                "operands kept in the sub-command's usage line") ;
 
     TEST_END() ;
 }

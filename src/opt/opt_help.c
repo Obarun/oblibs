@@ -47,18 +47,16 @@ static uint8_t opt_left_col(strbuf *col, opt_t const *o)
     return strbuf_terminate(col) ;
 }
 
-/* Build the left column of a sub-command ("name", or "name operands" when the
- * node documents positional operands) into @col, NUL-terminated; @col->len then
- * includes the trailing NUL. */
+/* Build the left column of a sub-command (just its name) into @col,
+ * NUL-terminated; @col->len then includes the trailing NUL. Operands are
+ * intentionally omitted here: they belong to each sub-command's own usage line
+ * (opt_usage), not to the parent's commands: index. */
 static uint8_t opt_sub_left_col(strbuf *col, opt_cmd_t const *s)
 {
     col->len = 0 ;
 
     if (!strbuf_cats(col, s->name))
         return 0 ;
-    if (s->operands && *s->operands)
-        if (!strbuf_cats(col, " ") || !strbuf_cats(col, s->operands))
-            return 0 ;
 
     return strbuf_terminate(col) ;
 }
