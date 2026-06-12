@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <oblibs/opt.h>
 #include <oblibs/log.h>
@@ -313,6 +314,44 @@ static void test_epilog(void)
     TEST_END() ;
 }
 
+/* opt_dispatch shows the FULL command path in a sub-command's help/usage:
+ * `66 tree create -h` must read "usage: 66 tree create ...", not "usage: create".
+ * opt_dispatch writes to fd 1 via io_allwrite, so capture it through a temp fd. */
+static void test_help_full_path(void)
+{
+    TEST_START("test_help_full_path") ;
+
+    char tmpl[] = "/tmp/optdispatchXXXXXX" ;
+    int tf = mkstemp(tmpl) ;
+    TEST_ASSERT(tf >= 0, "mkstemp") ;
+    unlink(tmpl) ;
+
+    int saved = dup(1) ;
+    TEST_ASSERT(saved >= 0, "dup stdout") ;
+    fflush(stdout) ;
+    TEST_ASSERT(dup2(tf, 1) >= 0, "redirect stdout to temp") ;
+
+    char const *argv[] = { "66", "tree", "create", "-h", 0 } ;
+    ctx_t c = { .tree = "", .cmd = "", .pos = "", .leaf_argc = 0 } ;
+    int r = opt_dispatch(countargv(argv), argv, &root, &c) ;
+
+    fflush(stdout) ;
+    dup2(saved, 1) ;
+    close(saved) ;
+
+    char buf[1024] ;
+    lseek(tf, 0, SEEK_SET) ;
+    ssize_t n = read(tf, buf, sizeof(buf) - 1) ;
+    close(tf) ;
+    TEST_ASSERT(n > 0, "captured some help output") ;
+    buf[n] = 0 ;
+
+    TEST_ASSERT(r == 0, "help returns 0") ;
+    TEST_ASSERT(strstr(buf, "usage: 66 tree create") != 0, "full command path in usage line") ;
+    TEST_ASSERT(c.cmd[0] == 0, "no leaf called on -h") ;
+    TEST_END() ;
+}
+
 int main(void)
 {
     test_nested_route() ;
@@ -325,6 +364,7 @@ int main(void)
     test_hidden() ;
     test_all_hidden() ;
     test_epilog() ;
+    test_help_full_path() ;
     printf("\nAll opt_dispatch tests passed.\n") ;
     return 0 ;
 }

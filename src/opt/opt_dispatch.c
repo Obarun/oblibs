@@ -20,9 +20,13 @@
 #include <string.h>
 
 #include <oblibs/opt.h>
+#include <oblibs/strbuf.h>
 #include <oblibs/log.h>
 
-int opt_dispatch(int argc, char const *const *argv, opt_cmd_t const *cmd, void *data)
+/* @prog is the displayed program path for THIS level: the root name at the top,
+ * then "<parent path> <child name>" as we descend, so a sub-command's help reads
+ * "usage: 66 tree create ...", not "usage: create ...". */
+static int dispatch(int argc, char const *const *argv, opt_cmd_t const *cmd, void *data, char const *prog)
 {
     opt_scan_t st = OPT_SCAN_ZERO ;
 
@@ -34,9 +38,9 @@ int opt_dispatch(int argc, char const *const *argv, opt_cmd_t const *cmd, void *
             break ;
 
         if (o == OPT_UNKNOWN || o == OPT_MISSARG)
-            return opt_emit_error(cmd, o, &st) ;
+            return opt_emit_error(prog, cmd, o, &st) ;
         if (o == OPT_ID_HELP)
-            return opt_emit_help(cmd) ;
+            return opt_emit_help(prog, cmd) ;
 
         if (cmd->on_option) {
             int r = cmd->on_option(o, st.arg, data) ;
@@ -51,20 +55,32 @@ int opt_dispatch(int argc, char const *const *argv, opt_cmd_t const *cmd, void *
     if (cmd->sub && cmd->nsub) {
 
         if (!argc || !argv[0]) {
-            log_warn("missing command") ;
-            return opt_emit_usage(cmd) ;
+            log_fatal("missing command") ;
+            return opt_emit_usage(prog, cmd) ;
         }
 
         for (size_t i = 0 ; i < cmd->nsub ; i++)
-            if (!strcmp(argv[0], cmd->sub[i].name))
-                return opt_dispatch(argc, argv, &cmd->sub[i], data) ;
+            if (!strcmp(argv[0], cmd->sub[i].name)) {
+                /* extend the path with the child name; the strbuf stays alive on
+                 * this frame for the whole recursive sub-call below. */
+                _alloc_strbuf_(child, 128) ;
+                if (!strbuf_cats(&child, prog) || !strbuf_cats(&child, " ")
+                 || !strbuf_cats(&child, cmd->sub[i].name) || !strbuf_terminate(&child))
+                    return LOG_EXIT_SYS ;
+                return dispatch(argc, argv, &cmd->sub[i], data, child.s) ;
+            }
 
-        log_warn("invalid command: ", argv[0]) ;
-        return opt_emit_usage(cmd) ;
+        log_fatal("invalid command: ", argv[0]) ;
+        return opt_emit_usage(prog, cmd) ;
     }
 
     if (cmd->fn)
         return cmd->fn(argc, argv, data) ;
 
     return 0 ;
+}
+
+int opt_dispatch(int argc, char const *const *argv, opt_cmd_t const *cmd, void *data)
+{
+    return dispatch(argc, argv, cmd, data, cmd->name) ;
 }

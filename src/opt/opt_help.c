@@ -221,24 +221,24 @@ uint8_t opt_help(strbuf *out, char const *prog, opt_cmd_t const *cmd)
     return 1 ;
 }
 
-int opt_emit_help(opt_cmd_t const *cmd)
+int opt_emit_help(char const *prog, opt_cmd_t const *cmd)
 {
     _alloc_strbuf_(sb, 512) ;
-    if (!opt_help(&sb, cmd->name, cmd) || !strbuf_cats(&sb, "\n"))
+    if (!opt_help(&sb, prog, cmd) || !strbuf_cats(&sb, "\n"))
         return LOG_EXIT_SYS ;
     io_allwrite(1, sb.s, sb.len) ;
     return 0 ;
 }
 
-int opt_emit_usage(opt_cmd_t const *cmd)
+int opt_emit_usage(char const *prog, opt_cmd_t const *cmd)
 {
     _alloc_strbuf_(sb, 256) ;
-    if (opt_usage(&sb, cmd->name, cmd) && strbuf_cats(&sb, "\n"))
+    if (opt_usage(&sb, prog, cmd) && strbuf_cats(&sb, "\n"))
         io_allwrite(2, sb.s, sb.len) ;
     return LOG_EXIT_USER ;
 }
 
-int opt_emit_error(opt_cmd_t const *cmd, int code, opt_scan_t const *st)
+int opt_emit_error(char const *prog, opt_cmd_t const *cmd, int code, opt_scan_t const *st)
 {
     /* ERROR level (log_fatal), not WARN: a bad option is a user error and must
      * stay visible at the default verbosity (WARN is hidden at VERBOSITY=1).
@@ -247,5 +247,5 @@ int opt_emit_error(opt_cmd_t const *cmd, int code, opt_scan_t const *st)
         log_fatal("option requires an argument: ", st->problem) ;
     else
         log_fatal("invalid option: ", st->problem) ;
-    return opt_emit_usage(cmd) ;
+    return opt_emit_usage(prog, cmd) ;
 }
