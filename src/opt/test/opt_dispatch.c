@@ -323,41 +323,65 @@ static void test_epilog(void)
     TEST_END() ;
 }
 
-/* opt_dispatch shows the FULL command path in a sub-command's help/usage:
- * `66 tree create -h` must read "usage: 66 tree create ...", not "usage: create".
- * opt_dispatch writes to fd 1 via io_allwrite, so capture it through a temp fd. */
-static void test_help_full_path(void)
+/* opt_dispatch writes help/usage to fd 1 via io_allwrite, so run it on @argv with
+ * stdout redirected to a temp fd and read it back into @buf (NUL-terminated).
+ * @c receives the dispatch context. Returns the opt_dispatch exit code. */
+static int dispatch_capture(char const *const *argv, ctx_t *c, char *buf, size_t bufsz)
 {
-    TEST_START("test_help_full_path") ;
-
     char tmpl[] = "/tmp/optdispatchXXXXXX" ;
     int tf = mkstemp(tmpl) ;
-    TEST_ASSERT(tf >= 0, "mkstemp") ;
+    if (tf < 0) return -100 ;
     unlink(tmpl) ;
 
     int saved = dup(1) ;
-    TEST_ASSERT(saved >= 0, "dup stdout") ;
     fflush(stdout) ;
-    TEST_ASSERT(dup2(tf, 1) >= 0, "redirect stdout to temp") ;
+    dup2(tf, 1) ;
 
-    char const *argv[] = { "66", "tree", "create", "-h", 0 } ;
-    ctx_t c = { .tree = "", .cmd = "", .pos = "", .leaf_argc = 0 } ;
-    int r = opt_dispatch(countargv(argv), argv, &root, &c) ;
+    int r = opt_dispatch(countargv(argv), argv, &root, c) ;
 
     fflush(stdout) ;
     dup2(saved, 1) ;
     close(saved) ;
 
-    char buf[1024] ;
     lseek(tf, 0, SEEK_SET) ;
-    ssize_t n = read(tf, buf, sizeof(buf) - 1) ;
+    ssize_t n = read(tf, buf, bufsz - 1) ;
     close(tf) ;
-    TEST_ASSERT(n > 0, "captured some help output") ;
-    buf[n] = 0 ;
+    buf[n > 0 ? n : 0] = 0 ;
+    return r ;
+}
+
+/* opt_dispatch shows the FULL command path in a sub-command's help/usage:
+ * `66 tree create -h` must read "usage: 66 tree create ...", not "usage: create". */
+static void test_help_full_path(void)
+{
+    TEST_START("test_help_full_path") ;
+
+    char const *argv[] = { "66", "tree", "create", "-h", 0 } ;
+    ctx_t c = { .tree = "", .cmd = "", .pos = "", .leaf_argc = 0 } ;
+    char buf[1024] ;
+    int r = dispatch_capture(argv, &c, buf, sizeof(buf)) ;
 
     TEST_ASSERT(r == 0, "help returns 0") ;
     TEST_ASSERT(strstr(buf, "usage: 66 tree create") != 0, "full command path in usage line") ;
     TEST_ASSERT(c.cmd[0] == 0, "no leaf called on -h") ;
+    TEST_END() ;
+}
+
+/* a bare router node (no sub-command given) is a usage error, but still prints the
+ * full help (commands: list) to stdout for discovery, and returns LOG_EXIT_USER. */
+static void test_bare_router(void)
+{
+    TEST_START("test_bare_router") ;
+
+    char const *argv[] = { "66", 0 } ;
+    ctx_t c = { .tree = "", .cmd = "", .pos = "", .leaf_argc = 0 } ;
+    char buf[1024] ;
+    int r = dispatch_capture(argv, &c, buf, sizeof(buf)) ;
+
+    TEST_ASSERT(r == LOG_EXIT_USER, "bare router is a usage error (LOG_EXIT_USER)") ;
+    TEST_ASSERT(strstr(buf, "commands:") != 0, "full help lists the commands section") ;
+    TEST_ASSERT(strstr(buf, "tree") != 0, "the sub-command is listed") ;
+    TEST_ASSERT(c.cmd[0] == 0, "no leaf called") ;
     TEST_END() ;
 }
 
@@ -396,6 +420,7 @@ int main(void)
     test_all_hidden() ;
     test_epilog() ;
     test_help_full_path() ;
+    test_bare_router() ;
     test_option_arg_render() ;
     printf("\nAll opt_dispatch tests passed.\n") ;
     return 0 ;

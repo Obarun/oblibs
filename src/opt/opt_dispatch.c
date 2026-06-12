@@ -54,9 +54,14 @@ static int dispatch(int argc, char const *const *argv, opt_cmd_t const *cmd, voi
 
     if (cmd->sub && cmd->nsub) {
 
+        /* Bare router node (no sub-command given): a usage error (no command), but
+         * show the FULL help -- the commands: list is exactly what the user needs
+         * here -- on stdout, and return LOG_EXIT_USER so scripts see the error.
+         * opt_emit_help returns 0 on success / LOG_EXIT_SYS on OOM; remap the
+         * success code. An *invalid* name below still gets the diagnostic + usage. */
         if (!argc || !argv[0]) {
-            log_fatal("missing command") ;
-            return opt_emit_usage(prog, cmd) ;
+            int r = opt_emit_help(prog, cmd) ;
+            return r ? r : LOG_EXIT_USER ;
         }
 
         for (size_t i = 0 ; i < cmd->nsub ; i++)
