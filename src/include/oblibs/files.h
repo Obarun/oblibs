@@ -79,4 +79,12 @@ extern int file_write_at(char const *dir, char const *name, char const *content,
  * @Return 1 on success
  * @Return 0 on fail and set errno */
 extern int file_copy(char const *src, char const *dst, mode_t mode) ;
+
+/** Fill @n bytes at @x with random [A-Za-z0-9-_] chars (no NUL terminator added).
+ * Helper to build a unique temporary name from a template's trailing run of
+ * placeholder bytes; the caller owns the retry loop. Native replacement for the
+ * name-generation half of skalibs mkfiletemp.
+ * @Return 1 on success
+ * @Return 0 on fail and set errno (getrandom error) */
+extern int file_tmpname (char *x, size_t n) ;
 #endif
