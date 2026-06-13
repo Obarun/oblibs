@@ -425,7 +425,10 @@ int io_rb_encode_cmsg(io_rb_t *io, char *cmsg, size_t cmsgsize, int *cmsglen)
     cm->cmsg_type = SCM_RIGHTS ;
     cm->cmsg_len = CMSG_LEN(len * sizeof(int)) ;
 
-    bytes_read = rbuffer_read(&io->fdout.buf, CMSG_DATA(cm), len * sizeof(int)) ;
+    /** Peek only: the file descriptors stay in fdout. io_rb_flush consumes
+     * them via rbuffer_radvance ONLY after a successful sendmsg, so a failed
+     * or EAGAIN send does not lose them. */
+    bytes_read = rbuffer_peek(&io->fdout.buf, CMSG_DATA(cm), len * sizeof(int)) ;
     if (bytes_read != len * sizeof(int)) {
         // Ring buffer state changed between checks - should not happen
         *cmsglen = 0 ;

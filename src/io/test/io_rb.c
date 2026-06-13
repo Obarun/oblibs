@@ -503,6 +503,71 @@ void test_fd_passing_integration() {
     TEST_END();
 }
 
+// Test: Two flushes on the same stream, first carrying an fd, second carrying none.
+// Regression: the second flush used to emit phantom SCM_RIGHTS fds because fdout
+// was advanced twice per flush (peek-consume in encode_cmsg + radvance in flush).
+void test_fd_passing_double_flush() {
+    TEST_START("test_fd_passing_double_flush");
+
+    int fds[2];
+    TEST_ASSERT(create_socketpair(fds) == 0, "socketpair creation should succeed");
+    TEST_ASSERT(set_nonblocking(fds[0]) == 0, "set_nonblocking should succeed");
+    TEST_ASSERT(set_nonblocking(fds[1]) == 0, "set_nonblocking should succeed");
+
+    io_rb_t io_writer, io_reader;
+    io_rb_init(&io_writer, NULL, fds[0]);
+    io_rb_init(&io_reader, NULL, fds[1]);
+
+    int pipe_fds[2];
+    TEST_ASSERT(pipe(pipe_fds) == 0, "pipe creation should succeed");
+
+    // --- First exchange: data + 1 fd ---
+    const char *msg1 = "first";
+    struct iovec iov1[1];
+    iov1[0].iov_base = (void *)msg1;
+    iov1[0].iov_len = strlen(msg1);
+
+    TEST_ASSERT(io_rb_putv_fd(&io_writer, iov1, 1, &pipe_fds[0], 1, NULL) == 0, "putv_fd should succeed");
+    TEST_ASSERT(io_rb_flush(&io_writer, NULL) > 0, "first flush should succeed");
+    // fdout must be fully drained, exactly once.
+    TEST_ASSERT(io_rb_pending_fdout(&io_writer) == 0, "fdout must be empty after first flush");
+
+    TEST_ASSERT(io_rb_read(&io_reader, NULL) > 0, "first read should succeed");
+    char buf1[16];
+    TEST_ASSERT(io_rb_get(&io_reader, buf1, strlen(msg1)) == (ssize_t)strlen(msg1), "should get first data");
+    TEST_ASSERT(memcmp(buf1, msg1, strlen(msg1)) == 0, "first data should match");
+
+    int received_fd;
+    TEST_ASSERT(io_rb_get_fd(&io_reader, &received_fd) == sizeof(int), "should get exactly one fd");
+    TEST_ASSERT(received_fd >= 0, "received fd should be valid");
+    TEST_ASSERT(io_rb_pending_fdin(&io_reader) == 0, "no extra fd should be buffered after first exchange");
+    close(received_fd);
+
+    // --- Second exchange: data, NO fd ---
+    const char *msg2 = "second";
+    struct iovec iov2[1];
+    iov2[0].iov_base = (void *)msg2;
+    iov2[0].iov_len = strlen(msg2);
+
+    TEST_ASSERT(io_rb_putv(&io_writer, iov2, 1, NULL) == 0, "second putv should succeed");
+    TEST_ASSERT(io_rb_pending_fdout(&io_writer) == 0, "fdout must still be empty before second flush");
+    TEST_ASSERT(io_rb_flush(&io_writer, NULL) > 0, "second flush should succeed");
+
+    TEST_ASSERT(io_rb_read(&io_reader, NULL) > 0, "second read should succeed");
+    char buf2[16];
+    TEST_ASSERT(io_rb_get(&io_reader, buf2, strlen(msg2)) == (ssize_t)strlen(msg2), "should get second data");
+    TEST_ASSERT(memcmp(buf2, msg2, strlen(msg2)) == 0, "second data should match");
+
+    // The core assertion: the second message must NOT carry any fd.
+    TEST_ASSERT(io_rb_pending_fdin(&io_reader) == 0, "second message must carry no phantom fds");
+
+    close(pipe_fds[1]);
+    close(fds[0]);
+    close(fds[1]);
+
+    TEST_END();
+}
+
 // Test: Pending functions with NULL
 void test_pending_null() {
     TEST_START("test_pending_null");
@@ -583,6 +648,7 @@ int main(void) {
     // Integration tests
     test_read_flush_integration();
     test_fd_passing_integration();
+    test_fd_passing_double_flush();
 
     printf("\n=== All tests passed! ===\n");
     return 0;

@@ -371,7 +371,9 @@ extern void io_rb_unref(io_rb_t *io) ;
  * Reads file descriptors from the `fdout` ring buffer and formats them into the provided
  * `cmsg` buffer in the format required by `sendmsg` for `SCM_RIGHTS`. The number of
  * file descriptors included is limited by the available space in `cmsg` and `IO_RB_MAX_FD`.
- * If successful, the read file descriptors are consumed from the `fdout` buffer.
+ * The file descriptors are only PEEKED, not consumed: `io_rb_flush` advances the
+ * `fdout` read pointer via `rbuffer_radvance` only after a successful `sendmsg`,
+ * so a failed or would-block send does not lose them.
  *
  * @param[in,out] io        I/O ring buffer object.
  * @param[out]    cmsg      Buffer to store the formatted ancillary data message.

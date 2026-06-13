@@ -399,6 +399,43 @@ static inline size_t rbuffer_read(rbuffer_t *restrict b, void *restrict buf, siz
 }
 
 /**
+ * @brief Read bytes without advancing the read pointer.
+ *
+ * Copies up to `n` bytes from buffer into `buf`. Does NOT consume:
+ * the read pointer is left untouched so the same data can be read again.
+ *
+ * @param b Pointer to the ring buffer.
+ * @param buf Destination buffer.
+ * @param n Maximum number of bytes to peek.
+ *
+ * @return Number of bytes copied (0 <= result <= min(n, used)).
+ *
+ * @note Safe to call even if buffer is empty (returns 0).
+ */
+static inline size_t rbuffer_peek(const rbuffer_t *restrict b, void *restrict buf, size_t n)
+{
+    uint8_t *dst = (uint8_t *)buf ;
+    size_t available = rbuffer_used(b) ;
+    size_t to_read = RB_MIN(n, available) ;
+    size_t r = b->r ;
+
+    if (to_read == 0)
+        return 0 ;
+
+    size_t chunck = RB_MIN(to_read, b->a - r) ;
+    for (size_t i = 0; i < chunck; i++) {
+        dst[i] = b->b[r + i] ;
+    }
+
+    size_t remaining = to_read - chunck ;
+    for (size_t i = 0; i < remaining; i++) {
+        dst[chunck + i] = b->b[i] ;
+    }
+
+    return to_read ;
+}
+
+/**
  * @brief Scatter read into an array of iovec structures.
  *
  * Reads sequentially into each iovec until buffer is empty or all iovecs filled.
