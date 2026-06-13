@@ -121,11 +121,22 @@ ssize_t io_rb_flush(io_rb_t *io, void *data)
     if (!io)
         return (errno = EBADF, -1) ;
 
-    if (!io->want_flush || rbuffer_isempty(&io->out.buf))
+    if (!io->want_flush)
         return 0 ;
 
-    ssize_t total_sent = 0 ;
     bool dfault = (io->ops && io->ops->write) ? false : true ;
+
+    if (rbuffer_isempty(&io->out.buf)) {
+        /** No payload to carry the queued fds. On a stream socket SCM_RIGHTS
+         * requires at least one data byte as carrier, so fds sitting in fdout
+         * with no data can never be transmitted. Surface the contract violation
+         * instead of looping forever on a writable fd (busy-loop). */
+        if (dfault && !rbuffer_isempty(&io->fdout.buf))
+            return (errno = EINVAL, -1) ;
+        return 0 ;
+    }
+
+    ssize_t total_sent = 0 ;
 
     while (!rbuffer_isempty(&io->out.buf)) {
 
@@ -178,11 +189,15 @@ ssize_t io_rb_flush(io_rb_t *io, void *data)
 
     /** Only clear want_flush if data buffer is empty
      * Transports with ancillary data must clear it themselves*/
-    if (rbuffer_isempty(&io->out.buf))
+    if (rbuffer_isempty(&io->out.buf)) {
         io->want_flush = false ;
-
-    if (dfault && !rbuffer_isempty(&io->fdout.buf))
-        io->want_flush = true ;
+        /** Data fully drained but fds remain: they have lost their carrier and
+         * can never be sent. The enqueue guard (io_rb_put_fd/io_rb_putv_fd)
+         * caps pending fds to IO_RB_MAX_FD so a single iteration drains them,
+         * making this unreachable in practice; kept as defense in depth. */
+        if (dfault && !rbuffer_isempty(&io->fdout.buf))
+            return (errno = EINVAL, -1) ;
+    }
 
     return total_sent ;
 }
@@ -248,6 +263,12 @@ int io_rb_put_fd(io_rb_t *io, int fd)
     if (!io)
         return (errno = EINVAL, -1) ;
 
+    /** A single sendmsg carries at most IO_RB_MAX_FD fds; the flush loop
+     * drains fdout in one pass alongside the data. Cap pending fds here so
+     * they can never outlive their data carrier (see io_rb_flush). */
+    if ((io_rb_pending_fdout(io) / sizeof(int)) + 1 > IO_RB_MAX_FD)
+        return (errno = EINVAL, -1) ;
+
     if (rbuffer_available(&io->fdout.buf) < sizeof(int))
         return (errno = EOVERFLOW, -1) ;
 
@@ -264,6 +285,12 @@ int io_rb_put_fd(io_rb_t *io, int fd)
 int io_rb_putv_fd(io_rb_t *io, const struct iovec *iov, int iovcnt, const int *fds, int nfd, void *ctx)
 {
     if (!io || !iov || iovcnt <= 0 || nfd < 0 || (nfd > 0 && !fds))
+        return (errno = EINVAL, -1) ;
+
+    /** A single sendmsg carries at most IO_RB_MAX_FD fds; the flush loop drains
+     * fdout in one pass alongside the data. Reject batches that would push the
+     * pending fd count past that cap so fds can never outlive their carrier. */
+    if (nfd > IO_RB_MAX_FD || (io_rb_pending_fdout(io) / sizeof(int)) + nfd > IO_RB_MAX_FD)
         return (errno = EINVAL, -1) ;
 
     size_t total_data_size = io_rb_iovec_len(iov, iovcnt) ;

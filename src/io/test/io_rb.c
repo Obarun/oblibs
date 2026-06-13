@@ -568,6 +568,74 @@ void test_fd_passing_double_flush() {
     TEST_END();
 }
 
+// Test: enqueue guards reject going past IO_RB_MAX_FD pending fds.
+void test_fd_enqueue_cap() {
+    TEST_START("test_fd_enqueue_cap");
+
+    io_rb_t io;
+    io_rb_init(&io, NULL, 5);
+
+    // Fill fdout up to exactly IO_RB_MAX_FD with single put_fd calls.
+    for (int i = 0 ; i < IO_RB_MAX_FD ; i++)
+        TEST_ASSERT(io_rb_put_fd(&io, i) == 0, "put_fd within cap should succeed");
+
+    TEST_ASSERT(io_rb_pending_fdout(&io) == IO_RB_MAX_FD * sizeof(int), "fdout should hold IO_RB_MAX_FD fds");
+
+    // One more must be rejected.
+    errno = 0;
+    TEST_ASSERT(io_rb_put_fd(&io, 999) == -1, "put_fd past cap should fail");
+    TEST_ASSERT(errno == EINVAL, "errno should be EINVAL on overflow of fd cap");
+
+    // putv_fd with a batch larger than the cap must be rejected outright.
+    io_rb_t io2;
+    io_rb_init(&io2, NULL, 6);
+    const char *d = "x";
+    struct iovec iov[1];
+    iov[0].iov_base = (void *)d;
+    iov[0].iov_len = 1;
+    int big[IO_RB_MAX_FD + 1];
+    for (int i = 0 ; i < IO_RB_MAX_FD + 1 ; i++) big[i] = i;
+
+    errno = 0;
+    TEST_ASSERT(io_rb_putv_fd(&io2, iov, 1, big, IO_RB_MAX_FD + 1, NULL) == -1, "putv_fd over cap should fail");
+    TEST_ASSERT(errno == EINVAL, "errno should be EINVAL on oversized fd batch");
+    TEST_ASSERT(io_rb_pending_out(&io2) == 0, "no data should be queued on rejected batch");
+    TEST_ASSERT(io_rb_pending_fdout(&io2) == 0, "no fd should be queued on rejected batch");
+
+    TEST_END();
+}
+
+// Test: flushing fds with no payload to carry them fails with EINVAL instead of
+// silently dropping them and busy-looping.
+void test_flush_orphan_fd() {
+    TEST_START("test_flush_orphan_fd");
+
+    int fds[2];
+    TEST_ASSERT(create_socketpair(fds) == 0, "socketpair creation should succeed");
+    TEST_ASSERT(set_nonblocking(fds[0]) == 0, "set_nonblocking should succeed");
+
+    io_rb_t io;
+    io_rb_init(&io, NULL, fds[0]);
+
+    int pipe_fds[2];
+    TEST_ASSERT(pipe(pipe_fds) == 0, "pipe creation should succeed");
+
+    // Queue a fd but no data, then flush: SCM_RIGHTS needs a data carrier.
+    TEST_ASSERT(io_rb_put_fd(&io, pipe_fds[0]) == 0, "put_fd should succeed");
+    TEST_ASSERT(io_rb_pending_out(&io) == 0, "no data should be queued");
+
+    errno = 0;
+    TEST_ASSERT(io_rb_flush(&io, NULL) == -1, "flush of orphan fd should fail");
+    TEST_ASSERT(errno == EINVAL, "errno should be EINVAL for orphan fd flush");
+
+    close(pipe_fds[0]);
+    close(pipe_fds[1]);
+    close(fds[0]);
+    close(fds[1]);
+
+    TEST_END();
+}
+
 // Test: Pending functions with NULL
 void test_pending_null() {
     TEST_START("test_pending_null");
@@ -632,6 +700,8 @@ int main(void) {
     test_get_fd_basic();
     test_putv_fd_basic();
     test_putv_fd_no_data();
+    test_fd_enqueue_cap();
+    test_flush_orphan_fd();
 
     // Utility function tests
     test_restore();

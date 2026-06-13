@@ -179,14 +179,19 @@ extern ssize_t io_rb_read(io_rb_t *io, void *data) ;
  * `sendmsg` is used, potentially including `SCM_RIGHTS` ancillary data. Writes as much
  * as possible until the buffer is empty or a non-blocking write would block.
  *
- * The `want_flush` flag is cleared if the data buffer (`out`) becomes empty after flushing.
- * The flag remains set if the file descriptor buffer (`fdout`) still has data.
+ * The `want_flush` flag is cleared once the data buffer (`out`) becomes empty.
+ *
+ * Queued file descriptors (`fdout`) are sent as `SCM_RIGHTS` ancillary data riding
+ * on the payload of the same `sendmsg`. They therefore require payload data as a
+ * carrier: if the data buffer drains while file descriptors are still pending in
+ * `fdout`, those fds can never be transmitted and the function fails with EINVAL
+ * (the enqueue guard normally prevents this; see `io_rb_put_fd`/`io_rb_putv_fd`).
  *
  * @param[in,out] io   I/O ring buffer object.
  * @param[in]     data User-provided context data passed to custom write operation.
  * @return
  *   - >=0: Total number of data bytes successfully flushed.
- *   - -1:  Error occurred (errno set).
+ *   - -1:  Error occurred (errno set; EINVAL if fds are pending with no payload to carry them).
  */
 extern ssize_t io_rb_flush(io_rb_t *io, void *data) ;
 
@@ -227,9 +232,15 @@ extern int io_rb_putv(io_rb_t *io, const struct iovec *iov, int iovcnt, void *ct
  * Attempts to queue a single file descriptor into the `fdout` ring buffer for later transmission
  * via `io_rb_flush`. Sets the `want_flush` flag to true upon successful addition.
  *
+ * Contract: at most `IO_RB_MAX_FD` file descriptors may be pending in `fdout` at
+ * any time, and they must always be flushed together with payload data — a stream
+ * socket cannot transmit `SCM_RIGHTS` without at least one data byte as carrier.
+ * Queuing a fd that would exceed `IO_RB_MAX_FD` is rejected with EINVAL.
+ *
  * @param[in,out] io I/O ring buffer object.
  * @param[in]     fd The file descriptor to queue for sending.
- * @return 0 on success, -1 on error (errno set, typically EOVERFLOW if fd buffer is full or EINVAL).
+ * @return 0 on success, -1 on error (errno set: EINVAL if the pending fd count would
+ *         exceed IO_RB_MAX_FD or `io` is NULL, EOVERFLOW if the fd buffer is full).
  */
 extern int io_rb_put_fd(io_rb_t *io, int fd) ;
 
@@ -241,13 +252,18 @@ extern int io_rb_put_fd(io_rb_t *io, int fd) ;
  * if queuing file descriptors fails after data was queued, the data write is rolled back.
  * Sets the `want_flush` flag to true if any data or file descriptors were added.
  *
+ * Contract: at most `IO_RB_MAX_FD` file descriptors may be pending in `fdout` at
+ * any time (a single `sendmsg` carries no more), and they must always be flushed
+ * together with payload data. A batch with `nfd > IO_RB_MAX_FD`, or one that would
+ * push the pending fd count past that cap, is rejected with EINVAL.
+ *
  * @param[in,out] io      I/O ring buffer object.
  * @param[in]     iov     Array of iovec structures describing the data to queue.
  * @param[in]     iovcnt  Number of iovec structures in the array (must be > 0).
  * @param[in]     fds     Array of file descriptors to queue (can be NULL if `nfd` is 0).
- * @param[in]     nfd     Number of file descriptors in the `fds` array (must be >= 0).
+ * @param[in]     nfd     Number of file descriptors in the `fds` array (must be >= 0 and <= IO_RB_MAX_FD).
  * @param[in]     ctx     User-provided context data passed to `io_rb_flush` if needed.
- * @return 0 on success, -1 on error (errno set).
+ * @return 0 on success, -1 on error (errno set; EINVAL if the pending fd count would exceed IO_RB_MAX_FD).
  */
 extern int io_rb_putv_fd(io_rb_t *io, const struct iovec *iov, int iovcnt, const int *fds, int nfd, void *ctx) ;
 
