@@ -138,6 +138,14 @@ int socket_unsetfd_flags(int fd, int flags) ;
  * @param[in] fd   Socket file descriptor.
  * @param[in] path Null-terminated filesystem path (must not be NULL).
  * @return 0 on success, -1 on error (errno set to `EINVAL`, `EPROTO`, etc.).
+ *
+ * @note This is a thin mirror of `bind(2)`: it sets no permissions and removes
+ *       no existing node. The created socket node inherits `0777 & ~umask`, and
+ *       `bind()` fails with `EADDRINUSE` if `path` already exists. The caller
+ *       owns the policy: enforce the socket mode (e.g. `fchmod` on `fd` after a
+ *       successful bind, or a restrictive parent directory), and unlink any
+ *       residual node beforehand — only after checking it is a socket the caller
+ *       legitimately owns. None of this is done here, by design.
  */
 extern int socketunix_bind(int fd, const char *path) ;
 
