@@ -36,6 +36,7 @@
 #include <oblibs/rbuffer.h>
 
 #define IO_RB_BUFFER_SIZE 8192
+#define IO_RB_FD_BUFFER_SIZE 2048 // fd queue: holds 511 fds, >= IO_RB_MAX_FD
 #define IO_RB_MAX_FD 253 // SCM_MAX_FD on Linux
 
 typedef struct io_rb_s io_rb_t ;
@@ -52,6 +53,14 @@ struct io_rb_buffer_s
     uint8_t data[IO_RB_BUFFER_SIZE] ;
 } ;
 typedef struct io_rb_buffer_s io_rb_buffer_t ;
+
+// smaller backing for fd queues: only IO_RB_MAX_FD descriptors ever transit
+struct io_rb_fdbuffer_s
+{
+    rbuffer_t buf ;
+    uint8_t data[IO_RB_FD_BUFFER_SIZE] ;
+} ;
+typedef struct io_rb_fdbuffer_s io_rb_fdbuffer_t ;
 
 /**
  * @brief Structure representing scatter-gather vectors and associated file descriptors.
@@ -120,7 +129,7 @@ typedef struct io_rb_ops_s io_rb_ops_t ;
 struct io_rb_s
 {
     io_rb_buffer_t in, out ;     // Input/Output buffer for regular data
-    io_rb_buffer_t fdin, fdout ; // Input/Output buffer for file descriptor passing
+    io_rb_fdbuffer_t fdin, fdout ; // Input/Output buffer for file descriptor passing
     int fd ;                     // Associated file descriptor of the transport
 
     const io_rb_ops_t *ops ;     // Transport-specific operations (can be NULL for default socket ops)
