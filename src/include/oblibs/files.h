@@ -87,4 +87,11 @@ extern int file_copy(char const *src, char const *dst, mode_t mode) ;
  * @Return 1 on success
  * @Return 0 on fail and set errno (getrandom error) */
 extern int file_tmpname(char *x, size_t n) ;
+
+/** Best-effort unlink of @file for cleanup/error paths: removes @file but
+ * preserves the caller's errno; an unlink() failure is ignored. Use it to drop
+ * a temporary on an error path without clobbering the errno you want to report.
+ * Native replacement for skalibs unlink_void.
+ * @Return nothing */
+extern void file_tryunlink(char const *file) ;
 #endif
