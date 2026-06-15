@@ -42,25 +42,20 @@
 typedef struct io_rb_s io_rb_t ;
 
 /**
- * @brief Input or output buffer using a ring buffer and static storage.
+ * @brief Ring-buffer control for one direction.
  *
- * Each `io_rb_buffer_t` holds a ring buffer (`rbuffer_t`) and a fixed-size
- * internal data array used as backing storage.
+ * Holds only the ring-buffer control (`rbuffer_t`); the backing storage lives
+ * in the owning io_rb_t's tail arrays (in_data/out_data/fdin_data/fdout_data).
+ * Keeping control and storage apart lets the four control structs pack into a
+ * single page while the ~20 kB of storage sits at the tail of io_rb_t and is
+ * faulted in lazily, page by page, only when bytes actually transit. An idle
+ * connection touches none of it.
  */
 struct io_rb_buffer_s
 {
     rbuffer_t buf ;
-    uint8_t data[IO_RB_BUFFER_SIZE] ;
 } ;
 typedef struct io_rb_buffer_s io_rb_buffer_t ;
-
-// smaller backing for fd queues: only IO_RB_MAX_FD descriptors ever transit
-struct io_rb_fdbuffer_s
-{
-    rbuffer_t buf ;
-    uint8_t data[IO_RB_FD_BUFFER_SIZE] ;
-} ;
-typedef struct io_rb_fdbuffer_s io_rb_fdbuffer_t ;
 
 /**
  * @brief Structure representing scatter-gather vectors and associated file descriptors.
@@ -128,14 +123,25 @@ typedef struct io_rb_ops_s io_rb_ops_t ;
  */
 struct io_rb_s
 {
+    // Ring-buffer control structs, packed at the head so init touches one page.
     io_rb_buffer_t in, out ;     // Input/Output buffer for regular data
-    io_rb_fdbuffer_t fdin, fdout ; // Input/Output buffer for file descriptor passing
+    io_rb_buffer_t fdin, fdout ; // Input/Output buffer for file descriptor passing
     int fd ;                     // Associated file descriptor of the transport
 
     const io_rb_ops_t *ops ;     // Transport-specific operations (can be NULL for default socket ops)
 
     bool want_flush ;            // True if output buffer needs flushing
     int refcount ;               // Reference count for lifetime management
+
+    // Backing storage, kept LAST so it never pushes a touched field onto a
+    // lazily-faulted page. Each array backs the matching control struct above;
+    // a ring buffer never reads outside [r, w), so it needs no initialization.
+    // Any field added to io_rb_t MUST go ABOVE these arrays, or the residency
+    // win is lost.
+    uint8_t in_data[IO_RB_BUFFER_SIZE] ;
+    uint8_t out_data[IO_RB_BUFFER_SIZE] ;
+    uint8_t fdin_data[IO_RB_FD_BUFFER_SIZE] ;
+    uint8_t fdout_data[IO_RB_FD_BUFFER_SIZE] ;
 } ;
 
 /**

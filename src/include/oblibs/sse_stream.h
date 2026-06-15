@@ -67,7 +67,6 @@ struct sse_stream_s
 {
     int fd ;                     // Socket file descriptor
     sse_watcher_t watcher ;      // SSE I/O watcher for this connection
-    io_rb_t io ;                 // I/O ring buffer (handles both data and FDs)
 
     bool closed ;                // Connection closed flag
     int error ;                  // Last error code
@@ -76,6 +75,11 @@ struct sse_stream_s
     void *data ;                 // User-provided context passed to all callbacks
     sse_stream_cb_t *read_cb, *write_cb, *close_cb ;
     sse_stream_error_cb_t *error_cb ;
+
+    // LAST: io_rb_t ends with ~20 kB of backing arrays. Keeping io last puts
+    // that block at the very tail of sse_stream_t, so no touched field ever
+    // lands on its lazily-faulted pages. Any field added MUST go ABOVE io.
+    io_rb_t io ;                 // I/O ring buffer (handles both data and FDs)
 } ;
 
 // Connection lifecycle
