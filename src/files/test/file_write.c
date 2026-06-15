@@ -144,10 +144,14 @@ static void test_write_at(void)
     TEST_END() ;
 }
 
-/* file_write_atomic: correct final content, no temp residue. */
+/* file_write_atomic: correct final content, no temp residue, final mode 0644.
+ * mkstemp creates the temp at 0600; the impl then fchmod()s it to a hardcoded
+ * 0644 (fchmod ignores umask), so under a restrictive umask(077) the renamed
+ * file must still be 0644 -- this pins the hardcoded chmod, not an umask effect. */
 static void test_atomic(void)
 {
     TEST_START("test_atomic") ;
+    mode_t saved = umask(077) ;   /* would force 0600 if mode came from umask */
     char p[64] ;
     path_in(p, "a") ;
     char buf[3000] ;
@@ -156,8 +160,12 @@ static void test_atomic(void)
     char rb[3000] ;
     TEST_ASSERT(readfile(p, rb, sizeof rb) == (ssize_t)sizeof buf, "size mismatch") ;
     TEST_ASSERT(memcmp(rb, buf, sizeof buf) == 0, "content mismatch") ;
+    struct stat sb ;
+    TEST_ASSERT(stat(p, &sb) == 0, "stat failed") ;
+    TEST_ASSERT((sb.st_mode & 07777) == 0644, "atomic final mode must be 0644") ;
     TEST_ASSERT(count_entries() == 1, "temp residue left behind") ;   /* only "a" */
     file_tryunlink(p) ;
+    umask(saved) ;
     TEST_END() ;
 }
 
