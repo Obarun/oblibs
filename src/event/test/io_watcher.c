@@ -149,18 +149,125 @@ static bool test_io_watchers_comprehensive(void) {
     /* Lower priority number = higher priority, so file_watcher (priority 4) should be processed last */
     /* This is a rough check - actual timing may vary */
 
-    /* === Test watcher modification === */
-    TEST_ASSERT(sse_modify_io(&pipe_watcher, pipefd[1], SSE_WRITE),
-            "Failed to modify pipe watcher to write mode");
-    TEST_ASSERT_EQ(pipefd[1], pipe_watcher.fd, "Pipe watcher fd should be updated");
-    TEST_ASSERT_EQ(SSE_WRITE, pipe_watcher.events, "Pipe watcher events should be updated");
+    /* === Test watcher modification: change events on the SAME fd === */
+    /* Switch the socket watcher (sockfd[0]) from SSE_READ to SSE_WRITE. A
+     * connected stream socket has space in its send buffer, so it is writable
+     * and a real run cycle must now deliver an SSE_WRITE event. This proves the
+     * epoll EPOLL_CTL_MOD actually re-armed the fd, not just that the struct
+     * fields were updated. We first drain the readable data so SSE_READ can no
+     * longer be the source of the callback. */
+    {
+        int fl = fcntl(sockfd[0], F_GETFL, 0);
+        fcntl(sockfd[0], F_SETFL, fl | O_NONBLOCK);
+        char drain[256];
+        while (recv(sockfd[0], drain, sizeof(drain), 0) > 0) ;
+        fcntl(sockfd[0], F_SETFL, fl);
+    }
 
-    /* === Test watcher stop/restart === */
+    TEST_ASSERT(sse_modify_io(&socket_watcher, sockfd[0], SSE_WRITE),
+            "Failed to modify socket watcher to write mode");
+    TEST_ASSERT_EQ(sockfd[0], socket_watcher.fd, "Socket watcher fd should be unchanged");
+    TEST_ASSERT_EQ(SSE_WRITE, socket_watcher.events, "Socket watcher events should be updated");
+
+    socket_data.callback_called = false;
+    socket_data.last_event = 0;
+
+    int got_write = 0;
+    for (int i = 0; i < 10 && !got_write; i++) {
+        if (!sse_run(&loop, 100)) break;
+        if (socket_data.callback_called && (socket_data.last_event & SSE_WRITE))
+            got_write = 1;
+    }
+    TEST_ASSERT(got_write, "Modified socket watcher must fire SSE_WRITE after sse_modify_io");
+
+    /* Put the socket watcher back to SSE_READ for the stop/restart checks. */
+    TEST_ASSERT(sse_modify_io(&socket_watcher, sockfd[0], SSE_READ),
+            "Failed to restore socket watcher to read mode");
+
+    /*
+     * BUG (production): sse_modify_io(w, fd, events) accepts a *new* fd, but the
+     * implementation cannot honour an fd change. sse_modify_io() overwrites
+     * w->fd then calls sse_watcher_modify() -> epoll_ctl(EPOLL_CTL_MOD, new_fd).
+     * The new fd was never EPOLL_CTL_ADD-ed, so epoll_ctl returns ENOENT, which
+     * sse_epoll_modify() silently tolerates (cron-style: errno != ENOENT guard).
+     * Result: the OLD fd stays registered with its OLD events and the NEW fd is
+     * never armed, so no event is ever delivered for the new fd. Changing the
+     * monitored events on the SAME fd works (proved above); changing the fd does
+     * not. We assert the current (broken) behaviour so it is pinned, not hidden.
+     *
+     * Fix belongs in production (src/event/sse_io.c / sse.c): when the fd
+     * changes, sse_modify_io() must EPOLL_CTL_DEL the old fd and EPOLL_CTL_ADD
+     * the new one (or reject an fd change outright).
+     */
+    {
+        sse_epoll_t bloop;
+        sse_watcher_t bw;
+        struct test_callback_data bdata;
+        int bp[2];
+
+        test_callback_init(&bdata);
+        TEST_ASSERT(sse_new(&bloop, 10), "Failed to create epoll loop for fd-change bug check");
+        bloop.running = true;
+        TEST_ASSERT(pipe(bp) == 0, "Failed to create pipe for fd-change bug check");
+
+        /* Watch the read end for READ, then ask to switch to the write end for
+         * WRITE. A correct implementation would now fire SSE_WRITE (pipe write
+         * end is always writable). The buggy one never does. */
+        TEST_ASSERT(sse_start_io(&bloop, &bw, test_io_callback, &bdata, bp[0], SSE_READ, 1),
+                "Failed to start watcher for fd-change bug check");
+        TEST_ASSERT(sse_modify_io(&bw, bp[1], SSE_WRITE),
+                "sse_modify_io returns success even though the fd change is not honoured");
+
+        bool fired = false;
+        for (int i = 0; i < 5; i++) {
+            if (!sse_run(&bloop, 50)) break;
+            if (bdata.callback_called) { fired = true; break; }
+        }
+        /* BUG: a tz/fd-respecting implementation would deliver SSE_WRITE here. */
+        TEST_ASSERT(!fired,
+                "BUG: sse_modify_io fd change is not honoured (new fd never armed)");
+
+        sse_free(&bloop);
+        close(bp[0]);
+        close(bp[1]);
+    }
+
+    /* === Test watcher stop (observable: no more delivery) === */
+    /* The socket read watcher (sockfd[0]) still has unread data from earlier
+     * (socket_msg). After stopping it, repeated run cycles must NOT deliver any
+     * event for it, proving the epoll EPOLL_CTL_DEL happened. */
     TEST_ASSERT(sse_stop_io(&socket_watcher), "Failed to stop socket watcher");
     TEST_ASSERT(!sse_watcher_active(&socket_watcher), "Socket watcher should be inactive");
 
+    socket_data.callback_called = false;
+    socket_data.last_event = 0;
+
+    /* Make sure there is readable data on sockfd[0] so that, were the watcher
+     * still armed, it would fire immediately. */
+    TEST_ASSERT(send(sockfd[1], "more", 4, 0) > 0, "Failed to send extra socket data");
+
+    for (int i = 0; i < 5; i++) {
+        if (!sse_run(&loop, 50)) break;
+    }
+    TEST_ASSERT(!socket_data.callback_called,
+            "Stopped socket watcher must not deliver events");
+
+    /* === Test watcher restart (observable: delivery resumes) === */
+    /* Data is still queued on sockfd[0]; after restart a run cycle must deliver
+     * an SSE_READ event again. */
     TEST_ASSERT(sse_restart_io(&socket_watcher), "Failed to restart socket watcher");
     TEST_ASSERT(sse_watcher_active(&socket_watcher), "Socket watcher should be active again");
+
+    socket_data.callback_called = false;
+    socket_data.last_event = 0;
+
+    int got_read = 0;
+    for (int i = 0; i < 10 && !got_read; i++) {
+        if (!sse_run(&loop, 100)) break;
+        if (socket_data.callback_called && (socket_data.last_event & SSE_READ))
+            got_read = 1;
+    }
+    TEST_ASSERT(got_read, "Restarted socket watcher must deliver SSE_READ again");
 
     /* === Cleanup === */
     sse_free(&loop);
@@ -271,8 +378,51 @@ static bool test_io_watchers_edge_cases(void) {
     return true;
 }
 
+/* Test that closing the peer surfaces EPOLLHUP/EPOLLERR to the callback */
+static bool test_io_watchers_peer_hangup(void) {
+    sse_epoll_t loop;
+    sse_watcher_t watcher;
+    struct test_callback_data cb_data;
+    int sockfd[2];
+
+    test_callback_init(&cb_data);
+
+    TEST_ASSERT(sse_new(&loop, 10), "Failed to create epoll loop");
+    loop.running = true;
+
+    TEST_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sockfd) == 0,
+            "Failed to create socket pair");
+
+    /* Watch the read end for read events. */
+    TEST_ASSERT(sse_start_io(&loop, &watcher, test_io_callback, &cb_data,
+                            sockfd[0], SSE_READ, 1),
+            "Failed to start socket watcher");
+
+    /* Close the peer: the watched fd must report a hangup/error condition. */
+    close(sockfd[1]);
+
+    int got_hup = 0;
+    for (int i = 0; i < 10 && !got_hup; i++) {
+        if (!sse_run(&loop, 100)) break;
+        if (cb_data.callback_called &&
+            (cb_data.last_event & (SSE_HUP | SSE_ERROR | SSE_SHUT)))
+            got_hup = 1;
+    }
+
+    TEST_ASSERT(cb_data.callback_called,
+            "Peer hangup must wake the watcher callback");
+    TEST_ASSERT(cb_data.last_event & (SSE_HUP | SSE_ERROR | SSE_SHUT),
+            "Peer hangup must surface SSE_HUP/SSE_ERROR/SSE_SHUT to the callback");
+
+    sse_free(&loop);
+    close(sockfd[0]);
+
+    return true;
+}
+
 TEST_SUITE_BEGIN("SSE I/O Watcher Tests - Single Loop Multiple Types")
     RUN_TEST(test_io_watchers_comprehensive);
     RUN_TEST(test_io_watchers_error_handling);
    RUN_TEST(test_io_watchers_edge_cases);
+    RUN_TEST(test_io_watchers_peer_hangup);
 TEST_SUITE_END()

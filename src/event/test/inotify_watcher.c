@@ -12,6 +12,7 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <string.h>
 #include <sys/inotify.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -19,6 +20,7 @@
 
 #include <oblibs/sse.h>
 #include <oblibs/files.h>
+#include <oblibs/linux.h>
 #include "framework.h"
 
 /* Test callback for inotify events */
@@ -30,6 +32,60 @@ static void test_inotify_callback(sse_watcher_t *w, void *cbdata, int event) {
 
     /* Store watcher pointer for identification */
     data->user_data = w;
+}
+
+/*
+ * Discriminating callback for the exact-count test below.
+ *
+ * sse_dispatch_inotify() reads the whole inotify buffer with a single
+ * lx_inotify_read() and then calls the watcher callback exactly once per
+ * dispatch cycle. So call_count alone counts dispatch cycles, NOT individual
+ * filesystem events. To attribute events to the watch (and thus to the path)
+ * that produced them, the callback walks the freshly-read buffer with
+ * FOREACH_INOTIFY() and maps each event->wd back to its path via
+ * lx_inotify_get_wd(). This lets the test assert exactly which path fired and
+ * with which mask, instead of the always-true "call_count >= 0".
+ */
+struct inotify_probe {
+    int cycles;        /* number of dispatch cycles (callback invocations) */
+    int total_events;  /* total inotify events seen across all cycles */
+    int dir1_create;   /* IN_CREATE events attributed to dir1 */
+    int dir2_modify;   /* IN_MODIFY events attributed to dir2 */
+    int dir3_delete;   /* IN_DELETE events attributed to dir3 */
+    int other;         /* events not matching the three expectations */
+    char last_name[256];
+};
+
+static void probe_inotify_callback(sse_watcher_t *w, void *cbdata, int event) {
+    (void)w;
+    (void)event;
+    struct inotify_probe *p = (struct inotify_probe *)cbdata;
+    p->cycles++;
+
+    FOREACH_INOTIFY() {
+        p->total_events++;
+        lx_inotify_wd_t *wd = lx_inotify_get_wd(event->wd);
+        const char *path = wd ? wd->path : NULL;
+
+        if (event->len)
+            snprintf(p->last_name, sizeof(p->last_name), "%s", event->name);
+
+        bool matched = false;
+        if (path && strstr(path, "sse_test_dir1") && (event->mask & IN_CREATE)) {
+            p->dir1_create++;
+            matched = true;
+        }
+        if (path && strstr(path, "sse_test_dir2") && (event->mask & IN_MODIFY)) {
+            p->dir2_modify++;
+            matched = true;
+        }
+        if (path && strstr(path, "sse_test_dir3") && (event->mask & IN_DELETE)) {
+            p->dir3_delete++;
+            matched = true;
+        }
+        if (!matched)
+            p->other++;
+    }
 }
 
 /* Helper to create test directories */
@@ -286,13 +342,18 @@ static bool test_inotify_watcher_error_handling(void) {
     return true;
 }
 
-/* Test different inotify event types on single watcher */
+/* Test different inotify event types on single watcher.
+ *
+ * Each path is attached with a single distinct mask (dir1: IN_CREATE,
+ * dir2: IN_MODIFY, dir3: IN_DELETE). The discriminating callback maps every
+ * inotify event back to its path+mask, so the test asserts EXACTLY which event
+ * came from which watch, rather than the always-true "call_count >= 0". */
 static bool test_inotify_event_types(void) {
     sse_epoll_t loop;
     sse_watcher_t inotify_watcher;
-    struct test_callback_data inotify_data;
+    struct inotify_probe probe;
 
-    test_callback_init(&inotify_data);
+    memset(&probe, 0, sizeof(probe));
 
     cleanup_test_dirs();
     TEST_ASSERT(create_test_dirs(), "Failed to create test directories");
@@ -301,7 +362,7 @@ static bool test_inotify_event_types(void) {
     loop.running = true ;
 
     /* Setup single watcher monitoring different event types on different paths */
-    TEST_ASSERT(sse_start_inotify(&loop, &inotify_watcher, test_inotify_callback, &inotify_data, 1),
+    TEST_ASSERT(sse_start_inotify(&loop, &inotify_watcher, probe_inotify_callback, &probe, 1),
                "Failed to start inotify watcher");
 
     TEST_ASSERT(sse_attach_inotify(&inotify_watcher, "/tmp/sse_test_dir1", IN_CREATE),
@@ -315,12 +376,13 @@ static bool test_inotify_event_types(void) {
 
     /* Trigger specific events */
 
-    /* CREATE event */
+    /* CREATE event in dir1 (dir1 watches IN_CREATE only) */
     int fd = open("/tmp/sse_test_dir1/created_file", O_CREAT | O_WRONLY, 0644);
     TEST_ASSERT(fd >= 0, "Failed to create file for CREATE test");
     close(fd);
 
-    /* MODIFY event */
+    /* MODIFY event in dir2 (creation does not trigger; only the append does,
+     * because dir2 watches IN_MODIFY only) */
     fd = open("/tmp/sse_test_dir2/file_to_modify", O_CREAT | O_WRONLY, 0644);
     TEST_ASSERT(fd >= 0, "Failed to create file for MODIFY test");
     close(fd);
@@ -330,27 +392,31 @@ static bool test_inotify_event_types(void) {
     write(fd, "modification", 12);
     close(fd);
 
-    /* DELETE event */
+    /* DELETE event in dir3 (creation does not trigger; only the unlink does,
+     * because dir3 watches IN_DELETE only) */
     fd = open("/tmp/sse_test_dir3/file_to_delete", O_CREAT | O_WRONLY, 0644);
     TEST_ASSERT(fd >= 0, "Failed to create file for DELETE test");
     close(fd);
 
     TEST_ASSERT(unlink("/tmp/sse_test_dir3/file_to_delete") == 0, "Failed to delete file");
 
-    /* Process events */
-    int max_iterations = 25;
-    int initial_count = inotify_data.call_count;
-
-    while (max_iterations-- > 0 && (inotify_data.call_count - initial_count) < 3) {
+    /* Process events until each of the three expected events has been seen. */
+    int max_iterations = 30;
+    while (max_iterations-- > 0 &&
+           (probe.dir1_create < 1 || probe.dir2_modify < 1 || probe.dir3_delete < 1)) {
         if (!sse_run(&loop, 100)) {
             break;
         }
     }
 
-    /* Verify events were received */
-    TEST_ASSERT(inotify_data.call_count >= initial_count,
-               "Should receive CREATE, MODIFY, and DELETE events");
-    TEST_ASSERT(inotify_data.callback_called, "Inotify callback should be called");
+    /* Exact discrimination: each path produced exactly one event of its mask,
+     * and nothing spurious leaked through. */
+    TEST_ASSERT(probe.cycles >= 1, "Inotify callback should be invoked at least once");
+    TEST_ASSERT_EQ(1, probe.dir1_create, "dir1 must produce exactly one IN_CREATE event");
+    TEST_ASSERT_EQ(1, probe.dir2_modify, "dir2 must produce exactly one IN_MODIFY event");
+    TEST_ASSERT_EQ(1, probe.dir3_delete, "dir3 must produce exactly one IN_DELETE event");
+    TEST_ASSERT_EQ(0, probe.other, "No unexpected inotify events should be delivered");
+    TEST_ASSERT_EQ(3, probe.total_events, "Exactly three inotify events expected in total");
 
     sse_free(&loop);
     cleanup_test_dirs();
