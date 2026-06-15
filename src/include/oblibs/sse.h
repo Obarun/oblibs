@@ -166,7 +166,7 @@ struct sse_watcher_s
     sse_time_t time ; // stats of the event
 } ;
 typedef struct sse_watcher_s sse_watcher_t ;
-#define SSE_WATCHER_ZERO { NULL, 0, -1, 0, 0, 0, false, false, NULL, NULL, NULL, 0, {{0}} }
+#define SSE_WATCHER_ZERO { NULL, 0, -1, 0, 0, 0, false, false, NULL, NULL, NULL, 0, {{0},{0}} }
 
 struct sse_watcher_hash_s
 {

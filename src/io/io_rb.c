@@ -18,7 +18,6 @@
 #include <sys/uio.h>
 #include <sys/socket.h>
 #include <errno.h>
-#include <string.h>
 
 #include <oblibs/rbuffer.h>
 #include <oblibs/io.h>
@@ -38,8 +37,14 @@ int io_rb_init(io_rb_t *io, const io_rb_ops_t *ops, int fd)
     if (!io)
         return (errno = EINVAL, 0) ;
 
-    memset(io, 0, sizeof(*io)) ;
-
+    /*
+     * No memset(io, 0, sizeof(*io)) here: the four ring buffers' backing
+     * data[] arrays (~20 kB total) must not be touched, or every page becomes
+     * resident for nothing. A ring buffer never reads outside [r, w), so
+     * leaving data[] uninitialized is safe. Every scalar field of io_rb_t is
+     * set explicitly below; ANY field added to io_rb_t later MUST be
+     * initialized here too, or it will hold garbage.
+     */
     if (!rbuffer_init(&io->in.buf, io->in.data, sizeof(io->in.data)) ||
         !rbuffer_init(&io->out.buf, io->out.data, sizeof(io->out.data)) ||
         !rbuffer_init(&io->fdin.buf, io->fdin.data, sizeof(io->fdin.data)) ||

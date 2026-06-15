@@ -13,7 +13,6 @@
  */
 
 #include <errno.h>
-#include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -85,11 +84,22 @@ int sse_stream_init(sse_stream_t *stream, int fd, sse_stream_cb_t *read_cb, sse_
     if (!stream || fd < 0)
         return (errno = EINVAL, 0) ;
 
-    memset(stream, 0, sizeof(*stream)) ;
+    /*
+     * No memset(stream, 0, sizeof(*stream)) here: stream embeds io_rb_t whose
+     * ring-buffer data[] (~20 kB) would otherwise be faulted in and stay
+     * resident for every connection. Every field is initialized explicitly
+     * below; ANY field added to sse_stream_t later MUST be initialized here
+     * too, or it will hold garbage.
+     */
 
     // Initialize io_rb with NULL ops to use default socket I/O
     if (!io_rb_init(&stream->io, NULL, fd))
         return 0 ;
+
+    // watcher is no longer zeroed by memset: set it explicitly. SSE_WATCHER_ZERO
+    // sets fd = -1 and p = NULL, so a close-before-attach path short-circuits
+    // cleanly in sse_watcher_del/stop instead of acting on garbage.
+    stream->watcher = (sse_watcher_t)SSE_WATCHER_ZERO ;
 
     stream->fd = fd ;
     stream->closed = false ;
