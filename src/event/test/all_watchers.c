@@ -203,13 +203,12 @@ static bool test_all_watchers_comprehensive(void) {
     TEST_ASSERT_EQ(SSE_TYPE_SCHEDULE, schedule_w->type, "Schedule watcher type should be correct");
 
     /* === Verify event types === */
+    /* I/O is the only watcher whose event flag is discriminating here (READ vs
+     * WRITE). The other fd-backed watchers (child/timer/signal/eventfd/inotify/
+     * schedule) only ever receive EPOLLIN -> SSE_READ from epoll, so asserting
+     * SSE_READ on them is a tautology that proves nothing; their real per-type
+     * effects are covered by the dedicated *_watcher tests. */
     TEST_ASSERT(io_data.last_event & SSE_READ, "I/O should generate read event");
-    TEST_ASSERT(child_data.last_event & SSE_READ, "Child should generate read event");
-    TEST_ASSERT(timer_data.last_event & SSE_READ, "Timer should generate read event");
-    TEST_ASSERT(signal_data.last_event & SSE_READ, "Signal should generate read event");
-    TEST_ASSERT(eventfd_data.last_event & SSE_READ, "EventFD should generate read event");
-    TEST_ASSERT(inotify_data.last_event & SSE_READ, "Inotify should generate read event");
-    TEST_ASSERT(schedule_data.last_event & SSE_READ, "Schedule should generate read event");
 
     /* === Cleanup === */
     sse_free(&loop);
@@ -288,7 +287,9 @@ static bool test_mixed_watcher_lifecycle(void) {
     return true;
 }
 
-/* Test resource cleanup and error resilience */
+/* Mass registration, dispatch, and cleanup: 15 watchers of three types must all
+ * be active, all actually fire (not merely register), and then be torn down by a
+ * single sse_free() without leak (proven under the sanitizer build). */
 static bool test_mixed_watcher_cleanup(void) {
     sse_epoll_t loop;
 
@@ -301,33 +302,57 @@ static bool test_mixed_watcher_cleanup(void) {
      * referencing stack memory that is out of scope -> use-after-scope). */
     sse_watcher_t io_w[5], timer_w[5], eventfd_w[5];
     struct test_callback_data io_data[5], timer_data[5], eventfd_data[5];
+    int io_wr[5];
 
-    /* Create many watchers of different types */
     for (int i = 0; i < 5; i++) {
         test_callback_init(&io_data[i]);
         test_callback_init(&timer_data[i]);
         test_callback_init(&eventfd_data[i]);
+        io_wr[i] = -1;
 
         int pipefd[2];
         if (pipe(pipefd) == 0) {
-            sse_start_io(&loop, &io_w[i], test_mixed_callback, &io_data[i], pipefd[0], SSE_READ, i + 1);
+            TEST_ASSERT(sse_start_io(&loop, &io_w[i], test_mixed_callback, &io_data[i], pipefd[0], SSE_READ, i + 1),
+                        "Failed to start io watcher");
+            io_wr[i] = pipefd[1];
         }
 
-        sse_start_timer(&loop, &timer_w[i], test_mixed_callback, &timer_data[i], 50 + i * 10, 0, i + 10);
-        sse_start_eventfd(&loop, &eventfd_w[i], test_mixed_callback, &eventfd_data[i], i + 20);
-
-        /* For this test, we rely on sse_free() to handle watcher cleanup. */
+        TEST_ASSERT(sse_start_timer(&loop, &timer_w[i], test_mixed_callback, &timer_data[i], 30 + i * 5, 0, i + 10),
+                    "Failed to start timer watcher");
+        TEST_ASSERT(sse_start_eventfd(&loop, &eventfd_w[i], test_mixed_callback, &eventfd_data[i], i + 20),
+                    "Failed to start eventfd watcher");
     }
 
-    /* Run a few iterations */
-    for (int i = 0; i < 10; i++) {
-        sse_run(&loop, 30);
+    /* All 15 must be active before the loop is driven. */
+    for (int i = 0; i < 5; i++) {
+        TEST_ASSERT(sse_watcher_active(&io_w[i]), "io watcher should be active");
+        TEST_ASSERT(sse_watcher_active(&timer_w[i]), "timer watcher should be active");
+        TEST_ASSERT(sse_watcher_active(&eventfd_w[i]), "eventfd watcher should be active");
     }
 
-    /* Cleanup should handle all watchers */
+    /* Trigger every io and eventfd watcher; the one-shot timers fire on their own. */
+    for (int i = 0; i < 5; i++) {
+        if (io_wr[i] >= 0)
+            TEST_ASSERT(write(io_wr[i], "x", 1) == 1, "Failed to write io trigger");
+        TEST_ASSERT(sse_write_eventfd(&eventfd_w[i]), "Failed to write eventfd");
+    }
+
+    for (int i = 0; i < 40; i++) {
+        if (!sse_run(&loop, 30))
+            break;
+    }
+
+    /* Every watcher must have been dispatched, not merely registered. */
+    for (int i = 0; i < 5; i++) {
+        TEST_ASSERT(io_data[i].callback_called, "each io watcher must fire");
+        TEST_ASSERT(timer_data[i].callback_called, "each timer watcher must fire");
+        TEST_ASSERT(eventfd_data[i].callback_called, "each eventfd watcher must fire");
+    }
+
     sse_free(&loop);
-
-    /* This test primarily verifies that mass cleanup doesn't crash */
+    for (int i = 0; i < 5; i++)
+        if (io_wr[i] >= 0)
+            close(io_wr[i]);
 
     return true;
 }
