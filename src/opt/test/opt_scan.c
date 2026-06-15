@@ -222,6 +222,22 @@ static void test_all_bool_cluster(void)
     TEST_END() ;
 }
 
+/* A bool cluster that ends argv (no positional after it) must still terminate
+ * cleanly with ind == argc -- exercises the end-of-argv boundary. */
+static void test_bool_cluster_last(void)
+{
+    TEST_START("test_bool_cluster_last") ;
+    char const *argv[] = { "prog", "-hz", 0 } ;
+    int argc = countargv(argv) ;
+    opt_scan_t st = OPT_SCAN_ZERO ;
+
+    TEST_ASSERT(opt_scan(argc, argv, opts, OPT_COUNT(opts), &st) == 'h', "first h") ;
+    TEST_ASSERT(opt_scan(argc, argv, opts, OPT_COUNT(opts), &st) == 'z', "then z") ;
+    TEST_ASSERT(opt_scan(argc, argv, opts, OPT_COUNT(opts), &st) == OPT_END, "then end") ;
+    TEST_ASSERT(st.ind == argc, "ind at end of argv") ;
+    TEST_END() ;
+}
+
 static void test_no_options(void)
 {
     TEST_START("test_no_options") ;
@@ -249,6 +265,7 @@ int main(void)
     test_missarg_long() ;
     test_flag_with_eq() ;
     test_all_bool_cluster() ;
+    test_bool_cluster_last() ;
     test_no_options() ;
     printf("\nAll opt_scan tests passed.\n") ;
     return 0 ;

@@ -170,6 +170,22 @@ static void test_write_error(void)
     TEST_END() ;
 }
 
+// Case 5: len == 0. The transfer loop never runs; both return 0 without I/O.
+static void test_zero_length(void)
+{
+    TEST_START("test_zero_length") ;
+
+    int fds[2] ;
+    TEST_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, fds) == 0, "socketpair failed") ;
+
+    char b[1] ;
+    TEST_ASSERT(io_allwrite(fds[1], b, 0) == 0, "io_allwrite len 0 -> 0") ;
+    TEST_ASSERT(io_allread(fds[0], b, 0) == 0, "io_allread len 0 -> 0") ;
+
+    close(fds[0]) ; close(fds[1]) ;
+    TEST_END() ;
+}
+
 int main(void)
 {
     // Writing to a closed peer raises SIGPIPE by default; ignore it so the
@@ -182,6 +198,7 @@ int main(void)
     test_large_transfer() ;
     test_eof_premature() ;
     test_write_error() ;
+    test_zero_length() ;
 
     printf("\nAll tests passed.\n") ;
     return 0 ;

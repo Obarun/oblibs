@@ -175,6 +175,30 @@ static void test_fill_getnofill_nonblock(void)
     TEST_END() ;
 }
 
+/* istream_get itself (not just istream_fill) must surface would-block: on a
+ * non-blocking fd with an empty buffer and nothing on the wire, it returns
+ * -1/EAGAIN rather than a short count. */
+static void test_get_would_block(void)
+{
+    TEST_START("test_get_would_block") ;
+
+    int p[2] ;
+    TEST_ASSERT(pipe(p) == 0, "pipe failed") ;
+    TEST_ASSERT(fcntl(p[0], F_SETFL, O_NONBLOCK) == 0, "set non-blocking failed") ;
+
+    istream o ;
+    char storage[16] ;
+    TEST_ASSERT(istream_init(&o, p[0], storage, sizeof storage), "istream_init") ;
+
+    char buf[4] ;
+    errno = 0 ;
+    TEST_ASSERT(istream_get(&o, buf, sizeof buf) == -1 && error_isagain(errno),
+               "get on empty non-blocking fd -> -1/EAGAIN") ;
+
+    close(p[0]) ; close(p[1]) ;
+    TEST_END() ;
+}
+
 /* istream_fill on a full buffer cannot read: it returns -1/ENOBUFS rather than
  * mistaking a zero-iovec read for EOF. */
 static void test_fill_full_buffer(void)
@@ -292,6 +316,7 @@ int main(void)
     test_get_short_at_eof() ;
     test_get_one_by_one() ;
     test_fill_getnofill_nonblock() ;
+    test_get_would_block() ;
     test_fill_full_buffer() ;
     test_getall_resumable() ;
     test_getall_small_buffer_blocking() ;

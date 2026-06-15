@@ -166,6 +166,21 @@ static void test_borrowed_and_migration(void)
     TEST_END() ;
 }
 
+/* strbuf_with rejects a NULL sb or NULL storage with EINVAL. */
+static void test_with_guards(void)
+{
+    TEST_START("test_with_guards") ;
+
+    char seed[8] ;
+    strbuf sb ;
+    errno = 0 ;
+    TEST_ASSERT(!strbuf_with(&sb, NULL, sizeof seed) && errno == EINVAL, "with NULL storage -> EINVAL") ;
+    errno = 0 ;
+    TEST_ASSERT(!strbuf_with(NULL, seed, sizeof seed) && errno == EINVAL, "with NULL sb -> EINVAL") ;
+
+    TEST_END() ;
+}
+
 /* freeing a still-borrowed strbuf must NOT free the stack buffer (would crash);
  * it just resets the struct. */
 static void test_free_borrowed_does_not_free_stack(void)
@@ -415,6 +430,7 @@ int main(void)
     test_reserve() ;
     test_geometric_growth() ;
     test_borrowed_and_migration() ;
+    test_with_guards() ;
     test_free_borrowed_does_not_free_stack() ;
     test_copyb() ;
     test_catb_empty() ;

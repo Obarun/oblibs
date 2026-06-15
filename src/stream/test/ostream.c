@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/uio.h>
 
 #include <oblibs/stream.h>
@@ -170,6 +171,32 @@ static void test_fmt(void)
     TEST_END() ;
 }
 
+/* A flush whose underlying write fails (the pipe reader is gone) must report
+ * failure by returning 0, not silently succeed. */
+static void test_flush_failure(void)
+{
+    TEST_START("test_flush_failure") ;
+
+    signal(SIGPIPE, SIG_IGN) ;
+
+    int p[2] ;
+    TEST_ASSERT(pipe(p) == 0, "pipe failed") ;
+    close(p[0]) ;                      /* reader gone -> writes get EPIPE */
+
+    ostream o ;
+    char storage[16] ;
+    TEST_ASSERT(ostream_init(&o, p[1], storage, sizeof storage), "init") ;
+
+    /* fits the buffer: only buffered, no write yet, so this succeeds */
+    TEST_ASSERT(ostream_puts(&o, "buffered"), "buffering should succeed") ;
+    /* the flush is the first real write, and it must fail */
+    errno = 0 ;
+    TEST_ASSERT(!ostream_flush(&o), "flush to a broken pipe must return 0") ;
+
+    close(p[1]) ;
+    TEST_END() ;
+}
+
 int main(void)
 {
     printf("=== ostream test suite ===\n\n") ;
@@ -178,6 +205,7 @@ int main(void)
     test_empty_put() ;
     test_cats() ;
     test_fmt() ;
+    test_flush_failure() ;
 
     printf("\nAll tests passed.\n") ;
     return 0 ;

@@ -140,6 +140,32 @@ static void test_empty(void)
     TEST_END() ;
 }
 
+/* A zero-length iovec in the middle of a non-empty array must be skipped (not
+ * corrupt the stream nor loop), and a negative iovcnt is degenerate like 0. */
+static void test_empty_segment_and_negative(void)
+{
+    TEST_START("test_empty_segment_and_negative") ;
+
+    int p[2] ;
+    TEST_ASSERT(pipe(p) == 0, "pipe failed") ;
+
+    char a[] = "abc", b[] = "def" ;
+    struct iovec wv[3] = { { a, 3 }, { a, 0 }, { b, 3 } } ;
+    TEST_ASSERT(io_allwritev(p[1], wv, 3) == 6, "allwritev must skip the empty segment") ;
+
+    char buf[6] ;
+    struct iovec rv[3] = { { buf, 3 }, { buf, 0 }, { buf + 3, 3 } } ;
+    TEST_ASSERT(io_allreadv(p[0], rv, 3) == 6, "allreadv must skip the empty segment") ;
+    TEST_ASSERT(memcmp(buf, "abcdef", 6) == 0, "content mismatch") ;
+
+    struct iovec v1[1] = { { buf, 3 } } ;
+    TEST_ASSERT(io_allwritev(p[1], v1, -1) == 0, "allwritev(-1) should be 0") ;
+    TEST_ASSERT(io_allreadv(p[0], v1, -1) == 0, "allreadv(-1) should be 0") ;
+
+    close(p[0]) ; close(p[1]) ;
+    TEST_END() ;
+}
+
 int main(void)
 {
     printf("=== io vectored test suite ===\n\n") ;
@@ -147,6 +173,7 @@ int main(void)
     test_single() ;
     test_big_pipe_roundtrip() ;
     test_empty() ;
+    test_empty_segment_and_negative() ;
 
     printf("\nAll tests passed.\n") ;
     return 0 ;

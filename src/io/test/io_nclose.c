@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include <oblibs/io.h>
 #include <oblibs/files.h>
@@ -110,6 +111,45 @@ static void test_short_read(void)
     TEST_END() ;
 }
 
+/* n == 0 reads nothing but still closes the fd; a genuine read error (not EOF)
+ * yields -1 with errno preserved, fd still closed; a failed write yields 0. */
+static void test_zero_and_errors(void)
+{
+    TEST_START("test_zero_and_errors") ;
+
+    char buf[16] ;
+
+    /* n == 0: returns 0, fd closed. */
+    char path[] = "/tmp/oblibs_nclose_XXXXXX" ;
+    int wfd = mkstemp(path) ;
+    TEST_ASSERT(wfd >= 0, "mkstemp failed") ;
+    TEST_ASSERT(io_writenclose(wfd, "data", 4) == 1, "seed file") ;
+    int fd = io_open(path, O_RDONLY | O_CLOEXEC) ;
+    TEST_ASSERT(fd >= 0, "open failed") ;
+    TEST_ASSERT(io_readnclose(fd, buf, 0) == 0, "n==0 -> 0") ;
+    TEST_ASSERT(is_closed(fd), "n==0 still closes the fd") ;
+    file_tryunlink(path) ;
+
+    /* real read error (not EOF): reading a directory fd fails with EISDIR. */
+    int dfd = io_open("/tmp", O_RDONLY | O_CLOEXEC) ;
+    TEST_ASSERT(dfd >= 0, "open dir failed") ;
+    errno = 0 ;
+    TEST_ASSERT(io_readnclose(dfd, buf, sizeof buf) == -1, "real read error -> -1") ;
+    TEST_ASSERT(errno == EISDIR, "errno preserved from the failed read") ;
+    TEST_ASSERT(is_closed(dfd), "fd closed even on read error") ;
+
+    /* write failure: a pipe whose reader is gone makes the write fail (EPIPE);
+     * the call returns 0 and still closes the fd. */
+    signal(SIGPIPE, SIG_IGN) ;
+    int pfd[2] ;
+    TEST_ASSERT(pipe(pfd) == 0, "pipe failed") ;
+    close(pfd[0]) ;
+    TEST_ASSERT(io_writenclose(pfd[1], "hello", 5) == 0, "write to broken pipe -> 0") ;
+    TEST_ASSERT(is_closed(pfd[1]), "fd closed even on write error") ;
+
+    TEST_END() ;
+}
+
 int main(void)
 {
     printf("=== io_readnclose / io_writenclose test suite ===\n\n") ;
@@ -117,6 +157,7 @@ int main(void)
     test_roundtrip_and_close() ;
     test_fd_negative() ;
     test_short_read() ;
+    test_zero_and_errors() ;
 
     printf("\nAll tests passed.\n") ;
     return 0 ;
