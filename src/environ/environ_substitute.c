@@ -161,8 +161,21 @@ static int dollar_replace(strbuf *old, const char *line, const char *mkey, subst
                  * to exlsn_t *info struct */
 
                 _alloc_strbuf_(nregex, value.len + 1) ;
+                /* Keys already expanded in this chain. A key reappearing means a
+                 * cyclic reference (e.g. A=${B}, B=${A}), which would otherwise
+                 * loop forever -- value just oscillates between ${A} and ${B}.
+                 * The same-name guard above only sees one step, so indirect
+                 * cycles must be caught here. */
+                _alloc_sbl_(seen, value.len + 1) ;
 
                 while (dollar_find(&nregex, value.s)) {
+
+                    if (sbl_search(&seen, nregex.s) >= 0) {
+                        log_warn("cyclic reference of variable: ", nregex.s, " -- ignoring it") ;
+                        break ;
+                    }
+                    if (!sbl_add(&seen, nregex.s))
+                        return (errno = EOVERFLOW, 0) ;
 
                     r = dollar_recursive(&value, nregex.s, old->s, old->len, info, blah) ;
                     if (!r)

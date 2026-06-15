@@ -188,20 +188,33 @@ empty=t" ;
     compare(&sa, a, b) ;
 }
 
-/* BUG (found, not fixed): the anti-loop guard only catches DIRECT self-reference
- * (mkey == regex). An INDIRECT cycle is NOT caught and loops forever:
- *
- *     B=${A}
- *     A=${B}
- *
- * environ_substitute hangs in dollar_replace on this input (reproduced: the
- * process never returns, 100% CPU). The guard "if (!strcmp(mkey, regex.s))"
- * compares the line's own key against the referenced name, so a two-step cycle
- * (B -> A -> B) slips past it. No test is added for this input because it would
- * hang the suite; this comment records the defect. A real fix needs a visited-set
- * / depth bound across the recursive expansion, not just a same-name check.
- *
- * Direct self-reference A=${A}: the anti-loop guard in dollar_replace
+/* Indirect cycle: dollar_replace tracks the keys expanded in one chain, so a
+ * two-step (or longer) cycle is caught instead of looping forever -- value used
+ * to oscillate between ${A} and ${B}. The reaching of this assertion at all is
+ * the regression guard: a re-introduced loop would hang the suite. The cyclic
+ * variables are left literal and an indirect cycle is reported as failure (0),
+ * unlike a direct self-reference which succeeds (1) and is left as-is. */
+void cyclic_reference()
+{
+    printf("Running test cyclic_reference...\n") ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
+    subst_t info = SUBST_ZERO ;
+    assert(environ_merge_string(&sa, "B=${A}\nA=${B}") == 1) ;
+    assert(environ_substitute(&sa, &info) == 0) ;        /* terminates, not a hang */
+    assert(environ_rebuild(&sa) == 1) ;
+    assert(strbuf_terminate(&sa) == 1) ;
+    assert(strcmp(sa.s, "B=${A}\nA=${B}") == 0) ;        /* left literal */
+    subst_free(&info) ;
+
+    /* a longer cycle terminates too */
+    sa.len = 0 ;
+    subst_t info2 = SUBST_ZERO ;
+    assert(environ_merge_string(&sa, "A=${B}\nB=${C}\nC=${A}") == 1) ;
+    assert(environ_substitute(&sa, &info2) == 0) ;
+    subst_free(&info2) ;
+}
+
+/* Direct self-reference A=${A}: the anti-loop guard in dollar_replace
  * ("if (!strcmp(mkey, regex.s)) ... continue") catches a variable that refers to
  * itself and leaves the ${A} literal instead of recursing forever. Without the
  * guard this would loop; with it, A=${A} comes out verbatim. */
@@ -245,6 +258,7 @@ int main() {
     comment() ;
     unknown() ;
     empty_line() ;
+    cyclic_reference() ;
     self_reference() ;
     escape_is_dead() ;
 
