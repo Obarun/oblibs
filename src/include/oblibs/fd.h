@@ -97,4 +97,18 @@ extern int cloexec_fd(int fd) ;
  */
 extern int uncloexec_fd(int fd) ;
 
+/**
+ * @brief Takes an advisory whole-file lock on @fd via `flock(2)`: exclusive
+ * (write) when @ex is set, shared (read) otherwise; non-blocking when @nb is set.
+ * The lock is owned by the open file description, so it is released when the last
+ * descriptor referring to that description is closed -- in particular an
+ * `O_CLOEXEC` descriptor releases it automatically at the next `exec`. On success
+ * `errno` is preserved; an interrupted (`EINTR`) blocking wait is retried.
+ * Replaces skalibs `fd_lock`.
+ * @return 1 if the lock was taken
+ * @return 0 if @nb is set and the lock is already held by another owner (contended)
+ * @return -1 on error (`errno` set)
+ */
+extern int lock_fd(int fd, int ex, int nb) ;
+
 #endif
