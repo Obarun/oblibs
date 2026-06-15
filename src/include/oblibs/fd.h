@@ -86,13 +86,17 @@ extern int copy_fd(int to, int from) ;
 extern int ensure_stdfds(void) ;
 
 /**
- * @brief Sets the close-on-exec flag on @fd (`EINTR`-safe). Replaces skalibs `coe`.
+ * @brief Sets the close-on-exec flag on @fd. Replaces skalibs `coe`.
+ * @note `F_GETFD`/`F_SETFD` do not block, so there is no `EINTR` to retry here
+ *       (unlike `chdir_fd`/`move_fd`, whose syscalls are interruptible).
  * @return 1 on success, 0 on error (`errno` set).
  */
 extern int cloexec_fd(int fd) ;
 
 /**
- * @brief Clears the close-on-exec flag on @fd (`EINTR`-safe). Replaces skalibs `uncoe`.
+ * @brief Clears the close-on-exec flag on @fd. Replaces skalibs `uncoe`.
+ * @note `F_GETFD`/`F_SETFD` do not block, so there is no `EINTR` to retry here
+ *       (unlike `chdir_fd`/`move_fd`, whose syscalls are interruptible).
  * @return 1 on success, 0 on error (`errno` set).
  */
 extern int uncloexec_fd(int fd) ;
