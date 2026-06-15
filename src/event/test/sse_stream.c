@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <errno.h>
+#include <signal.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/uio.h>
@@ -43,15 +44,6 @@
         } \
     } while(0)
 
-#define TEST_ASSERT_ERRNO(condition, expected_errno, message) \
-    do { \
-        errno = 0; \
-        int result = (condition); \
-        if (!result) { \
-            TEST_ASSERT(errno == expected_errno, message); \
-        } \
-    } while(0)
-
 #define TEST_START(name) \
     printf("Running %s...", name)
 
@@ -67,18 +59,22 @@ static int last_error = 0;
 
 // Callback implementations for testing
 static void test_read_cb(sse_stream_t *stream, void *data) {
+    (void)stream; (void)data;
     read_cb_called++;
 }
 
 static void test_write_cb(sse_stream_t *stream, void *data) {
+    (void)stream; (void)data;
     write_cb_called++;
 }
 
 static void test_close_cb(sse_stream_t *stream, void *data) {
+    (void)stream; (void)data;
     close_cb_called++;
 }
 
 static void test_error_cb(sse_stream_t *stream, int error, void *data) {
+    (void)stream; (void)data;
     error_cb_called++;
     last_error = error;
 }
@@ -98,6 +94,15 @@ static int create_test_socketpair(int fds[2]) {
         return -1;
     }
     return 0;
+}
+
+// Drive the event loop a few iterations or until *done becomes non-zero.
+static void pump_loop(sse_epoll_t *loop, volatile int *done, int max_iter) {
+    int i = 0;
+    while (i < max_iter && !*done) {
+        TEST_ASSERT(sse_run(loop, 200) == 1, "sse_run failed");
+        i++;
+    }
 }
 
 // Test 1: Basic initialization with sse_stream_new (heap-allocated)
@@ -421,33 +426,131 @@ static void test_streamux_helpers(void) {
     TEST_END();
 }
 
-// Test 9: Error handling
+// Test 9: Error handling — drive a real flush failure through the event loop.
+//
+// The peer's read half is shut down (shutdown(SHUT_RD)) rather than fully
+// closed: a full close raises EPOLLHUP, which sse_stream_io_callback handles
+// FIRST (clean close: error stays 0, only close_cb fires) and never reaches
+// the write/flush branch. SHUT_RD instead yields EPOLLOUT with no HUP, so the
+// write branch runs, the flush sendmsg() returns EPIPE, and the error path is
+// exercised: stream->error = EPIPE, error_cb(EPIPE) then close_cb fire.
 static void test_stream_errors(void) {
     TEST_START("test_stream_errors");
+
+    reset_callbacks();
 
     int fds[2];
     TEST_ASSERT(create_test_socketpair(fds) == 0, "Failed to create socketpair");
 
-    sse_stream_t *stream = sse_stream_new(fds[0], NULL, NULL, NULL, NULL, NULL);
+    sse_epoll_t loop = {0};
+    TEST_ASSERT(sse_new(&loop, 16) == 1, "sse_new failed");
+
+    sse_stream_t *stream = sse_stream_new(fds[0], test_read_cb, test_write_cb,
+                                          test_close_cb, test_error_cb, NULL);
     TEST_ASSERT(stream != NULL, "Failed to create stream");
 
-    // Test invalid operations on closed stream
-    sse_stream_close(stream);
+    // Register for events (SSE_READ initially).
+    TEST_ASSERT(sse_stream_attach(stream, &loop, 0) == 1, "attach failed");
 
-    // Note: After close, stream is freed, so we need a new one for error testing
-    stream = sse_stream_new(fds[1], NULL, NULL, NULL, NULL, NULL);
-    TEST_ASSERT(stream != NULL, "Failed to create second stream");
+    // Kill the peer's read side: writes will fail with EPIPE, but NO HUP.
+    TEST_ASSERT(shutdown(fds[1], SHUT_RD) == 0, "shutdown(SHUT_RD) failed");
 
-    // Close the peer to cause errors
-    close(fds[0]);
-
-    // Try to put on a stream whose peer is closed - should succeed locally
-    errno = 0;
+    // Queue data: want_flush becomes true and sse_stream_modify() enables
+    // SSE_WRITE monitoring. The local put only buffers (no early flush).
     int put_result = sse_stream_put(stream, "test", 4);
-    // Put succeeds locally, flush would fail
-    TEST_ASSERT(put_result == 0, "Put should succeed even if peer closed");
+    TEST_ASSERT(put_result == 0, "Put should succeed locally");
+    TEST_ASSERT(sse_stream_pending_out(stream) == 4, "data should be buffered");
+
+    // The socket is writable (no HUP) so the write branch runs and the flush
+    // fails with EPIPE.
+    pump_loop(&loop, &error_cb_called, 5);
+
+    TEST_ASSERT(error_cb_called > 0, "error_cb must fire on failed flush");
+    TEST_ASSERT(last_error == EPIPE, "flush error should be EPIPE");
+    // close_cb is also invoked by the error branch.
+    TEST_ASSERT(close_cb_called > 0, "close_cb must fire after error");
+
+    // The io_callback only notifies via callbacks; the owner must close the
+    // stream. close defers the free, which sse_free() then drains.
+    sse_stream_close(stream);
+    sse_free(&loop);
+    close(fds[1]);
+
+    TEST_END();
+}
+
+// Test 9b: read_cb fires on real inbound data through the event loop.
+static void test_stream_read_event(void) {
+    TEST_START("test_stream_read_event");
+
+    reset_callbacks();
+
+    int fds[2];
+    TEST_ASSERT(create_test_socketpair(fds) == 0, "Failed to create socketpair");
+
+    sse_epoll_t loop = {0};
+    TEST_ASSERT(sse_new(&loop, 16) == 1, "sse_new failed");
+
+    // stream owns fds[0]; the peer end fds[1] stays open so no HUP fires.
+    sse_stream_t *stream = sse_stream_new(fds[0], test_read_cb, test_write_cb,
+                                          test_close_cb, test_error_cb, NULL);
+    TEST_ASSERT(stream != NULL, "Failed to create stream");
+    TEST_ASSERT(sse_stream_attach(stream, &loop, 0) == 1, "attach failed");
+
+    // Peer writes raw bytes; the stream fd becomes readable.
+    const char *msg = "hello";
+    TEST_ASSERT(write(fds[1], msg, 5) == 5, "peer write failed");
+
+    pump_loop(&loop, &read_cb_called, 5);
+
+    // read_cb fired and the bytes are now buffered in the stream's input rb.
+    TEST_ASSERT(read_cb_called > 0, "read_cb must fire on inbound data");
+    TEST_ASSERT(error_cb_called == 0, "no error expected on clean read");
+    TEST_ASSERT(sse_stream_pending_in(stream) == 5, "5 bytes must be buffered");
+
+    char buf[16] = {0};
+    TEST_ASSERT(sse_stream_get(stream, buf, 5) == 5, "get failed");
+    TEST_ASSERT(strcmp(buf, "hello") == 0, "data mismatch");
 
     sse_stream_close(stream);
+    sse_free(&loop);
+    close(fds[1]);
+
+    TEST_END();
+}
+
+// Test 9c: close_cb fires on a clean peer close (EPOLLHUP), with error == 0.
+static void test_stream_close_event(void) {
+    TEST_START("test_stream_close_event");
+
+    reset_callbacks();
+
+    int fds[2];
+    TEST_ASSERT(create_test_socketpair(fds) == 0, "Failed to create socketpair");
+
+    sse_epoll_t loop = {0};
+    TEST_ASSERT(sse_new(&loop, 16) == 1, "sse_new failed");
+
+    sse_stream_t *stream = sse_stream_new(fds[0], test_read_cb, test_write_cb,
+                                          test_close_cb, test_error_cb, NULL);
+    TEST_ASSERT(stream != NULL, "Failed to create stream");
+    TEST_ASSERT(sse_stream_attach(stream, &loop, 0) == 1, "attach failed");
+
+    // Fully close the peer: the stream fd reports EPOLLHUP.
+    close(fds[1]);
+
+    pump_loop(&loop, &close_cb_called, 5);
+
+    /* sse_stream_io_callback treats HUP as a clean close: close_cb fires,
+     * error stays 0, and error_cb is NOT called. This documents that on
+     * AF_UNIX a dead peer is delivered as HUP (handled first), so the
+     * read-error and flush-error branches are unreachable via peer close. */
+    TEST_ASSERT(close_cb_called > 0, "close_cb must fire on peer HUP");
+    TEST_ASSERT(error_cb_called == 0, "HUP is a clean close, no error_cb");
+    TEST_ASSERT(stream->error == 0, "clean close leaves error == 0");
+
+    sse_stream_close(stream);
+    sse_free(&loop);
 
     TEST_END();
 }
@@ -538,6 +641,10 @@ static void test_stream_null_handling(void) {
 // Main test runner
 int main(void) {
 
+    // io_rb flushes with MSG_NOSIGNAL, but ignore SIGPIPE defensively so a
+    // stray write to a half-closed peer cannot kill the test process.
+    signal(SIGPIPE, SIG_IGN);
+
     printf("Starting sse_stream test suite...\n\n");
     test_stream_new();
     test_stream_init_invalid();
@@ -548,6 +655,8 @@ int main(void) {
     test_stream_status();
     test_streamux_helpers();
     test_stream_errors();
+    test_stream_read_event();
+    test_stream_close_event();
     test_stream_close_fds();
     test_stream_callbacks();
     test_stream_null_handling();
