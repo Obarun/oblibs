@@ -12,6 +12,8 @@
  * except according to the terms contained in the LICENSE file./
  */
 
+#include <errno.h>
+#include <stdint.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -36,6 +38,11 @@ static void test_schedule_callback(sse_watcher_t *w, void *cbdata, int event) {
             data->expected_event = 1; /* Use this field to flag clock change */
         }
     }
+}
+
+/* True when a timespec is non-zero, i.e. it has actually been stamped. */
+static bool timespec_set(const struct timespec *ts) {
+    return ts->tv_sec != 0 || ts->tv_nsec != 0;
 }
 
 /* Main schedule watcher test - single loop handling multiple cron schedules */
@@ -151,7 +158,32 @@ static bool test_schedule_watchers_comprehensive(void) {
     }
 
     TEST_ASSERT(test_data.callback_called, "Test schedule should have fired");
-    TEST_ASSERT(test_data.last_event & SSE_READ, "Schedule should generate read event");
+
+    /* === Verify the fire was a real timer expiration, not a tautology ===
+     *
+     * The previous assertion (last_event & SSE_READ) was vacuous: the watcher
+     * is registered with SSE_READ, so any dispatch necessarily carries that
+     * flag. Assert observable effects instead:
+     *   1. exactly one fire happened (one-shot timer, no interval),
+     *   2. the dispatch timestamp was actually stamped and is not before the
+     *      creation timestamp (sse_dispatch sets w->time.dispatched before the
+     *      callback),
+     *   3. the expiration was drained: an immediate re-poll on the now-disarmed
+     *      timer yields no further callback. */
+    TEST_ASSERT_EQ(1, test_data.call_count, "One-shot schedule must fire exactly once");
+    TEST_ASSERT(timespec_set(&test_schedule.time.dispatched),
+               "Dispatch timestamp must be stamped on fire");
+    TEST_ASSERT(test_schedule.time.dispatched.tv_sec > test_schedule.time.created.tv_sec ||
+               (test_schedule.time.dispatched.tv_sec == test_schedule.time.created.tv_sec &&
+                test_schedule.time.dispatched.tv_nsec >= test_schedule.time.created.tv_nsec),
+               "Dispatch time must not precede creation time");
+
+    int prev_count = test_data.call_count;
+    /* Drain any stray readiness without blocking; the one-shot timer is disarmed. */
+    sse_run(&loop, 0);
+    sse_run(&loop, 0);
+    TEST_ASSERT_EQ(prev_count, test_data.call_count,
+               "Disarmed one-shot schedule must not fire again");
 
     /* === Test watcher stop/restart === */
     TEST_ASSERT(sse_stop_schedule(&hourly), "Failed to stop hourly schedule");
@@ -299,7 +331,87 @@ static bool test_schedule_cron_patterns(void) {
     return true;
 }
 
-/* Test schedule clock change handling */
+/* sse_getfire_schedule contract: future fire time consistent with cron_next,
+ * and the documented error path on a NULL watcher. */
+static bool test_schedule_getfire_contract(void) {
+    sse_epoll_t loop;
+    sse_watcher_t schedule_watcher;
+    struct test_callback_data schedule_data;
+    cron_t test_expr = CRON_EXPR_ZERO;
+
+    test_callback_init(&schedule_data);
+
+    TEST_ASSERT(sse_new(&loop, 15), "Failed to create epoll loop");
+    loop.running = true ;
+
+    int r = parse_cron("* * * * ?", &test_expr, NULL); /* Every minute */
+    TEST_ASSERT(r, "Failed to create test cron expression");
+
+    TEST_ASSERT(sse_start_schedule(&loop, &schedule_watcher, test_schedule_callback, &schedule_data,
+                                  &test_expr, 1),
+               "Failed to start schedule for getfire test");
+
+    /* === Error path: NULL watcher must fail with EINVAL, not crash === */
+    errno = 0;
+    time_t bad = sse_getfire_schedule(NULL);
+    TEST_ASSERT_EQ((time_t)0, bad, "sse_getfire_schedule(NULL) must return 0");
+    TEST_ASSERT_EQ(EINVAL, errno, "sse_getfire_schedule(NULL) must set errno EINVAL");
+
+    /* === Valid path: result is in the future and matches cron_next ===
+     * sse_getfire_schedule internally computes cron_next(expr, &realtime_now).
+     * Capture a now both before and after the call so we can bound the same
+     * computation independently and assert byte-coherence with cron_next. */
+    time_t before = time(NULL);
+    time_t when = sse_getfire_schedule(&schedule_watcher);
+    time_t after = time(NULL);
+
+    TEST_ASSERT(when > before, "Next fire time must be strictly in the future");
+    /* "* * * * ?" fires at the top of every minute, so the next fire is at most
+     * 60 seconds away from the moment the call sampled the clock. */
+    TEST_ASSERT(when <= after + 60, "Next fire time must be within the next minute");
+
+    /* Coherence with cron_next: recompute against the same expression. The clock
+     * advanced by at most (after - before) seconds during the call, so the
+     * watcher's result must equal cron_next for some now in [before, after]. */
+    cron_t *expr = ((sse_schedule_t *)schedule_watcher.sdata)->expr ;
+    time_t cn_before = cron_next(expr, &before);
+    time_t cn_after = cron_next(expr, &after);
+    TEST_ASSERT(when == cn_before || when == cn_after,
+               "sse_getfire_schedule must match cron_next over the sampled window");
+
+    sse_free(&loop);
+
+    return true;
+}
+
+/* Test schedule clock change handling.
+ *
+ * The schedule watcher exists for exactly one reason: cron schedules are
+ * wall-clock anchored, so its timerfd is armed with TFD_TIMER_ABSTIME |
+ * TFD_TIMER_CANCEL_ON_SET on CLOCK_REALTIME. When the wall clock jumps
+ * discontinuously, the kernel cancels the timer and the next read() must be
+ * detected so the absolute fire time is recomputed via cron_next().
+ *
+ * Two facts make the success path of that recovery (clockchange == true)
+ * untestable here without privilege and without a production injection point:
+ *
+ *  1. Triggering a real discontinuity needs clock_settime(CLOCK_REALTIME, ...),
+ *     which requires CAP_SYS_TIME. This is verified at runtime below and is
+ *     denied in this environment (EPERM). CLOCK_REALTIME is global, so even a
+ *     user namespace cannot grant it.
+ *
+ *  2. sse_dispatch_schedule branches on read(w->fd) == 0. A timerfd never
+ *     returns EOF: on a cancel-on-set discontinuity the man page specifies the
+ *     read() FAILS with ECANCELED (-1), and otherwise it returns the expiration
+ *     count (>0) or -1/EAGAIN. read() == 0 is therefore unreachable for a real
+ *     timerfd. Substituting an EOF fd cannot exercise the success path either,
+ *     because the very next step (sse_modify_schedule -> timerfd_settime on the
+ *     same w->fd) would fail on a non-timerfd.
+ *
+ * This test pins down what IS observable: the clockchange flag starts false and
+ * stays false across a normal fire, and read() == 0 is empirically unreachable
+ * on the timerfd. Both assertions guard the contract; the recovery success path
+ * needs a code-level injection point to become testable (see test report). */
 static bool test_schedule_clock_change_handling(void) {
     sse_epoll_t loop;
     sse_watcher_t schedule_watcher;
@@ -307,6 +419,17 @@ static bool test_schedule_clock_change_handling(void) {
     cron_t test_expr = CRON_EXPR_ZERO;
 
     test_callback_init(&schedule_data);
+
+    /* Document the privilege boundary: a real clock step is not available. */
+    struct timespec rtnow ;
+    clock_gettime(CLOCK_REALTIME, &rtnow) ;
+    errno = 0 ;
+    int can_set_clock = (clock_settime(CLOCK_REALTIME, &rtnow) == 0) ;
+    if (!can_set_clock) {
+        TEST_ASSERT_EQ(EPERM, errno,
+            "clock_settime denial must be EPERM (no CAP_SYS_TIME); clock-change "
+            "recovery success path cannot be tested without privilege") ;
+    }
 
     TEST_ASSERT(sse_new(&loop, 15), "Failed to create epoll loop");
     loop.running = true ;
@@ -318,6 +441,23 @@ static bool test_schedule_clock_change_handling(void) {
     TEST_ASSERT(sse_start_schedule(&loop, &schedule_watcher, test_schedule_callback, &schedule_data,
                                   &test_expr, 1),
                "Failed to start schedule for clock change test");
+
+    sse_schedule_t *sched_data = (sse_schedule_t *)schedule_watcher.sdata;
+    TEST_ASSERT_NOT_NULL(sched_data, "Schedule should have data structure");
+    TEST_ASSERT(!sched_data->clockchange, "clockchange must start false");
+
+    /* === read() == 0 is structurally unreachable on the timerfd ===
+     * Drain the armed timer with a non-blocking read: it must be either -1
+     * (EAGAIN, not yet expired) or a positive expiration count, never 0. This
+     * is the deterministic proof that the r == 0 recovery branch is dead for a
+     * real timerfd. */
+    uint64_t expirations = 0 ;
+    errno = 0 ;
+    ssize_t rd = read(schedule_watcher.fd, &expirations, sizeof(expirations)) ;
+    TEST_ASSERT(rd != 0, "timerfd read() must never return 0 (EOF unreachable)");
+    if (rd < 0)
+        TEST_ASSERT(errno == EAGAIN || errno == EWOULDBLOCK || errno == ECANCELED,
+                   "timerfd non-blocking read failure must be EAGAIN/ECANCELED");
 
     /* Set to fire in near future */
     time_t fire_time = time(NULL) + 2;
@@ -334,10 +474,12 @@ static bool test_schedule_clock_change_handling(void) {
 
     TEST_ASSERT(schedule_data.callback_called, "Schedule should fire normally");
 
-    /* Test that schedule data structure contains correct information */
-    sse_schedule_t *sched_data = (sse_schedule_t *)schedule_watcher.sdata;
-    TEST_ASSERT_NOT_NULL(sched_data, "Schedule should have data structure");
-    TEST_ASSERT_NOT_NULL(sched_data->expr, "Schedule should have cron expression");
+    /* A normal expiration is NOT a clock change: the flag must remain false and
+     * the callback must not have flagged a clock change. */
+    TEST_ASSERT(!sched_data->clockchange,
+               "clockchange must stay false on a normal expiration");
+    TEST_ASSERT_EQ(0, schedule_data.expected_event,
+               "callback must not flag a clock change on a normal fire");
 
     /* Test getting next fire time */
     time_t next_fire = sse_getfire_schedule(&schedule_watcher);
@@ -352,5 +494,6 @@ TEST_SUITE_BEGIN("SSE Schedule Watcher Tests - Single Loop Multiple Schedules")
     RUN_TEST(test_schedule_watchers_comprehensive);
     RUN_TEST(test_schedule_watchers_error_handling);
     RUN_TEST(test_schedule_cron_patterns);
+    RUN_TEST(test_schedule_getfire_contract);
     RUN_TEST(test_schedule_clock_change_handling);
 TEST_SUITE_END()
