@@ -26,9 +26,10 @@ void test_lx_signalfd_init(void) {
     assert(fd >= 0 && "Failed to initialize signalfd");
     assert(lx_signalfd_get_fd() == fd && "lx_signalfd_get_fd does not match initialized fd");
 
-    // Verify mask is empty
+    // Verify mask is empty: inspect the mask actually returned, not the result
+    // of sigemptyset() (which clears it in place and always returns 0).
     sigset_t mask = lx_signalfd_get_mask();
-    assert(sigemptyset(&mask) == 0 && "Initial mask should be empty");
+    assert(sigisemptyset(&mask) && "Initial mask should be empty");
 
     // Test reinitialization
     int fd2 = lx_signalfd_init();
@@ -142,10 +143,15 @@ void test_lx_signalfd_ignore(void) {
 
     // No assertion on signal receipt, as it’s ignored (no-op handler)
 
-    // Test ignoring a non-catchable signal (SIGKILL)
+    // Test ignoring a non-catchable signal (SIGKILL): sigaction() rejects it with
+    // EINVAL and lx_signalfd_ignore reports success (1) precisely because the
+    // signal number is valid but uncatchable. Parenthesize the errno alternative
+    // so it is actually asserted (the bare `a || b && msg` form binds as
+    // `a || (b && msg)`, which is true whenever a holds and never checks msg).
     errno = 0;
-    assert(lx_signalfd_ignore(SIGKILL) == 1 && "Expected success for non-catchable SIGKILL");
-    assert(errno == EINVAL || errno == 0 && "Expected EINVAL or unchanged errno for SIGKILL");
+    int killret = lx_signalfd_ignore(SIGKILL);
+    assert(killret == 1 && "Expected success for non-catchable SIGKILL");
+    assert(errno == EINVAL && "SIGKILL is uncatchable: sigaction must leave EINVAL");
 
     // Test invalid signal number
     errno = 0;

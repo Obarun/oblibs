@@ -13,9 +13,12 @@
  */
 
 /* Non-regression test for the oblibs-native move_fd, drop-in replacement for
- * skalibs' move_fd. Pins down the contract: the source is duplicated onto the
- * target then closed, errno is preserved on the success path, and the to==from
- * special case clears the close-on-exec flag instead of duplicating. */
+ * skalibs' move_fd. Pins down the contract: the source's description is
+ * duplicated onto the target then the source is closed, errno is preserved on
+ * the success path, a failed dup2 returns -1 without disturbing the source, and
+ * the to==from special case clears the close-on-exec flag instead of
+ * duplicating. The success path is checked by reading a distinctive byte back
+ * through the target, not just by its validity. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +28,7 @@
 #include <fcntl.h>
 
 #include <oblibs/fd.h>
+#include <oblibs/files.h>
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -44,14 +48,33 @@ static int is_closed(int fd)
     return fcntl(fd, F_GETFD) == -1 && errno == EBADF ;
 }
 
-/* from is duped onto a freed number then closed; the target becomes valid,
- * the source is closed, and a non-zero errno survives the success path. */
+/* A readable fd holding exactly the byte `c`, rewound to the start. */
+static int byte_fd(char c)
+{
+    char path[] = "/tmp/oblibs_move_fd_XXXXXX" ;
+    int fd = mkstemp(path) ;
+    TEST_ASSERT(fd >= 0, "mkstemp failed") ;
+    file_tryunlink(path) ;
+    TEST_ASSERT(write(fd, &c, 1) == 1, "write failed") ;
+    TEST_ASSERT(lseek(fd, 0, SEEK_SET) == 0, "lseek failed") ;
+    return fd ;
+}
+
+static char read_byte(int fd)
+{
+    char c = 0 ;
+    TEST_ASSERT(pread(fd, &c, 1, 0) == 1, "pread failed") ;
+    return c ;
+}
+
+/* from is duped onto a freed number then closed; the target ends up carrying
+ * from's description (proven by reading its distinctive byte), the source is
+ * closed, and a non-zero errno survives the success path. */
 static void test_move_success(void)
 {
     TEST_START("test_move_success") ;
 
-    int from = open("/dev/null", O_RDONLY) ;
-    TEST_ASSERT(from >= 0, "open /dev/null failed") ;
+    int from = byte_fd('Z') ;       /* distinctive payload to identify the description */
 
     int to = dup(from) ;            /* a distinct, valid number ... */
     TEST_ASSERT(to >= 0, "dup failed") ;
@@ -63,7 +86,27 @@ static void test_move_success(void)
     TEST_ASSERT(errno == EXDEV, "errno not preserved on success") ;
 
     TEST_ASSERT(fcntl(to, F_GETFD) >= 0, "target fd should be valid") ;
+    TEST_ASSERT(read_byte(to) == 'Z', "target must carry from's description") ;
     TEST_ASSERT(is_closed(from), "source fd should be closed") ;
+
+    close(to) ;
+    TEST_END() ;
+}
+
+/* A failed dup2 (bogus source -1) returns -1 and leaves the target untouched. */
+static void test_move_failure(void)
+{
+    TEST_START("test_move_failure") ;
+
+    int to = byte_fd('T') ;         /* valid, distinct target that must survive */
+
+    errno = 0 ;
+    int r = move_fd(to, -1) ;       /* dup2(-1, to) fails with EBADF */
+    TEST_ASSERT(r == -1, "move_fd with invalid source should fail") ;
+    TEST_ASSERT(errno == EBADF, "errno should be EBADF on dup2 failure") ;
+
+    TEST_ASSERT(fcntl(to, F_GETFD) >= 0, "target fd should be untouched") ;
+    TEST_ASSERT(read_byte(to) == 'T', "target description must be undisturbed") ;
 
     close(to) ;
     TEST_END() ;
@@ -93,6 +136,7 @@ int main(void)
     printf("=== move_fd test suite ===\n\n") ;
 
     test_move_success() ;
+    test_move_failure() ;
     test_move_same_fd_clears_cloexec() ;
 
     printf("\nAll tests passed.\n") ;
