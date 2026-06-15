@@ -206,15 +206,15 @@ void test_queue_shrink() {
 }
 
 int main() {
-    // test_queue_init();
-    // test_queue_init_empty_cap();
-    // test_queue_insert();
-    // test_queue_remove();
+    test_queue_init();
+    test_queue_init_empty_cap();
+    test_queue_insert();
+    test_queue_remove();
     test_queue_remove_ptr();
-    // test_queue_sort();
-    // test_queue_mode();
-    // test_queue_reverse();
-    // test_queue_shrink();
+    test_queue_sort();
+    test_queue_mode();
+    test_queue_reverse();
+    test_queue_shrink();
     printf("All tests passed successfully.\n") ;
     return 0;
 }

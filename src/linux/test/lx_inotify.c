@@ -365,16 +365,16 @@ void test_lx_inotify_end(void) {
 
 // Main test runner
 int main(void) {
-    // test_lx_inotify_init();
-    // test_lx_inotify_get_fd();
-    // test_lx_inotify_get_buffer();
-    // test_lx_inotify_get_blength();
-    // test_lx_inotify_add();
-    // test_lx_inotify_update();
+    test_lx_inotify_init();
+    test_lx_inotify_get_fd();
+    test_lx_inotify_get_buffer();
+    test_lx_inotify_get_blength();
+    test_lx_inotify_add();
+    test_lx_inotify_update();
     test_lx_inotify_del();
-    // test_lx_inotify_read_iterator();
-    // test_lx_inotify_read_iterator_dir();
-    // test_lx_inotify_end();
+    test_lx_inotify_read_iterator();
+    test_lx_inotify_read_iterator_dir();
+    test_lx_inotify_end();
     printf("All tests passed successfully!\n");
     return 0;
 }
