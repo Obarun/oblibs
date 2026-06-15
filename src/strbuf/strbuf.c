@@ -104,8 +104,10 @@ int strbuf_insertb(strbuf *sb, size_t offset, char const *s, size_t n)
         return (errno = ERANGE, 0) ;
     if (!strbuf_reserve(sb, need))
         return 0 ;
-    memmove(sb->s + offset + n, sb->s + offset, sb->len - offset) ;
-    memmove(sb->s + offset, s, n) ;
+    if (sb->len - offset)
+        memmove(sb->s + offset + n, sb->s + offset, sb->len - offset) ;
+    if (n)
+        memmove(sb->s + offset, s, n) ;
     sb->len = need ;
     return 1 ;
 }
