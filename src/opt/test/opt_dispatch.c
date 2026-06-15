@@ -19,6 +19,7 @@
 
 #include <oblibs/opt.h>
 #include <oblibs/log.h>
+#include <oblibs/files.h>
 
 #define TEST_ASSERT(condition, message) \
     do { \

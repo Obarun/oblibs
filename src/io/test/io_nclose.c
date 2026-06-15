@@ -24,6 +24,7 @@
 #include <fcntl.h>
 
 #include <oblibs/io.h>
+#include <oblibs/files.h>
 
 #define TEST_ASSERT(condition, message) \
     do { \

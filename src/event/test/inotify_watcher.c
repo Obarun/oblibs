@@ -18,6 +18,7 @@
 #include <unistd.h>
 
 #include <oblibs/sse.h>
+#include <oblibs/files.h>
 #include "framework.h"
 
 /* Test callback for inotify events */
@@ -334,7 +335,7 @@ static bool test_inotify_event_types(void) {
     TEST_ASSERT(fd >= 0, "Failed to create file for DELETE test");
     close(fd);
 
-    TEST_ASSERT(file_tryunlink("/tmp/sse_test_dir3/file_to_delete") == 0, "Failed to delete file");
+    TEST_ASSERT(unlink("/tmp/sse_test_dir3/file_to_delete") == 0, "Failed to delete file");
 
     /* Process events */
     int max_iterations = 25;

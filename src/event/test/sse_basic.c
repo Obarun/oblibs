@@ -21,6 +21,7 @@
 #include <sys/inotify.h>
 
 #include <oblibs/sse.h>
+#include <oblibs/files.h>
 
 // --- Helper Macros ---
 

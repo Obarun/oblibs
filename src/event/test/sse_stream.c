@@ -27,6 +27,7 @@
 
 #include <oblibs/sse_stream.h>
 #include <oblibs/sse.h>
+#include <oblibs/files.h>
 
 #define TEST_SOCKET_PATH "/tmp/test_sse_stream.sock"
 #define TEST_BUFFER_SIZE 4096

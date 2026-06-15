@@ -32,6 +32,7 @@
 
 #include <oblibs/cdb.h>
 #include <oblibs/types.h>
+#include <oblibs/files.h>
 
 #include "cdb_dataset.h"
 

@@ -27,6 +27,7 @@
 #include <sys/uio.h>
 
 #include <oblibs/stream.h>
+#include <oblibs/files.h>
 
 #define TEST_ASSERT(condition, message) \
     do { \

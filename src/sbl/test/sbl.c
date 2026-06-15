@@ -27,6 +27,7 @@
 
 #include <oblibs/sbl.h>
 #include <oblibs/strbuf.h>
+#include <oblibs/files.h>
 
 #define TEST_ASSERT(condition, message) \
     do { \

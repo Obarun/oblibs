@@ -19,6 +19,7 @@
 #include <signal.h>
 
 #include <oblibs/sse.h>
+#include <oblibs/files.h>
 #include "framework.h"
 
 /* Test callback for I/O events */

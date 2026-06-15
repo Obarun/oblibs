@@ -27,6 +27,7 @@
 #include <oblibs/linux.h>
 #include <oblibs/hash.h>
 #include <oblibs/io.h>
+#include <oblibs/files.h>
 
 // Helper: Create a temporary file
 static const char *create_temp_file(void) {
