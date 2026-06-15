@@ -194,6 +194,52 @@ static void test_sort(void)
     TEST_END() ;
 }
 
+/* sbl_sort short-circuits on the empty list with return 0 (the "if (!sb->len)
+ * return 0" guard), leaving the buffer empty. This is its ONLY 0 return that is
+ * not an allocation failure. Dropping the guard makes an empty sort return 1. */
+static void test_sort_empty(void)
+{
+    TEST_START("test_sort_empty") ;
+    strbuf sb = STRBUF_ZERO ;
+    TEST_ASSERT(sbl_sort(&sb) == 0, "sort of an empty list returns 0") ;
+    TEST_ASSERT(sb.len == 0, "empty list stays empty") ;
+    strbuf_free(&sb) ;
+    TEST_END() ;
+}
+
+/* The sort is non-destructive on duplicates: identical elements are NEVER merged
+ * (that is sbl_drop_duplicate's job), only reordered. A run of N identical keys
+ * must survive sort as N adjacent copies. sbl_sort uses strcmp > 0 (strict), so
+ * equal elements keep their relative order -- but since equal elements are
+ * byte-identical here, that order is not externally observable; what IS pinned is
+ * that the count and adjacency of duplicates are preserved across the sort.
+ * sbl_sortndrop then proves the equal run collapses to exactly one. */
+static void test_sort_duplicates(void)
+{
+    TEST_START("test_sort_duplicates") ;
+    {
+        /* three "b" and two "a" scattered -> sort keeps all five, grouped */
+        char const *un[] = { "b", "a", "b", "c", "a", "b" } ;
+        strbuf sb = STRBUF_ZERO ;
+        build(&sb, un, 6) ;
+        TEST_ASSERT(sbl_sort(&sb), "sbl_sort with duplicates") ;
+        char const *exp[] = { "a", "a", "b", "b", "b", "c" } ;
+        check_list(&sb, exp, 6) ;   /* all duplicates kept, none dropped, grouped */
+        strbuf_free(&sb) ;
+    }
+    {
+        /* same input through sortndrop collapses each equal run to one */
+        char const *un[] = { "b", "a", "b", "c", "a", "b" } ;
+        strbuf sb = STRBUF_ZERO ;
+        build(&sb, un, 6) ;
+        TEST_ASSERT(sbl_sortndrop(&sb), "sbl_sortndrop with duplicates") ;
+        char const *exp[] = { "a", "b", "c" } ;
+        check_list(&sb, exp, 3) ;
+        strbuf_free(&sb) ;
+    }
+    TEST_END() ;
+}
+
 static void test_dropdup_sortndrop(void)
 {
     TEST_START("test_dropdup_sortndrop") ;
@@ -260,6 +306,10 @@ static void test_to_char(void)
     memset(dst, 0xAA, sizeof dst) ;
     sbl_to_char(dst, &sb) ;
     TEST_ASSERT(!memcmp(dst, sb.s, sb.len), "to_char copies the whole buffer") ;
+    /* sentinel: the byte right after the copied region must be untouched.
+     * sbl_to_char must copy EXACTLY sb->len bytes, never one more (an off-by-one
+     * memcpy of sb->len+1 would clobber this 0xAA). */
+    TEST_ASSERT(dst[sb.len] == (char)0xAA, "to_char does not write past sb->len") ;
     strbuf_free(&sb) ;
     TEST_END() ;
 }
@@ -480,6 +530,8 @@ int main(void)
     test_remove() ;
     test_reverse() ;
     test_sort() ;
+    test_sort_empty() ;
+    test_sort_duplicates() ;
     test_dropdup_sortndrop() ;
     test_dir_drop_child() ;
     test_rebuild() ;

@@ -279,19 +279,30 @@ void test_restore() {
     io_rb_t io;
     io_rb_init(&io, NULL, 5);
 
-    const char *data = "Test data";
+    const char *data = "Test data";   /* 9 bytes */
     rbuffer_write(&io.in.buf, data, strlen(data));
 
-    // Read some data
+    // Read the first 4 bytes ("Test")
     char buffer[5];
-    io_rb_get(&io, buffer, 4);
+    ssize_t g4 = io_rb_get(&io, buffer, 4);
+    TEST_ASSERT(g4 == 4, "first get returns 4");
+    TEST_ASSERT(memcmp(buffer, "Test", 4) == 0, "first get content is 'Test'");
 
     size_t remaining = io_rb_pending_in(&io);
+    TEST_ASSERT(remaining == 5, "5 bytes remain after reading 4");
 
-    // Restore 2 bytes
+    // Restore 2 bytes: re-expose the last 2 consumed ("st"), back ahead of " data"
     io_rb_restore(&io, 2);
 
     TEST_ASSERT(io_rb_pending_in(&io) == remaining + 2, "buffer should have 2 more bytes");
+
+    /* Content check: the re-exposed bytes must be exactly the last two read,
+     * so reading the now-7 pending bytes yields "st data" -- not just a count. */
+    char back[8];
+    ssize_t g7 = io_rb_get(&io, back, 7);
+    TEST_ASSERT(g7 == 7, "get of the restored 7 bytes");
+    TEST_ASSERT(memcmp(back, "st data", 7) == 0, "restored bytes re-expose the exact content 'st data'");
+    TEST_ASSERT(io_rb_pending_in(&io) == 0, "input drained after the full read");
 
     TEST_END();
 }
@@ -305,8 +316,19 @@ void test_reserve_output() {
 
     ssize_t reserved = io_rb_reserve_output(&io, 100);
 
-    TEST_ASSERT(reserved > 0, "reserve should return positive value");
+    /* 100 fits well within the 8191-byte capacity, so the reserve is exact, not
+     * just "positive": reserved == requested, and pending_out advances by it. */
+    TEST_ASSERT(reserved == 100, "reserve returns exactly the requested count when it fits");
+    TEST_ASSERT(io_rb_pending_out(&io) == 100, "reserved bytes are now pending in out");
     TEST_ASSERT(io.want_flush == true, "want_flush should be set");
+
+    /* A reserve larger than the remaining space is capped at what is available
+     * (capacity 8191 minus the 100 already reserved == 8091), never more. */
+    ssize_t capped = io_rb_reserve_output(&io, (size_t)IO_RB_BUFFER_SIZE * 2);
+    TEST_ASSERT(capped == (ssize_t)(rbuffer_capacity(&io.out.buf) - 100),
+                "oversized reserve is capped at the remaining space");
+    TEST_ASSERT(io_rb_pending_out(&io) == rbuffer_capacity(&io.out.buf),
+                "out is now full to capacity after the capped reserve");
 
     TEST_END();
 }
@@ -397,13 +419,29 @@ void test_buffer_overflow() {
     char large_data[IO_RB_BUFFER_SIZE + 100];
     memset(large_data, 'A', sizeof(large_data));
 
+    errno = 0;
     int result = io_rb_put(&io, large_data, sizeof(large_data), NULL);
 
     TEST_ASSERT(result == -1, "put with oversized data should fail");
-    // When buffer is full, it tries to flush. Since fd=5 is likely invalid,
-    // flush fails with EAGAIN (non-blocking would block) or other error
-    TEST_ASSERT(errno == EAGAIN || errno == EOVERFLOW || errno == EBADF,
-                "errno should be EAGAIN, EOVERFLOW, or EBADF");
+    /* Deterministic EAGAIN, independent of fd: io_rb_put has no upfront capacity
+     * check, so it sets want_flush and calls io_rb_flush. The out buffer is still
+     * EMPTY at this point (data not written yet), so flush is a no-op returning 0
+     * (no ops->write, fdout empty -> returns before touching the fd). Back in
+     * io_rb_put, available (8191) is still < count (8292), so it returns EAGAIN.
+     * The fd (5) is never used. */
+    TEST_ASSERT(errno == EAGAIN, "errno should be exactly EAGAIN");
+
+    /* io_rb_putv DOES have an upfront capacity check, so oversized data there
+     * is rejected with EOVERFLOW before any flush attempt -- a distinct path. */
+    io_rb_t io2;
+    io_rb_init(&io2, NULL, 5);
+    struct iovec ov;
+    ov.iov_base = large_data;
+    ov.iov_len = sizeof(large_data);
+    errno = 0;
+    int rv = io_rb_putv(&io2, &ov, 1, NULL);
+    TEST_ASSERT(rv == -1, "putv with oversized data should fail");
+    TEST_ASSERT(errno == EOVERFLOW, "putv oversized errno should be exactly EOVERFLOW");
 
     TEST_END();
 }
@@ -663,6 +701,176 @@ void test_read_invalid_fd() {
     TEST_END();
 }
 
+// Helper: is this fd still open?
+static int fd_is_open(int fd) {
+    return fcntl(fd, F_GETFD) != -1;
+}
+
+// Test: io_rb_decode_cmsg overflow path -- fdin has no room for the incoming fds.
+// The received fds MUST be closed (no leak) and the call MUST report EOVERFLOW.
+// This is the ancillary overflow branch that real recvmsg traffic almost never
+// exercises; we forge the msghdr to drive it deterministically.
+void test_decode_overflow_closes_fds() {
+    TEST_START("test_decode_overflow_closes_fds");
+
+    io_rb_t io;
+    io_rb_init(&io, NULL, 5);
+
+    // Saturate fdin so rbuffer_available(fdin) < sizeof(int): any incoming fd
+    // overflows and must be closed instead of stored.
+    size_t cap = rbuffer_capacity(&io.fdin.buf);
+    char *junk = malloc(cap);
+    TEST_ASSERT(junk != NULL, "alloc junk");
+    memset(junk, 0, cap);
+    rbuffer_write(&io.fdin.buf, junk, cap);
+    free(junk);
+    TEST_ASSERT(rbuffer_available(&io.fdin.buf) < sizeof(int), "fdin saturated");
+
+    // Two real fds carried by a forged SCM_RIGHTS cmsg.
+    int a = dup(2), b = dup(2);
+    TEST_ASSERT(a >= 0 && b >= 0, "dup test fds");
+    TEST_ASSERT(fd_is_open(a) && fd_is_open(b), "fds open before decode");
+
+    char cbuf[CMSG_SPACE(2 * sizeof(int))];
+    memset(cbuf, 0, sizeof(cbuf));
+    struct msghdr msg;
+    memset(&msg, 0, sizeof(msg));
+    msg.msg_control = cbuf;
+    msg.msg_controllen = sizeof(cbuf);
+    struct cmsghdr *cm = CMSG_FIRSTHDR(&msg);
+    cm->cmsg_level = SOL_SOCKET;
+    cm->cmsg_type = SCM_RIGHTS;
+    cm->cmsg_len = CMSG_LEN(2 * sizeof(int));
+    int fds[2] = { a, b };
+    memcpy(CMSG_DATA(cm), fds, sizeof(fds));
+    msg.msg_controllen = cm->cmsg_len;
+
+    errno = 0;
+    int r = io_rb_decode_cmsg(&io, &msg);
+    TEST_ASSERT(r == -1, "decode signals failure on overflow");
+    TEST_ASSERT(errno == EOVERFLOW, "errno is exactly EOVERFLOW on overflow");
+    // The crux: no fd leak. Both received fds must have been closed.
+    TEST_ASSERT(!fd_is_open(a) && !fd_is_open(b), "overflowed fds are CLOSED (no leak)");
+    TEST_ASSERT(rbuffer_used(&io.fdin.buf) == cap, "fdin unchanged; nothing stored");
+
+    TEST_END();
+}
+
+// Test: io_rb_decode_cmsg corruption path -- cmsg_len whose fd region is not a
+// whole number of ints. The identifiable fds are closed (no leak) and the entry
+// is skipped; this is NOT flagged as overflow, so the call returns 0.
+void test_decode_corrupt_closes_fds() {
+    TEST_START("test_decode_corrupt_closes_fds");
+
+    io_rb_t io;
+    io_rb_init(&io, NULL, 5);   // fdin empty -> ample room; corruption is the trigger
+
+    int a = dup(2);
+    TEST_ASSERT(a >= 0, "dup test fd");
+    TEST_ASSERT(fd_is_open(a), "fd open before decode");
+
+    // fd region = sizeof(int) + 1 bytes: fdbytes % sizeof(int) != 0 -> corrupt.
+    size_t bad = sizeof(int) + 1;
+    char cbuf[CMSG_SPACE(2 * sizeof(int))];
+    memset(cbuf, 0, sizeof(cbuf));
+    struct msghdr msg;
+    memset(&msg, 0, sizeof(msg));
+    msg.msg_control = cbuf;
+    msg.msg_controllen = sizeof(cbuf);
+    struct cmsghdr *cm = CMSG_FIRSTHDR(&msg);
+    cm->cmsg_level = SOL_SOCKET;
+    cm->cmsg_type = SCM_RIGHTS;
+    cm->cmsg_len = CMSG_LEN(bad);
+    memcpy(CMSG_DATA(cm), &a, sizeof(int));   // first 4 bytes = the real fd
+    msg.msg_controllen = cm->cmsg_len;
+
+    errno = 0;
+    int r = io_rb_decode_cmsg(&io, &msg);
+    TEST_ASSERT(r == 0, "corrupt cmsg is skipped, not an overflow error");
+    // The fdbytes/sizeof(int) == 1 identifiable fd must be closed (no leak).
+    TEST_ASSERT(!fd_is_open(a), "the identifiable corrupt fd is CLOSED (no leak)");
+    TEST_ASSERT(io_rb_pending_fdin(&io) == 0, "nothing stored from a corrupt cmsg");
+
+    TEST_END();
+}
+
+// Test: io_rb_close_fds drains a fd buffer and closes every fd in it.
+void test_close_fds() {
+    TEST_START("test_close_fds");
+
+    io_rb_t io;
+    io_rb_init(&io, NULL, 5);
+
+    int a = dup(2), b = dup(2), c = dup(2);
+    TEST_ASSERT(a >= 0 && b >= 0 && c >= 0, "dup three fds");
+    TEST_ASSERT(io_rb_put_fd(&io, a) == 0, "queue a");
+    TEST_ASSERT(io_rb_put_fd(&io, b) == 0, "queue b");
+    TEST_ASSERT(io_rb_put_fd(&io, c) == 0, "queue c");
+    TEST_ASSERT(io_rb_pending_fdout(&io) == 3 * sizeof(int), "three fds queued");
+
+    io_rb_close_fds(&io.fdout.buf);
+
+    TEST_ASSERT(!fd_is_open(a) && !fd_is_open(b) && !fd_is_open(c), "all queued fds closed");
+    TEST_ASSERT(rbuffer_used(&io.fdout.buf) == 0, "fd buffer drained");
+
+    TEST_END();
+}
+
+// Test: ring wrap-around. A payload written after the ring's write pointer has
+// advanced near the end forces rbuffer_riovec to return TWO regions; flush then
+// goes out as a 2-iovec sendmsg. Verify byte-for-byte integrity end to end --
+// the small ~20-byte payloads elsewhere never exercise the split-region path.
+void test_ring_wraparound() {
+    TEST_START("test_ring_wraparound");
+
+    int fds[2];
+    TEST_ASSERT(create_socketpair(fds) == 0, "socketpair");
+    TEST_ASSERT(set_nonblocking(fds[0]) == 0, "nonblock writer");
+    TEST_ASSERT(set_nonblocking(fds[1]) == 0, "nonblock reader");
+    // Enlarge the socket buffers so a single flush of ~8 KB drains in one pass.
+    int sz = 1 << 20;
+    setsockopt(fds[0], SOL_SOCKET, SO_SNDBUF, &sz, sizeof(sz));
+    setsockopt(fds[1], SOL_SOCKET, SO_RCVBUF, &sz, sizeof(sz));
+
+    io_rb_t w, r;
+    io_rb_init(&w, NULL, fds[0]);
+    io_rb_init(&r, NULL, fds[1]);
+
+    // Deterministic pattern so any mis-ordered region is caught.
+    char *blk = malloc(IO_RB_BUFFER_SIZE);
+    TEST_ASSERT(blk != NULL, "alloc pattern");
+    for (int i = 0 ; i < IO_RB_BUFFER_SIZE ; i++) blk[i] = (char)(i & 0xff);
+
+    // Phase 1: push the out ring's r/w pointers to offset 6000, then drain, so
+    // both sit near the end of the 8192-slot ring with the buffer empty.
+    TEST_ASSERT(io_rb_put(&w, blk, 6000, NULL) == 0, "put 6000");
+    TEST_ASSERT(io_rb_flush(&w, NULL) == 6000, "flush 6000");
+    TEST_ASSERT(io_rb_read(&r, NULL) == 6000, "read 6000");
+    char drain[6000];
+    TEST_ASSERT(io_rb_get(&r, drain, 6000) == 6000, "drain 6000");
+    TEST_ASSERT(io_rb_pending_out(&w) == 0, "out empty, pointers parked near end");
+
+    // Phase 2: 4000 bytes now wrap past the ring boundary -> two iovec regions.
+    TEST_ASSERT(io_rb_put(&w, blk, 4000, NULL) == 0, "put 4000 (wraps)");
+    struct iovec iov[2];
+    unsigned n = rbuffer_riovec(&w.out.buf, iov);
+    TEST_ASSERT(n == 2, "wrapped payload yields a 2-region readable iovec");
+    TEST_ASSERT(iov[0].iov_len + iov[1].iov_len == 4000, "two regions cover the whole payload");
+
+    // Flush (2-iovec sendmsg) and read back; bytes must match exactly.
+    TEST_ASSERT(io_rb_flush(&w, NULL) == 4000, "flush wrapped 4000 in one pass");
+    TEST_ASSERT(io_rb_read(&r, NULL) == 4000, "read wrapped 4000");
+    char out[4000];
+    TEST_ASSERT(io_rb_get(&r, out, 4000) == 4000, "get wrapped 4000");
+    TEST_ASSERT(memcmp(out, blk, 4000) == 0, "wrapped payload is byte-for-byte intact");
+
+    free(blk);
+    close(fds[0]);
+    close(fds[1]);
+
+    TEST_END();
+}
+
 // Test: io_rb_flush with empty buffer
 void test_flush_empty() {
     TEST_START("test_flush_empty");
@@ -703,6 +911,11 @@ int main(void) {
     test_fd_enqueue_cap();
     test_flush_orphan_fd();
 
+    // Ancillary fd-handling edge cases (no-leak guarantees)
+    test_decode_overflow_closes_fds();
+    test_decode_corrupt_closes_fds();
+    test_close_fds();
+
     // Utility function tests
     test_restore();
     test_reserve_output();
@@ -714,6 +927,7 @@ int main(void) {
     test_buffer_overflow();
     test_read_invalid_fd();
     test_flush_empty();
+    test_ring_wraparound();
 
     // Integration tests
     test_read_flush_integration();

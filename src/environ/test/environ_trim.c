@@ -221,6 +221,39 @@ static void test_boot_system_shape(void)
     TEST_END() ;
 }
 
+/* Syntax errors drive the state machine into its error state (state 15), the
+ * only path through "if (state > 14)" -> log_warn_return(LOG_EXIT_ZERO) -> 0.
+ * Every other return is a success (1) or an OOM die, so a 0 here pins exactly
+ * that error branch. Mutating it (e.g. dropping the "if (state > 14)" guard or
+ * forcing "return 1" there) makes these cases succeed and breaks this test. */
+static void test_syntax_error(void)
+{
+    TEST_START("test_syntax_error") ;
+
+    /* unterminated double quote: EOF reached while still inside the quote. */
+    {
+        _alloc_strbuf_(stk, 64) ;
+        TEST_ASSERT(environ_trim(&stk, "K=\"abc") == 0, "unclosed quote is a syntax error") ;
+    }
+    /* a bare "\x" escape with no following hex digit (state expects \xNN). */
+    {
+        _alloc_strbuf_(stk, 64) ;
+        TEST_ASSERT(environ_trim(&stk, "K=\\x") == 0, "incomplete \\x escape is a syntax error") ;
+    }
+    /* \x followed by non-hex characters inside quotes. */
+    {
+        _alloc_strbuf_(stk, 64) ;
+        TEST_ASSERT(environ_trim(&stk, "K=\"a\\xZZ\"") == 0, "\\x with non-hex digits is a syntax error") ;
+    }
+    /* a trailing lone backslash at EOF (escape started, nothing follows). */
+    {
+        _alloc_strbuf_(stk, 64) ;
+        TEST_ASSERT(environ_trim(&stk, "K=\"abc\\") == 0, "dangling backslash is a syntax error") ;
+    }
+
+    TEST_END() ;
+}
+
 int main(void)
 {
     printf("=== environ_trim test suite ===\n\n") ;
@@ -234,6 +267,7 @@ int main(void)
     test_empty() ;
     test_real_world() ;
     test_boot_system_shape() ;
+    test_syntax_error() ;
 
     printf("\nAll tests passed.\n") ;
     return 0 ;

@@ -188,6 +188,51 @@ empty=t" ;
     compare(&sa, a, b) ;
 }
 
+/* BUG (found, not fixed): the anti-loop guard only catches DIRECT self-reference
+ * (mkey == regex). An INDIRECT cycle is NOT caught and loops forever:
+ *
+ *     B=${A}
+ *     A=${B}
+ *
+ * environ_substitute hangs in dollar_replace on this input (reproduced: the
+ * process never returns, 100% CPU). The guard "if (!strcmp(mkey, regex.s))"
+ * compares the line's own key against the referenced name, so a two-step cycle
+ * (B -> A -> B) slips past it. No test is added for this input because it would
+ * hang the suite; this comment records the defect. A real fix needs a visited-set
+ * / depth bound across the recursive expansion, not just a same-name check.
+ *
+ * Direct self-reference A=${A}: the anti-loop guard in dollar_replace
+ * ("if (!strcmp(mkey, regex.s)) ... continue") catches a variable that refers to
+ * itself and leaves the ${A} literal instead of recursing forever. Without the
+ * guard this would loop; with it, A=${A} comes out verbatim. */
+void self_reference()
+{
+    printf("Running test self_reference...\n") ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
+    compare(&sa, "A=${A}", "A=${A}") ;
+    /* same guard, with surrounding literal text kept intact */
+    sa.len = 0 ;
+    compare(&sa, "A=x${A}y", "A=x${A}y") ;
+}
+
+/* Escaping is DEAD at the config-value pipeline (environ_merge -> environ_trim ->
+ * environ_substitute): environ_trim consumes the backslash inside the quotes
+ * before substitution ever runs, so "\${VAR}" is indistinguishable from ${VAR}
+ * and the variable IS substituted. This pins the documented behavior -- a
+ * backslash does NOT protect a variable here (escaping only survives in the
+ * run-script pipeline, a different code path). */
+void escape_is_dead()
+{
+    printf("Running test escape_is_dead...\n") ;
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
+    const char *a = "Key=\"\\${ArgsConfFile}\"\n\
+ArgsConfFile=!-f /etc/bluetooth/main.conf" ;
+    /* the backslash is gone after trim, so Key gets the substituted value */
+    const char *b = "Key=-f /etc/bluetooth/main.conf\n\
+ArgsConfFile=!-f /etc/bluetooth/main.conf" ;
+    compare(&sa, a, b) ;
+}
+
 int main() {
 
     basic() ;
@@ -200,6 +245,8 @@ int main() {
     comment() ;
     unknown() ;
     empty_line() ;
+    self_reference() ;
+    escape_is_dead() ;
 
     printf("All tests passed successfully.\n") ;
 

@@ -68,6 +68,21 @@ static int always_fail(int id, char const *key, char const *val, void *data)
     return 0 ;
 }
 
+/* records like record(), but fails (returns 0) on its SECOND invocation: used to
+ * prove opt_fields stops at the failing field and never reaches the next one. */
+static int fail_on_second(int id, char const *key, char const *val, void *data)
+{
+    (void)key ;
+    rec_t *r = data ;
+    r->ids[r->n] = id ;
+    if (val)
+        strcpy(r->vals[r->n], val) ;
+    else
+        r->vals[r->n][0] = 0 ;
+    r->n++ ;
+    return r->n == 2 ? 0 : 1 ;
+}
+
 static void test_basic(void)
 {
     TEST_START("test_basic") ;
@@ -129,6 +144,46 @@ static void test_callback_abort(void)
     TEST_END() ;
 }
 
+/* The callback abort must stop the WHOLE parse, not just the current field:
+ * with three fields and a callback failing on the 2nd, opt_fields returns 0 and
+ * the 3rd field is never handed to the callback. Mutating "if (!fn(...)) return 0"
+ * in opt_fields.c (e.g. dropping the return) lets the 3rd field through. */
+static void test_callback_abort_midlist(void)
+{
+    TEST_START("test_callback_abort_midlist") ;
+    rec_t r = { .n = 0 } ;
+    uint8_t ok = opt_fields("depends=a:groups=b:allow=c", ':', '=',
+                            fields, OPT_COUNT(fields), &fail_on_second, &r) ;
+    TEST_ASSERT(!ok, "abort on the 2nd field fails the whole parse") ;
+    TEST_ASSERT(r.n == 2, "callback ran for fields 1 and 2 only") ;
+    TEST_ASSERT(r.ids[0] == F_DEPENDS, "first field was depends") ;
+    TEST_ASSERT(r.ids[1] == F_GROUPS, "second field was groups (the one that failed)") ;
+    /* the 3rd field (allow) must never have been recorded */
+    for (int i = 0 ; i < r.n ; i++)
+        TEST_ASSERT(r.ids[i] != F_ALLOW, "the 3rd field was never reached") ;
+    TEST_END() ;
+}
+
+/* opt_list short-circuits on an empty/NULL value: returns 1 and leaves @out
+ * untouched (the "if (!val || !*val) return 1" branch, never otherwise hit). */
+static void test_opt_list_empty(void)
+{
+    TEST_START("test_opt_list_empty") ;
+    {
+        _alloc_strbuf_(sb, 64) ;
+        TEST_ASSERT(opt_list(&sb, "", ',') == 1, "empty value is a no-op success") ;
+        TEST_ASSERT(sb.len == 0, "nothing appended for empty value") ;
+        TEST_ASSERT(sbl_count(&sb) == 0, "no elements for empty value") ;
+    }
+    {
+        _alloc_strbuf_(sb, 64) ;
+        TEST_ASSERT(opt_list(&sb, 0, ',') == 1, "NULL value is a no-op success") ;
+        TEST_ASSERT(sb.len == 0, "nothing appended for NULL value") ;
+        TEST_ASSERT(sbl_count(&sb) == 0, "no elements for NULL value") ;
+    }
+    TEST_END() ;
+}
+
 static void test_opt_list(void)
 {
     TEST_START("test_opt_list") ;
@@ -164,8 +219,10 @@ int main(void)
     test_unknown_key() ;
     test_empty() ;
     test_callback_abort() ;
+    test_callback_abort_midlist() ;
     test_opt_list() ;
     test_opt_list_none() ;
+    test_opt_list_empty() ;
     printf("\nAll opt_fields tests passed.\n") ;
     return 0 ;
 }

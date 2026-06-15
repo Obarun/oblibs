@@ -50,6 +50,18 @@ static int on_global(int id, char const *arg, void *data)
     return 0 ;
 }
 
+/* aborts dispatch by returning 42 as soon as -t is seen; records the arg so a
+ * test can confirm it ran exactly once before the abort. */
+static int on_global_abort(int id, char const *arg, void *data)
+{
+    ctx_t *c = data ;
+    if (id == 't') {
+        strcpy(c->tree, arg) ;
+        return 42 ;
+    }
+    return 0 ;
+}
+
 static int do_create(int argc, char const *const *argv, void *data)
 {
     ctx_t *c = data ;
@@ -94,6 +106,13 @@ static opt_cmd_t const root = {
     .sub = root_sub, .nsub = OPT_COUNT(root_sub),
 } ;
 
+/* same shape as root, but its on_option aborts (returns 42) on -t */
+static opt_cmd_t const root_abort = {
+    .name = "66", .help = "service manager",
+    .opts = gopts, .nopts = OPT_COUNT(gopts), .on_option = &on_global_abort,
+    .sub = root_sub, .nsub = OPT_COUNT(root_sub),
+} ;
+
 static int countargv(char const *const *argv)
 {
     int n = 0 ;
@@ -113,6 +132,24 @@ static void test_nested_route(void)
     TEST_ASSERT(!strcmp(c.cmd, "create"), "routed to create") ;
     TEST_ASSERT(!strcmp(c.pos, "mytree"), "positional reached leaf") ;
     TEST_ASSERT(c.leaf_argc == 1, "leaf sees only the positional") ;
+    TEST_END() ;
+}
+
+/* Contract: an on_option callback returning non-zero stops the dispatch right
+ * there and propagates that exact code to the caller; the routing and the leaf
+ * handler are skipped. Here -t makes on_option return 42, so opt_dispatch must
+ * return 42 and never reach the "tree create" leaf. Mutating the
+ * "if (r) return r" guard in opt_dispatch.c lets the leaf run and returns 0. */
+static void test_on_option_abort(void)
+{
+    TEST_START("test_on_option_abort") ;
+    char const *argv[] = { "66", "-t", "foo", "tree", "create", "mytree", 0 } ;
+    ctx_t c = { .tree = "", .cmd = "", .pos = "", .leaf_argc = 0 } ;
+
+    int r = opt_dispatch(countargv(argv), argv, &root_abort, &c) ;
+    TEST_ASSERT(r == 42, "non-zero on_option code propagated verbatim") ;
+    TEST_ASSERT(!strcmp(c.tree, "foo"), "on_option ran for -t before aborting") ;
+    TEST_ASSERT(c.cmd[0] == 0, "leaf handler never reached after abort") ;
     TEST_END() ;
 }
 
@@ -411,6 +448,7 @@ static void test_option_arg_render(void)
 int main(void)
 {
     test_nested_route() ;
+    test_on_option_abort() ;
     test_route_enable() ;
     test_unknown_command() ;
     test_unknown_subcommand() ;
