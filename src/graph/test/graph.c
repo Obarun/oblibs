@@ -133,16 +133,71 @@ void test_check_cycle_recursive() {
     assert(graph_add_vertex(&g, "VertexA"));
     assert(graph_add_vertex(&g, "VertexB"));
     assert(graph_add_vertex(&g, "VertexC"));
-    assert(graph_add_edge(&g, "VertexA", "VertexB",false));
-    assert(graph_add_edge(&g, "VertexB", "VertexC",false));
-    uint32_t visited[5] = {0};
+    assert(graph_add_edge(&g, "VertexA", "VertexB",false)); // A depends on B
+    assert(graph_add_edge(&g, "VertexB", "VertexC",false)); // B depends on C
     vertex_t *vertexA = g.sindex[0];
     vertex_t *vertexC = g.sindex[2];
-    assert(check_cycle_recursive(&g, vertexA, vertexC, visited));
-    assert(graph_add_edge(&g, "VertexC", "VertexA",false)); // Create cycle
+    uint32_t visited[5];
+    /* Reachability primitive: returns 0 when target is reachable from src
+       (a directed path exists, or src == target), 1 otherwise. Each independent
+       query needs a fresh visited. */
     memset(visited, 0, sizeof(visited));
-    assert(!check_cycle_recursive(&g, vertexA, vertexA, visited));
+    assert(!check_cycle_recursive(&g, vertexA, vertexC, visited)); // A->B->C reaches C
+    memset(visited, 0, sizeof(visited));
+    assert(check_cycle_recursive(&g, vertexC, vertexA, visited));  // C is a leaf, cannot reach A
+    assert(graph_add_edge(&g, "VertexC", "VertexA",false));        // close the cycle A->B->C->A
+    memset(visited, 0, sizeof(visited));
+    assert(!check_cycle_recursive(&g, vertexC, vertexA, visited)); // now C reaches A
     graph_free(&g);
+}
+
+void test_graph_check_cycle_deep() {
+    printf("Testing graph_check_cycle (deep)...\n");
+
+    /* 3-node cycle hidden behind a leaf dependency: T->S, S->D(leaf), S->E, E->T.
+       The leaf D is explored before E, which used to poison the shared visited
+       state and make the E->T branch be skipped. */
+    graph g = GRAPH_ZERO;
+    assert(graph_init(&g, 8));
+    assert(graph_add_vertex(&g, "T"));
+    assert(graph_add_vertex(&g, "D"));
+    assert(graph_add_vertex(&g, "S"));
+    assert(graph_add_vertex(&g, "E"));
+    assert(graph_add_edge(&g, "T", "S", false));
+    assert(graph_add_edge(&g, "S", "D", false));
+    assert(graph_add_edge(&g, "S", "E", false));
+    assert(graph_add_edge(&g, "E", "T", false));
+    assert(!graph_check_cycle(&g)); // cycle T->S->E->T must be detected
+    graph_free(&g);
+
+    /* Cycle reachable only after a non-cyclic branch was explored first:
+       P->M, Q->M, M->Q (cycle Q<->M). Used to recurse infinitely (stack
+       overflow) because visited was indexed by the loop counter, not the
+       neighbour's vertex index. */
+    graph h = GRAPH_ZERO;
+    assert(graph_init(&h, 8));
+    assert(graph_add_vertex(&h, "P"));
+    assert(graph_add_vertex(&h, "Q"));
+    assert(graph_add_vertex(&h, "M"));
+    assert(graph_add_edge(&h, "P", "M", false));
+    assert(graph_add_edge(&h, "Q", "M", false));
+    assert(graph_add_edge(&h, "M", "Q", false));
+    assert(!graph_check_cycle(&h)); // cycle Q<->M must be detected without recursing forever
+    graph_free(&h);
+
+    /* Diamond DAG must stay clean (no false positive). */
+    graph d = GRAPH_ZERO;
+    assert(graph_init(&d, 8));
+    assert(graph_add_vertex(&d, "A"));
+    assert(graph_add_vertex(&d, "B"));
+    assert(graph_add_vertex(&d, "C"));
+    assert(graph_add_vertex(&d, "Dd"));
+    assert(graph_add_edge(&d, "A", "B", false));
+    assert(graph_add_edge(&d, "A", "C", false));
+    assert(graph_add_edge(&d, "B", "Dd", false));
+    assert(graph_add_edge(&d, "C", "Dd", false));
+    assert(graph_check_cycle(&d)); // no cycle
+    graph_free(&d);
 }
 
 void test_graph_check_cycle() {
@@ -248,6 +303,7 @@ int main() {
     test_graph_get_edge();
     test_check_cycle_recursive();
     test_graph_check_cycle();
+    test_graph_check_cycle_deep();
     test_graph_dfs();
     test_graph_sort();
     test_graph_get_id();

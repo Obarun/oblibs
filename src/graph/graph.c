@@ -314,7 +314,7 @@ int check_cycle_recursive(graph *g, vertex_t *src, vertex_t *target, uint32_t *v
     graph_get_edge(g, src, edge, false) ;
 
     for (; pos < src->ndepends ; pos++) {
-        if (!visited[pos]) {
+        if (!visited[edge[pos]->index]) {
             if (!check_cycle_recursive(g, edge[pos], target, visited))
                 return 0 ;
         }
@@ -336,6 +336,7 @@ int graph_check_cycle(graph *g)
             graph_get_edge(g, g->sindex[pos], edge, false) ;
 
             for (uint32_t idx = 0 ; idx < g->sindex[pos]->ndepends ; idx++) {
+                memset(visited, 0, sizeof(uint32_t) * g->len) ;
                 if (!check_cycle_recursive(g, edge[idx], g->sindex[pos], visited)) {
                     log_warn("Adding the dependency: ", g->sindex[pos]->name, " depending on service: ", edge[idx]->name, " would create a cycle.\n") ;
                     return 0 ;
