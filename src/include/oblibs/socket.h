@@ -150,6 +150,38 @@ int socket_unsetfd_flags(int fd, int flags) ;
 extern int socketunix_bind(int fd, const char *path) ;
 
 /**
+ * @brief Bind a Unix socket to @path, coordinating concurrent binders and
+ *        reusing a stale node -- the rebind-safe counterpart of socketunix_bind().
+ *
+ * Takes an exclusive non-blocking lock on a sidecar file `"<path>.lock"`
+ * (created `O_CLOEXEC`, mode 0600), removes any residual node at @path, then
+ * binds @fd to @path. The lock excludes two processes from racing this setup;
+ * being `O_CLOEXEC` it is released automatically at the next `exec`, which is the
+ * point at which the bound server takes over. Mirrors skalibs `ipc_bind_reuse`.
+ *
+ * On success the lock descriptor is returned through @fdlock and stays open: the
+ * caller keeps it open (does nothing else with it) until `exec`, so the lock
+ * holds for the whole setup window. There is deliberately no fd-discarding
+ * variant -- closing the lock would drop it immediately, leaking it silently
+ * would hide ownership, so the descriptor is always handed back explicitly.
+ *
+ * @param[in]  fd     Socket file descriptor.
+ * @param[in]  path   Null-terminated socket path (must not be NULL).
+ * @param[out] fdlock Receives the open `O_CLOEXEC` lock descriptor on success.
+ * @return 0 on success (@fdlock set).
+ * @return -1 on error (errno set: `EINVAL` for a NULL argument, `EPROTO` if
+ *         @path is too long, `EBUSY` if another binder holds the lock, or the
+ *         underlying `open`/`bind` errno).
+ *
+ * @note Like socketunix_bind(), this sets no socket-node permissions and does no
+ *       umask work -- the caller owns mode policy. The reuse mechanism for an
+ *       `AF_UNIX` socket is the unlink-then-bind, not `SO_REUSEADDR` (a no-op on
+ *       Unix sockets), so none is set.
+ * @see socketunix_bind
+ */
+extern int socketunix_bind_reuse(int fd, char const *path, int *fdlock) ;
+
+/**
  * @brief Accept a connection on a Unix domain socket.
  *
  * Accepts an incoming connection and returns a new file descriptor.
