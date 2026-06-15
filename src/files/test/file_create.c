@@ -75,7 +75,7 @@ static void test_create(void)
     TEST_ASSERT(file_create_empty(tdir, "f", 0644) == 0, "second create should fail (O_EXCL)") ;
     TEST_ASSERT(errno == EEXIST, "errno should be EEXIST") ;
 
-    unlink(p) ;
+    file_tryunlink(p) ;
     TEST_END() ;
 }
 
@@ -107,7 +107,7 @@ static void test_trailing_slash(void)
     struct stat st ;
     TEST_ASSERT(stat(p, &st) == 0, "file not at expected path (// mishandled?)") ;
 
-    unlink(p) ;
+    file_tryunlink(p) ;
     TEST_END() ;
 }
 

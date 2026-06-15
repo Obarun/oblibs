@@ -246,7 +246,7 @@ void test_sse_inotify(void) {
     sse_free_inotify(&w);
     sse_free(&loop);
 
-    unlink("/tmp/sse_test_file");
+    file_tryunlink("/tmp/sse_test_file");
 }
 
 // --- Test: Loop Operations ---

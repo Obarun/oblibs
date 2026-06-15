@@ -44,8 +44,8 @@ static void cleanup_test_dirs(void) {
     system("rm -rf /tmp/sse_test_dir1");
     system("rm -rf /tmp/sse_test_dir2");
     system("rm -rf /tmp/sse_test_dir3");
-    unlink("/tmp/sse_test_file1");
-    unlink("/tmp/sse_test_file2");
+    file_tryunlink("/tmp/sse_test_file1");
+    file_tryunlink("/tmp/sse_test_file2");
 }
 
 /* Main inotify watcher test - single loop, single watcher, multiple paths */
@@ -188,7 +188,7 @@ static bool test_inotify_watcher_comprehensive(void) {
                "Failed to re-attach dir2");
 
     /* Delete file in re-attached dir2 - should trigger */
-    unlink("/tmp/sse_test_dir2/detached_file");
+    file_tryunlink("/tmp/sse_test_dir2/detached_file");
 
     max_iterations = 10;
     while (max_iterations-- > 0 && inotify_data.call_count == old_call_count) {
@@ -334,7 +334,7 @@ static bool test_inotify_event_types(void) {
     TEST_ASSERT(fd >= 0, "Failed to create file for DELETE test");
     close(fd);
 
-    TEST_ASSERT(unlink("/tmp/sse_test_dir3/file_to_delete") == 0, "Failed to delete file");
+    TEST_ASSERT(file_tryunlink("/tmp/sse_test_dir3/file_to_delete") == 0, "Failed to delete file");
 
     /* Process events */
     int max_iterations = 25;

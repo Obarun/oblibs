@@ -331,7 +331,7 @@ static int dispatch_capture(char const *const *argv, ctx_t *c, char *buf, size_t
     char tmpl[] = "/tmp/optdispatchXXXXXX" ;
     int tf = mkstemp(tmpl) ;
     if (tf < 0) return -100 ;
-    unlink(tmpl) ;
+    file_tryunlink(tmpl) ;
 
     int saved = dup(1) ;
     fflush(stdout) ;

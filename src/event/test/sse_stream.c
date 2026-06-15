@@ -387,7 +387,7 @@ static void test_stream_status(void) {
 static void test_streamux_helpers(void) {
     TEST_START("test_streamux_helpers");
 
-    unlink(TEST_SOCKET_PATH);
+    file_tryunlink(TEST_SOCKET_PATH);
 
     // Test 1: Create server
     int server_fd = sse_streamux_create_server(TEST_SOCKET_PATH, 5);
@@ -399,7 +399,7 @@ static void test_streamux_helpers(void) {
     TEST_ASSERT(S_ISSOCK(st.st_mode), "Not a socket file");
 
     close(server_fd);
-    unlink(TEST_SOCKET_PATH);
+    file_tryunlink(TEST_SOCKET_PATH);
 
     // Test 2: Test invalid parameters
     errno = 0;

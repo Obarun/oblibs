@@ -112,7 +112,7 @@ static void test_roundtrip_and_traverse(void)
 
     ocdb_free(&c) ;
     close(fd) ;
-    unlink(path) ;
+    file_tryunlink(path) ;
     free(ds) ;
     TEST_END() ;
 }
@@ -160,7 +160,7 @@ static void test_multivalue(void)
 
     ocdb_free(&c) ;
     close(fd) ;
-    unlink(path) ;
+    file_tryunlink(path) ;
     TEST_END() ;
 }
 
@@ -197,7 +197,7 @@ static void test_robustness_truncated(void)
 
     ocdb_free(&c) ;
     close(fd) ;
-    unlink(path) ;
+    file_tryunlink(path) ;
     free(ds) ;
     TEST_END() ;
 }

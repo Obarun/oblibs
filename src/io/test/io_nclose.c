@@ -67,7 +67,7 @@ static void test_roundtrip_and_close(void)
     TEST_ASSERT(memcmp(buf, data, len) == 0, "content mismatch") ;
     TEST_ASSERT(is_closed(rfd), "readnclose must close the fd") ;
 
-    unlink(path) ;
+    file_tryunlink(path) ;
     TEST_END() ;
 }
 
@@ -105,7 +105,7 @@ static void test_short_read(void)
     TEST_ASSERT(r == 5, "short file -> partial count, not -1") ;
     TEST_ASSERT(memcmp(buf, "hello", 5) == 0, "content mismatch") ;
 
-    unlink(path) ;
+    file_tryunlink(path) ;
     TEST_END() ;
 }
 

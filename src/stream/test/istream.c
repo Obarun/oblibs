@@ -48,7 +48,7 @@ static int primed_fd(char const *data, size_t len)
     TEST_ASSERT(fd >= 0, "mkstemp failed") ;
     TEST_ASSERT(write(fd, data, len) == (ssize_t)len, "write failed") ;
     TEST_ASSERT(lseek(fd, 0, SEEK_SET) == 0, "lseek failed") ;
-    unlink(path) ;
+    file_tryunlink(path) ;
     return fd ;
 }
 

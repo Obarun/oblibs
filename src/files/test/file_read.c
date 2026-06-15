@@ -74,7 +74,7 @@ static void test_read_exact(void)
         TEST_ASSERT(r == (ssize_t)n, "wrong byte count") ;
         TEST_ASSERT(memcmp(rb, pat, n) == 0, "content mismatch") ;
     }
-    unlink(p) ;
+    file_tryunlink(p) ;
     TEST_END() ;
 }
 
@@ -89,7 +89,7 @@ static void test_short_file(void)
     ssize_t r = file_read(p, rb, sizeof rb) ;
     TEST_ASSERT(r == 5, "short file should give partial count, not -1") ;
     TEST_ASSERT(memcmp(rb, "hello", 5) == 0, "content mismatch") ;
-    unlink(p) ;
+    file_tryunlink(p) ;
     TEST_END() ;
 }
 
@@ -103,7 +103,7 @@ static void test_read_at(void)
     ssize_t r = file_read_at(tdir, "at", rb, sizeof rb) ;
     TEST_ASSERT(r == 4, "wrong byte count") ;
     TEST_ASSERT(memcmp(rb, data, 4) == 0, "content mismatch") ;
-    char p[64] ; path_in(p, "at") ; unlink(p) ;
+    char p[64] ; path_in(p, "at") ; file_tryunlink(p) ;
     TEST_END() ;
 }
 

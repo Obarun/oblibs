@@ -57,7 +57,7 @@ static void test_copy(void)
 
     int src = mkstemp(tpath) ;
     TEST_ASSERT(src >= 0, "mkstemp") ;
-    unlink(tpath) ;
+    file_tryunlink(tpath) ;
 
     /* obtain a known-free target number */
     int dst = dup(src) ;

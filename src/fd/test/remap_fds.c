@@ -53,7 +53,7 @@ static int byte_fd(char c)
     char path[] = "/tmp/oblibs_move2_XXXXXX" ;
     int fd = mkstemp(path) ;
     TEST_ASSERT(fd >= 0, "mkstemp failed") ;
-    unlink(path) ;
+    file_tryunlink(path) ;
     TEST_ASSERT(write(fd, &c, 1) == 1, "write failed") ;
     TEST_ASSERT(lseek(fd, 0, SEEK_SET) == 0, "lseek failed") ;
     return fd ;

@@ -370,7 +370,7 @@ static void test_dir_get(void)
     }
 
     /* cleanup */
-    unlink(subfile) ;
+    file_tryunlink(subfile) ;
     snprintf(path, sizeof path, "%s/sub", dir) ; rmdir(path) ;
     for (size_t i = 0 ; i < 3 ; i++) {
         snprintf(path, sizeof path, "%s/%s", dir, files[i]) ; unlink(path) ;

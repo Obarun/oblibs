@@ -142,7 +142,7 @@ void test_lx_inotify_add(void) {
     int wd_uninit = lx_inotify_add(path, IN_MODIFY);
     assert(wd_uninit == 0 && errno == EBADF && "Expected EBADF with uninitialized fd");
 
-    unlink(path);
+    file_tryunlink(path);
     free((void *)path);
 }
 
@@ -180,7 +180,7 @@ void test_lx_inotify_update(void) {
     int wd_uninit = lx_inotify_update(path, IN_MODIFY);
     assert(wd_uninit == 0 && errno == EBADF && "Expected EBADF with uninitialized fd");
 
-    unlink(path);
+    file_tryunlink(path);
     free((void *)path);
 }
 
@@ -214,7 +214,7 @@ void test_lx_inotify_del(void) {
     errno = 0;
     assert(lx_inotify_del(path) == 0 && errno == EBADF && "Expected EBADF with invalid fd");
 
-    unlink(path);
+    file_tryunlink(path);
     free((void *)path);
 }
 
@@ -269,7 +269,7 @@ void test_lx_inotify_read_iterator(void) {
     // Test io_read_result with EPIPE
     assert(io_read_result(0) == -1 && errno == EPIPE && "io_read_result failed for EPIPE");
 
-    unlink(path);
+    file_tryunlink(path);
     free((void *)path);
 }
 
@@ -332,7 +332,7 @@ void test_lx_inotify_read_iterator_dir(void) {
     assert(io_read_result(0) == -1 && errno == EPIPE && "io_read_result failed for EPIPE");
 
     // Cleanup
-    unlink(file_path);
+    file_tryunlink(file_path);
     rmdir(dir_path);
     free((void *)dir_path);
 }
@@ -358,7 +358,7 @@ void test_lx_inotify_end(void) {
     assert(iwd == NULL && "Path-based hash table should be NULL after end");
     assert(iwd_by_wd == NULL && "wd-based hash table should be NULL after end");
 
-    unlink(path);
+    file_tryunlink(path);
     free((void *)path);
 }
 

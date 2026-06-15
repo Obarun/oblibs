@@ -36,22 +36,19 @@ int file_write_atomic(char const *file, char const *content, size_t len)
         return 0 ;
 
     if (fchmod(fd, 0644) < 0) {               /* mkstemp creates 0600 */
-        int e = errno ;
         close_fd(fd) ;
-        unlink(tmp) ;
-        return (errno = e, 0) ;
+        file_tryunlink(tmp) ;
+        return 0 ;
     }
 
     if (!io_writenclose(fd, content, len)) {  /* writes then closes fd */
-        int e = errno ;
-        unlink(tmp) ;
-        return (errno = e, 0) ;
+        file_tryunlink(tmp) ;
+        return 0 ;
     }
 
     if (rename(tmp, file) < 0) {
-        int e = errno ;
-        unlink(tmp) ;
-        return (errno = e, 0) ;
+        file_tryunlink(tmp) ;
+        return 0 ;
     }
 
     return 1 ;

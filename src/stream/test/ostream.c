@@ -82,7 +82,7 @@ static void test_mixed_paths(void)
     TEST_ASSERT(memcmp(got, expected, n) == 0, "file content mismatch") ;
 
     close(fd) ;
-    unlink(tpath) ;
+    file_tryunlink(tpath) ;
     TEST_END() ;
 }
 
@@ -125,7 +125,7 @@ static void test_cats(void)
     TEST_ASSERT(memcmp(got, expected, sizeof expected - 1) == 0, "content matches") ;
 
     close(fd) ;
-    unlink(path) ;
+    file_tryunlink(path) ;
     TEST_END() ;
 }
 
@@ -165,7 +165,7 @@ static void test_fmt(void)
 
     free(got) ;
     close(fd) ;
-    unlink(path) ;
+    file_tryunlink(path) ;
     TEST_END() ;
 }
 

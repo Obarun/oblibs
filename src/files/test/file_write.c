@@ -108,7 +108,7 @@ static void test_write(void)
         TEST_ASSERT(stat(p, &sb) == 0, "stat failed") ;
         TEST_ASSERT((sb.st_mode & 07777) == 0644, "mode should be 0644") ;
     }
-    unlink(p) ;
+    file_tryunlink(p) ;
     TEST_END() ;
 }
 
@@ -125,7 +125,7 @@ static void test_truncate(void)
     char rb[1024] ;
     TEST_ASSERT(readfile(p, rb, sizeof rb) == 5, "truncation left a tail") ;
     TEST_ASSERT(memcmp(rb, "short", 5) == 0, "truncated content wrong") ;
-    unlink(p) ;
+    file_tryunlink(p) ;
     TEST_END() ;
 }
 
@@ -140,7 +140,7 @@ static void test_write_at(void)
     char rb[16] ;
     TEST_ASSERT(readfile(p, rb, sizeof rb) == 7, "size mismatch") ;
     TEST_ASSERT(memcmp(rb, txt, 7) == 0, "content mismatch") ;
-    unlink(p) ;
+    file_tryunlink(p) ;
     TEST_END() ;
 }
 
@@ -157,7 +157,7 @@ static void test_atomic(void)
     TEST_ASSERT(readfile(p, rb, sizeof rb) == (ssize_t)sizeof buf, "size mismatch") ;
     TEST_ASSERT(memcmp(rb, buf, sizeof buf) == 0, "content mismatch") ;
     TEST_ASSERT(count_entries() == 1, "temp residue left behind") ;   /* only "a" */
-    unlink(p) ;
+    file_tryunlink(p) ;
     TEST_END() ;
 }
 
@@ -188,7 +188,7 @@ static void test_atomic_fail_keeps_old(void)
     TEST_ASSERT(readfile(p, rb, sizeof rb) == 3, "old file should be intact") ;
     TEST_ASSERT(memcmp(rb, "OLD", 3) == 0, "old content should be intact") ;
     TEST_ASSERT(count_entries() == 1, "temp residue left after failure") ;
-    unlink(p) ;
+    file_tryunlink(p) ;
     TEST_END() ;
 }
 

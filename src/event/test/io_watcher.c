@@ -74,7 +74,7 @@ static bool test_io_watchers_comprehensive(void) {
             "Failed to start socket watcher");
 
     /* === Setup FIFO === */
-    unlink(fifo_path); /* Clean up any existing FIFO */
+    file_tryunlink(fifo_path); /* Clean up any existing FIFO */
     TEST_ASSERT(mkfifo(fifo_path, 0666) == 0, "Failed to create FIFO");
     fifo_read = open(fifo_path, O_RDONLY | O_NONBLOCK);
     TEST_ASSERT(fifo_read >= 0, "Failed to open FIFO for reading");
@@ -165,8 +165,8 @@ static bool test_io_watchers_comprehensive(void) {
     sse_free(&loop);
     close(pipefd[0]);
     close(sockfd[1]);
-    unlink(fifo_path);
-    //unlink(test_file);
+    file_tryunlink(fifo_path);
+    //file_tryunlink(test_file);
 
     return true;
 }

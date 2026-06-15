@@ -63,7 +63,7 @@ static void capture_flog(char *out, size_t outn, void (*emit)(void))
     char path[] = "/tmp/oblibs_flog_XXXXXX" ;
     int tmp = mkstemp(path) ;
     TEST_ASSERT(tmp >= 0, "mkstemp") ;
-    unlink(path) ;
+    file_tryunlink(path) ;
 
     int saved = dup(2) ;
     TEST_ASSERT(saved >= 0, "dup(2)") ;
