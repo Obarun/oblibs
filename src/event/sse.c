@@ -556,7 +556,7 @@ int sse_prepare(sse_epoll_t *p)
 
                     uint64_t expirations;
                     ssize_t r = read(h->w->fd, &expirations, sizeof(expirations));
-                    if (r == 0) {
+                    if (r < 0 && errno == ECANCELED) {
 
                         time_t when = sse_getfire_schedule(h->w) ;
                         if (!sse_modify_schedule(h->w, when)) {
@@ -723,31 +723,33 @@ static void sse_dispatch_schedule(sse_watcher_t *w)
         log_warnsys("schedule watcher is NULL") ;
         return ;
     }
-    // SSE_HUP is expected on clock change
+    /* On a discontinuous CLOCK_REALTIME change a TFD_TIMER_CANCEL_ON_SET timer
+     * is cancelled and read() fails with ECANCELED -- it never returns 0. */
     uint64_t expirations ;
     ssize_t r = read(w->fd, &expirations, sizeof(expirations)) ;
-    if (r == 0) {
-        /** Timer canceled due to clock change
-         * Let's call it again with the modified
-         * time given by cron_next function
-         */
-        time_t when = sse_getfire_schedule(w) ;
-
-        if (!sse_modify_schedule(w, when)) {
-            sse_err(w, errno) ;
-            sse_stop_schedule(w) ;
-            return ;
-        } ;
-
-        // not an error here
-        ((sse_schedule_t *)w->sdata)->clockchange = true ;
-
-        sse_err_zero(w) ;
-        errno = 0 ;
-    }
     if (r < 0) {
         int e = errno ;
-        if (errno == EBADF || errno == EINVAL)
+
+        if (e == ECANCELED) {
+            /** The clock was set: recompute the next fire time against the new
+             * clock (cron_next, via sse_getfire_schedule) and rearm. Not an
+             * error. */
+            time_t when = sse_getfire_schedule(w) ;
+
+            if (!sse_modify_schedule(w, when)) {
+                sse_err(w, errno) ;
+                sse_stop_schedule(w) ;
+                return ;
+            }
+
+            ((sse_schedule_t *)w->sdata)->clockchange = true ;
+
+            sse_err_zero(w) ;
+            errno = 0 ;
+            return ;
+        }
+
+        if (e == EBADF || e == EINVAL)
             sse_stop_schedule(w) ;
 
         sse_err(w, e) ;

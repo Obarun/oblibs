@@ -392,26 +392,22 @@ static bool test_schedule_getfire_contract(void) {
  * discontinuously, the kernel cancels the timer and the next read() must be
  * detected so the absolute fire time is recomputed via cron_next().
  *
- * Two facts make the success path of that recovery (clockchange == true)
- * untestable here without privilege and without a production injection point:
+ * sse_dispatch_schedule detects the cancellation correctly: on a cancel-on-set
+ * discontinuity read() FAILS with ECANCELED (-1) -- it never returns EOF (0),
+ * and otherwise yields the expiration count (>0) or -1/EAGAIN. The dispatcher
+ * branches on ECANCELED, recomputes the absolute fire time via cron_next() and
+ * rearms. The read()==0 unreachability is asserted below, which is exactly why
+ * ECANCELED (not EOF) is the signal the production code keys on.
  *
- *  1. Triggering a real discontinuity needs clock_settime(CLOCK_REALTIME, ...),
- *     which requires CAP_SYS_TIME. This is verified at runtime below and is
- *     denied in this environment (EPERM). CLOCK_REALTIME is global, so even a
- *     user namespace cannot grant it.
+ * The recovery SUCCESS path (clockchange == true) is still not exercisable here:
+ * triggering a real discontinuity needs clock_settime(CLOCK_REALTIME, ...),
+ * which requires CAP_SYS_TIME. This is verified at runtime below and denied in
+ * this environment (EPERM); CLOCK_REALTIME is global, so even a user namespace
+ * cannot grant it.
  *
- *  2. sse_dispatch_schedule branches on read(w->fd) == 0. A timerfd never
- *     returns EOF: on a cancel-on-set discontinuity the man page specifies the
- *     read() FAILS with ECANCELED (-1), and otherwise it returns the expiration
- *     count (>0) or -1/EAGAIN. read() == 0 is therefore unreachable for a real
- *     timerfd. Substituting an EOF fd cannot exercise the success path either,
- *     because the very next step (sse_modify_schedule -> timerfd_settime on the
- *     same w->fd) would fail on a non-timerfd.
- *
- * This test pins down what IS observable: the clockchange flag starts false and
- * stays false across a normal fire, and read() == 0 is empirically unreachable
- * on the timerfd. Both assertions guard the contract; the recovery success path
- * needs a code-level injection point to become testable (see test report). */
+ * This test pins down what IS observable: read() never returns 0 on the timerfd
+ * (so ECANCELED is the right signal), and the clockchange flag starts false and
+ * stays false across a normal fire. */
 static bool test_schedule_clock_change_handling(void) {
     sse_epoll_t loop;
     sse_watcher_t schedule_watcher;
