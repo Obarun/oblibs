@@ -300,7 +300,7 @@ static int handle_day_condition(bitset8_t *days, cron_t *expr, struct tm *calend
     return 1 ;
 }
 
-time_t cron_next(cron_t *expr, const time_t *now)
+static time_t cron_next_locked(cron_t *expr, const time_t *now)
 {
 
     local = expr->tz[0] == '\0' ? false : true ;
@@ -455,4 +455,36 @@ time_t cron_next(cron_t *expr, const time_t *now)
 
     log_warn("No valid next time found within limit") ;
     return (time_t)-1 ;
+}
+
+time_t cron_next(cron_t *expr, const time_t *now)
+{
+    /* When a timezone is set, EVERY mktime()/localtime() of the search must run
+     * under it, not just the first conversion. Pin TZ for the whole computation
+     * and restore it once. With no tz the computation runs in UTC (timegm/
+     * gmtime) and needs no environment change. */
+    if (expr->tz[0] == '\0')
+        return cron_next_locked(expr, now) ;
+
+    char const *cur = getenv("TZ") ;
+    char *saved = cur ? strdup(cur) : 0 ;   /* setenv may invalidate getenv's pointer */
+    if (cur && !saved)
+        return (time_t)-1 ;
+
+    if (setenv("TZ", expr->tz, 1) < 0) {
+        free(saved) ;
+        return (time_t)-1 ;
+    }
+    tzset() ;
+
+    time_t result = cron_next_locked(expr, now) ;
+
+    if (saved)
+        setenv("TZ", saved, 1) ;
+    else
+        unsetenv("TZ") ;
+    tzset() ;
+    free(saved) ;
+
+    return result ;
 }

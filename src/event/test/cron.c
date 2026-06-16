@@ -89,8 +89,9 @@ void test_cron_invalid(const char *expr_str) {
 }
 
 /*
- * BUG (production): cron_next(expr, now) does NOT honour expr->tz for its
- * actual time arithmetic. parse_cron(..., "UTC") stores "UTC" in expr->tz,
+ * Regression guard: cron_next(expr, now) must honour expr->tz for ALL of its
+ * time arithmetic, independently of the process TZ. parse_cron(..., "UTC")
+ * stores "UTC" in expr->tz,
  * which makes cron_next() take its `local = true` branch -> mktime()/
  * localtime_r(). Those convert using the *process* TZ environment, not
  * expr->tz. handle_tz() wraps only the very first localtime_r() (cron.c:317);
@@ -104,17 +105,14 @@ void test_cron_invalid(const char *expr_str) {
  *
  * The historical suite hid this because parse_time() also used mktime() under
  * the same ambient TZ, so both sides shifted together and cancelled. This
- * function locks the comparison to the literal correct UTC epoch and proves
- * the environment dependence is a real defect. It asserts the CURRENT
- * behaviour (so the suite stays green under the pinned TZ=UTC) and documents
- * what a correct, tz-respecting cron_next() would guarantee.
- *
- * Fix belongs in production (src/event/cron.c), not here: cron_next() must
- * apply expr->tz around ALL of its mktime/localtime conversions, or compute
- * in UTC via timegm/gmtime whenever expr->tz is set.
+ * function locks the comparison to the literal correct UTC epoch under a
+ * deliberately non-UTC ambient TZ, so a cron_next() that leaked the process TZ
+ * back into its arithmetic would be caught. cron_next() pins expr->tz for the
+ * whole computation (cron.c), so the result is the same UTC epoch regardless of
+ * the ambient TZ.
  */
-void test_cron_tz_environment_dependence(void) {
-    printf("==== Documenting TZ-environment dependence (BUG) ====\n");
+void test_cron_tz_independence(void) {
+    printf("==== cron_next is independent of the process TZ ====\n");
 
     const char *expr_str = "0 0 0 1 1 ? 2026";
     /* 2025-06-01 00:00:00 UTC */
@@ -138,19 +136,19 @@ void test_cron_tz_environment_dependence(void) {
     time_t under_utc = cron_next(&expr, &start);
     assert(under_utc == correct_utc_epoch);
 
-    /* Same expr->tz ("UTC"), different ambient TZ: the result shifts.
-     * A tz-respecting cron_next() would return correct_utc_epoch regardless;
-     * the current implementation does not. We assert the (buggy) shift so the
-     * defect is pinned down rather than silently tolerated. */
-    setenv("TZ", "Asia/Kolkata", 1);
+    /* Same expr->tz ("UTC"), different ambient TZ: the result must NOT shift. */
+    setenv("TZ", "Asia/Kolkata", 1);   /* UTC+5:30 */
     tzset();
     time_t under_kolkata = cron_next(&expr, &start);
+    assert(under_kolkata == correct_utc_epoch);
 
-    /* Kolkata is UTC+5:30; the loop's mktime/localtime drift the answer. */
-    assert(under_kolkata != correct_utc_epoch); /* BUG: should be == */
-    printf("under TZ=UTC      : %lld (correct)\n", (long long)under_utc);
-    printf("under TZ=Kolkata  : %lld (BUG: tz ignored by cron_next)\n",
-           (long long)under_kolkata);
+    setenv("TZ", "America/New_York", 1);   /* UTC-5 */
+    tzset();
+    time_t under_ny = cron_next(&expr, &start);
+    assert(under_ny == correct_utc_epoch);
+
+    printf("under TZ=UTC/Kolkata/New_York : %lld (tz-independent)\n",
+           (long long)under_utc);
 
     /* Restore the suite-wide pinned timezone. */
     if (saved_copy[0])
@@ -213,7 +211,7 @@ int main() {
     test_cron_nomatch("0 0 0 29 2 ? 2025"); /* 2025 is not a leap year */
 
     /* Document the production TZ-environment dependence (real bug). */
-    test_cron_tz_environment_dependence();
+    test_cron_tz_independence();
 
     test_cron_invalid("0 0 0 ? * ?");
     test_cron_invalid("0 0 0 32 * ?");
