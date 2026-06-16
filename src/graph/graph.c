@@ -309,6 +309,9 @@ int check_cycle_recursive(graph *g, vertex_t *src, vertex_t *target, uint32_t *v
 
     visited[src->index] = 1 ;
 
+    if (!src->ndepends)   /* a leaf has no dependencies: it cannot reach target */
+        return 1 ;
+
     vertex_t *edge[src->ndepends] ;
     memset(edge, 0, sizeof(vertex_t *) * src->ndepends) ;
     graph_get_edge(g, src, edge, false) ;
