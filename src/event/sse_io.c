@@ -53,10 +53,25 @@ int sse_modify_io(sse_watcher_t *w, int fd, int event)
         sse_err_return(w, EINVAL) ;
     }
 
-    h->w->fd = fd ;
-    h->w->events = event ;
+    bool active = sse_watcher_active(w) ;
+    int fd_changed = (w->fd != fd) ;
 
-    if (sse_watcher_active(w))
+    /* Changing the fd is not a MOD: the new fd is not registered in epoll yet
+     * (EPOLL_CTL_MOD would fail with ENOENT, silently tolerated) and the old fd
+     * would stay armed. Drop the old fd from epoll, switch, then re-add under
+     * the new fd. A pure event change keeps the same fd and is a genuine MOD. */
+    if (active && fd_changed) {
+        if (!sse_watcher_stop(w))      // EPOLL_CTL_DEL on the old fd, active=false
+            return 0 ;
+        w->fd = fd ;
+        w->events = event ;
+        return sse_watcher_restart(w) ; // inactive now -> just EPOLL_CTL_ADD the new fd
+    }
+
+    w->fd = fd ;
+    w->events = event ;
+
+    if (active)
         return sse_watcher_modify(w) ;
 
     return 1 ;

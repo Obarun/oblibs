@@ -185,19 +185,10 @@ static bool test_io_watchers_comprehensive(void) {
             "Failed to restore socket watcher to read mode");
 
     /*
-     * BUG (production): sse_modify_io(w, fd, events) accepts a *new* fd, but the
-     * implementation cannot honour an fd change. sse_modify_io() overwrites
-     * w->fd then calls sse_watcher_modify() -> epoll_ctl(EPOLL_CTL_MOD, new_fd).
-     * The new fd was never EPOLL_CTL_ADD-ed, so epoll_ctl returns ENOENT, which
-     * sse_epoll_modify() silently tolerates (cron-style: errno != ENOENT guard).
-     * Result: the OLD fd stays registered with its OLD events and the NEW fd is
-     * never armed, so no event is ever delivered for the new fd. Changing the
-     * monitored events on the SAME fd works (proved above); changing the fd does
-     * not. We assert the current (broken) behaviour so it is pinned, not hidden.
-     *
-     * Fix belongs in production (src/event/sse_io.c / sse.c): when the fd
-     * changes, sse_modify_io() must EPOLL_CTL_DEL the old fd and EPOLL_CTL_ADD
-     * the new one (or reject an fd change outright).
+     * Changing the fd itself (not just the events) is honoured: sse_modify_io()
+     * removes the old fd from epoll and adds the new one, rather than a MOD on
+     * the never-registered new fd -- which epoll rejects with a silently
+     * tolerated ENOENT, leaving the old fd armed and the new one dark.
      */
     {
         sse_epoll_t bloop;
@@ -206,26 +197,25 @@ static bool test_io_watchers_comprehensive(void) {
         int bp[2];
 
         test_callback_init(&bdata);
-        TEST_ASSERT(sse_new(&bloop, 10), "Failed to create epoll loop for fd-change bug check");
+        TEST_ASSERT(sse_new(&bloop, 10), "Failed to create epoll loop for fd-change check");
         bloop.running = true;
-        TEST_ASSERT(pipe(bp) == 0, "Failed to create pipe for fd-change bug check");
+        TEST_ASSERT(pipe(bp) == 0, "Failed to create pipe for fd-change check");
 
-        /* Watch the read end for READ, then ask to switch to the write end for
-         * WRITE. A correct implementation would now fire SSE_WRITE (pipe write
-         * end is always writable). The buggy one never does. */
+        /* Watch the read end for READ, then switch to the write end for WRITE.
+         * A pipe write end is always writable, so SSE_WRITE must now fire on the
+         * new fd. */
         TEST_ASSERT(sse_start_io(&bloop, &bw, test_io_callback, &bdata, bp[0], SSE_READ, 1),
-                "Failed to start watcher for fd-change bug check");
+                "Failed to start watcher for fd-change check");
         TEST_ASSERT(sse_modify_io(&bw, bp[1], SSE_WRITE),
-                "sse_modify_io returns success even though the fd change is not honoured");
+                "sse_modify_io to a new fd should succeed");
 
         bool fired = false;
         for (int i = 0; i < 5; i++) {
             if (!sse_run(&bloop, 50)) break;
             if (bdata.callback_called) { fired = true; break; }
         }
-        /* BUG: a tz/fd-respecting implementation would deliver SSE_WRITE here. */
-        TEST_ASSERT(!fired,
-                "BUG: sse_modify_io fd change is not honoured (new fd never armed)");
+        TEST_ASSERT(fired, "new fd must be armed: SSE_WRITE should fire after the fd change");
+        TEST_ASSERT(bdata.last_event & SSE_WRITE, "delivered event should be SSE_WRITE on the new fd");
 
         sse_free(&bloop);
         close(bp[0]);
