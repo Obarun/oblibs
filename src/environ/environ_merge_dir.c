@@ -61,10 +61,8 @@ uint8_t environ_merge_dir(strbuf *modifs, char const *path)
             return 0 ;
     }
 
-    if (!strbuf_terminate(modifs))
+    if (!strbuf_uncounted(modifs))
         return 0 ;
-
-    modifs->len-- ;
 
     return 1 ;
 }

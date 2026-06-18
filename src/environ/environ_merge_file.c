@@ -33,19 +33,17 @@ uint8_t environ_merge_file(strbuf *modifs, const char *file)
     if (!modifs->len) {
         /** no previous file, copy verbatim*/
         if (!strbuf_copyb(modifs, stk.s, stk.len) ||
-            !strbuf_terminate(modifs))
+            !strbuf_uncounted(modifs))
                 return (errno = EOVERFLOW, 0) ;
 
-        modifs->len-- ;
         return 1 ;
     }
 
     _alloc_strbuf_(new, stk.len + 1) ;
 
     if (!strbuf_copyb(&new, stk.s, stk.len) ||
-        !strbuf_terminate(&new))
+        !strbuf_uncounted(&new))
             return (errno = EOVERFLOW, 0) ;
-    new.len-- ;
     if (!environ_merge_environ(modifs, &new))
         return 0 ;
 

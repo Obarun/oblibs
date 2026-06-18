@@ -68,9 +68,7 @@ int auto_strbuf_builder(strbuf *b, char const *str[], ...)
         str++ ;
     }
     va_end(alist) ;
-    /* leave a NUL-terminated C string, len excluding the NUL (like auto_stra) */
-    if (!strbuf_terminate(b))
+    if (!strbuf_uncounted(b))
         return 0 ;
-    b->len-- ;
     return 1 ;
 }

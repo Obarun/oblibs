@@ -36,9 +36,8 @@ uint8_t environ_rebuild(strbuf *sb)
 
     sb->len = 0 ;
     if (!strbuf_copyb(sb, s.s, s.len) ||
-        !strbuf_terminate(sb))
+        !strbuf_uncounted(sb))
             return 0 ;
-    sb->len-- ;
 
     return  1 ;
 }

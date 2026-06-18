@@ -43,6 +43,14 @@ int strbuf_reserve(strbuf *sb, size_t n)
     return 1 ;
 }
 
+int strbuf_uncounted(strbuf *sb)
+{
+    if (!strbuf_reserve(sb, sb->len + 1))
+        return 0 ;
+    sb->s[sb->len] = 0 ;
+    return 1 ;
+}
+
 int strbuf_with(strbuf *sb, void *storage, size_t size)
 {
     if (!sb || !storage)

@@ -31,9 +31,8 @@ uint8_t environ_search_key(strbuf *sb, const char *str, const char *key, lexer_c
 
     if (!strbuf_catb(&s, "\n", 1) ||
         !strbuf_catb(&s, str, slen) ||
-        !strbuf_terminate(&s))
+        !strbuf_uncounted(&s))
             return (errno = EOVERFLOW, 0) ;
-    s.len-- ; /* close: NUL at s.s[len], not counted (was stack_close) */
 
     cfg->str = s.s ; cfg->slen = s.len ;
     cfg->open = "\n"; cfg->olen = 1 ;

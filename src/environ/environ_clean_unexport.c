@@ -56,9 +56,8 @@ uint8_t environ_clean_unexport(strbuf *modifs)
     modifs->len = 0 ;
 
     if (!strbuf_copyb(modifs, stk.s, stk.len) ||
-        !strbuf_terminate(modifs))
+        !strbuf_uncounted(modifs))
             return (errno = EOVERFLOW, 0) ;
-    modifs->len-- ;
 
     return 1 ;
 }

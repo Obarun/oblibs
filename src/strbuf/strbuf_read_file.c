@@ -53,10 +53,8 @@ int strbuf_read_file(strbuf *sb, char const *path)
         goto err ;
     }
 
-    /* keep a NUL terminator at s[len] (C string) without counting it */
-    if (!strbuf_terminate(sb))
+    if (!strbuf_uncounted(sb))
         goto err ;
-    sb->len-- ;
 
     return 1 ;
 

@@ -78,9 +78,8 @@ int sbl_replace(strbuf *sb, char const *regex, char const *by)
 
             /* line = prefix + by, kept NUL-terminated for the sbl_add path. */
             if (!strbuf_catb(&line, by, bylen) ||
-                !strbuf_terminate(&line))
+                !strbuf_uncounted(&line))
                     return 0 ;
-            line.len-- ;
 
             if (stk.len) {
                 /** the rest of the line may contain @regex */
@@ -91,9 +90,8 @@ int sbl_replace(strbuf *sb, char const *regex, char const *by)
                 new.len = 0 ;
 
                 if (!strbuf_copyb(&new, stk.s, stk.len) ||
-                    !strbuf_terminate(&new))
+                    !strbuf_uncounted(&new))
                         return 0 ;
-                new.len-- ;
 
                 if (!sbl_replace(&new, regex, by) ||
                     !strbuf_insertb(&new, 0, line.s, line.len) ||

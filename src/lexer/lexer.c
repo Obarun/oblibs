@@ -292,12 +292,10 @@ uint8_t lexer_trim(strbuf *sb, lexer_config *cfg)
         }
     }
 
-    /* Close the list like stack_close did: guarantee a NUL at sb->s[len]
-     * (so the buffer is always a valid C string, even when empty) without
-     * counting it in len. The per-element NULs are already in [0, len). */
-    if (!strbuf_terminate(sb))
+    /* Close the list: always a valid C string, even when empty (NUL not
+     * counted). The per-element NULs are already in [0, len). */
+    if (!strbuf_uncounted(sb))
         log_warn_return(LOG_EXIT_ZERO, "strbuf overflow") ;
-    sb->len-- ;
 
     return 1 ;
 }

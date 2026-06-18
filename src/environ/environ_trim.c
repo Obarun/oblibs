@@ -145,11 +145,9 @@ int environ_trim (strbuf *sb, char const *file)
         log_warn_return(LOG_EXIT_ZERO, "syntax error at line: ", fmt, " in file: ", file) ;
     }
 
-    /* close the list: NUL at sb->s[len] (valid C string even when empty),
-     * not counted -- like the old stack_close. */
-    if (!strbuf_terminate(sb))
+    /* close the list: valid C string even when empty (NUL not counted) */
+    if (!strbuf_uncounted(sb))
         return 0 ;
-    sb->len-- ;
     return 1 ;
 }
 

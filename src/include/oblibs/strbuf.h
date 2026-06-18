@@ -114,6 +114,19 @@ extern int strbuf_catv(strbuf *sb, struct iovec const *v, unsigned int n) ;
 /** @brief Insert @n bytes from @s at @offset (0..len). @return 1 / 0 (errno). */
 extern int strbuf_insertb(strbuf *sb, size_t offset, char const *s, size_t n) ;
 
+/**
+ * @brief Ensure @sb->s is a valid C string of length @sb->len: write a NUL at
+ * @sb->s[@sb->len] that is NOT counted in len (grows by one byte if needed).
+ *
+ * Contrast strbuf_terminate(), which appends a COUNTED NUL (len += 1, e.g. an
+ * sbl element separator). Here len is unchanged: the terminator sits just past
+ * the content, so strlen(sb->s) == sb->len and sb->s is safe to pass to C-string
+ * APIs (open, strlen, ...). Replaces the strbuf_terminate()/len-- idiom.
+ *
+ * @return 1 on success, 0 on allocation failure / size overflow (errno == ERANGE).
+ */
+extern int strbuf_uncounted(strbuf *sb) ;
+
 /** @brief Release heap storage (if owned) and reset to STRBUF_ZERO. */
 extern void strbuf_free(strbuf *sb) ;
 

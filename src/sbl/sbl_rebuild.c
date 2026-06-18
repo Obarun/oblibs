@@ -40,10 +40,8 @@ static int rebuild(strbuf *sb, char sep, int keeplast)
     if (!strbuf_copy(sb, &tmp))
         return 0 ;
 
-    /* keep a NUL terminator at s[len] without counting it */
-    if (!strbuf_terminate(sb))
+    if (!strbuf_uncounted(sb))
         return 0 ;
-    sb->len-- ;
 
     return 1 ;
 }

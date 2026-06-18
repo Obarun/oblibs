@@ -64,10 +64,8 @@ uint8_t environ_merge_environ(strbuf *modifs, strbuf *new)
 
     // flush the modifs environment with the new one
     if (!strbuf_copyb(modifs, sa.s, sa.len) ||
-        !strbuf_terminate(modifs))
+        !strbuf_uncounted(modifs))
             return (errno = EOVERFLOW, 0) ;
-
-    modifs->len-- ;
 
     return 1 ;
 }

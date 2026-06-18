@@ -56,9 +56,8 @@ static int dollar_find(strbuf *regex, const char *line)
         cfg.opos = cfg.cpos = 0 ;
 
         if (!lexer(regex, &cfg) ||
-            !strbuf_terminate(regex))
+            !strbuf_uncounted(regex))
                 return 0 ;
-        regex->len-- ; /* NUL at regex->s[len] (read as C string), not counted */
 
         if (cfg.found)
             return 1 ;
@@ -79,9 +78,8 @@ static int dollar_recursive(strbuf *value, const char *key, const char *old, siz
         return 2 ;
 
     if (!strbuf_copyb(&sa, value->s, strlen(value->s)) ||
-        !strbuf_terminate(&sa))
+        !strbuf_uncounted(&sa))
         return (errno = EOVERFLOW, 0) ;
-    sa.len-- ;
 
     if (!auto_strbuf(&nkey, "${", key, "}"))
         return (errno = EOVERFLOW, 0) ;
@@ -111,10 +109,8 @@ static int dollar_replace(strbuf *old, const char *line, const char *mkey, subst
     lexer_config cfg = LEXER_CONFIG_ZERO ;
 
     if (!strbuf_copyb(&new, old->s, old->len) ||
-        !strbuf_terminate(&new))
+        !strbuf_uncounted(&new))
            return (errno = EOVERFLOW, 0) ;
-
-    new.len-- ;
 
     cfg.open = "${" ; cfg.olen = 2 ; cfg.close = "}" ;  cfg.clen = 1 ;
     cfg.forceclose = 0 ; cfg.firstoccurence = 1 ;
@@ -129,9 +125,8 @@ static int dollar_replace(strbuf *old, const char *line, const char *mkey, subst
         cfg.opos = cfg.cpos = 0 ;
 
         if (!lexer(&regex, &cfg) ||
-            !strbuf_terminate(&regex))
+            !strbuf_uncounted(&regex))
                 return 0 ;
-        regex.len-- ; /* NUL at regex.s[len] (read as C string), not counted */
 
         if (cfg.found) {
 
@@ -206,10 +201,8 @@ static int dollar_replace(strbuf *old, const char *line, const char *mkey, subst
         old->len = 0 ;
 
         if (!strbuf_copyb(old, new.s, new.len) ||
-            !strbuf_terminate(old))
+            !strbuf_uncounted(old))
                 return (errno = EOVERFLOW, 0) ;
-
-        old->len-- ;
     }
 
     return 1 ;
@@ -226,10 +219,8 @@ uint8_t environ_substitute(strbuf *modifs, subst_t *info)
     _alloc_strbuf_(new, modifs->len + 1) ;
 
     if (!strbuf_copyb(&new, modifs->s, modifs->len) ||
-        !strbuf_terminate(&new))
+        !strbuf_uncounted(&new))
             return (errno = EOVERFLOW, 0) ;
-
-    new.len-- ;
 
     if (!environ_rebuild(&new))
         return 0 ;
@@ -317,10 +308,8 @@ uint8_t environ_substitute(strbuf *modifs, subst_t *info)
         return 0 ;
 
     if (!strbuf_copyb(modifs, new.s, new.len) ||
-        !strbuf_terminate(modifs))
+        !strbuf_uncounted(modifs))
             return (errno = EOVERFLOW, 0) ;
-
-    modifs->len-- ;
 
     return 1 ;
 }
