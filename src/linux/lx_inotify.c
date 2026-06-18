@@ -144,7 +144,7 @@ int lx_inotify_add(const char *what, uint32_t imask)
         return (errno = ENOMEM, 0) ;
     }
 
-    HASH_ADD_KEYPTR(hh_path, iwd, what, strlen(wd->path), wd) ; // Path-based hash table, uses hh_path
+    HASH_ADD_KEYPTR(hh_path, iwd, wd->path, strlen(wd->path), wd) ; // Path-based hash table, uses hh_path
     HASH_ADD(hh_wd, iwd_by_wd, wd, sizeof(int), wd) ; // wd-based hash table, uses hh_wd
 
     return w ;
