@@ -69,9 +69,12 @@ static int dispatch(int argc, char const *const *argv, opt_cmd_t const *cmd, voi
                 /* extend the path with the child name; the strbuf stays alive on
                  * this frame for the whole recursive sub-call below. */
                 _alloc_strbuf_(child, 128) ;
-                if (!strbuf_cats(&child, prog) || !strbuf_cats(&child, " ")
-                 || !strbuf_cats(&child, cmd->sub[i].name) || !strbuf_terminate(&child))
-                    return LOG_EXIT_SYS ;
+                if (!strbuf_cats(&child, prog) ||
+                    !strbuf_cats(&child, " ") ||
+                    !strbuf_cats(&child, cmd->sub[i].name) ||
+                    !strbuf_terminate(&child))
+                        return LOG_EXIT_SYS ;
+
                 return dispatch(argc, argv, &cmd->sub[i], data, child.s) ;
             }
 
