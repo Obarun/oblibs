@@ -74,7 +74,7 @@ int main(void)
     assert(io_watcher.events == SSE_READ);
     assert(io_watcher.active);
     assert(io_watcher.p == &epoll);
-    fprintf(stderr,"After sse_start_io, epoll.watchers=%p\n", epoll.watchers);
+    fprintf(stderr,"After sse_start_io, epoll.watchers=%p\n", (void *)epoll.watchers.buckets);
 
     assert(write(pipefd[1], test_input, strlen(test_input)) == (ssize_t)strlen(test_input));
     close(pipefd[1]); // Close write end to signal EOF after input
@@ -85,7 +85,7 @@ int main(void)
     int max_iterations = 3;
     fprintf(stderr, "io_watcher->active=%i\n",io_watcher.active) ;
     while (epoll.running && max_iterations--) {
-        fprintf(stderr,"Iteration %d, epoll.watchers=%p\n", 3 - max_iterations, epoll.watchers);
+        fprintf(stderr,"Iteration %d, epoll.watchers=%p\n", 3 - max_iterations, (void *)epoll.watchers.buckets);
         if (!sse_run(&epoll, 1000)) {
             fprintf(stderr,"Error in sse_run: %s\n", strerror(io_watcher.api_errno ? io_watcher.api_errno : errno));
             close(pipefd[0]);
@@ -103,12 +103,12 @@ int main(void)
     assert(io_count == 1); // Expect exactly one read event from pipe
 
     /* Clean up */
-    fprintf(stderr,"Cleaning up, epoll.watchers=%p\n", epoll.watchers);
+    fprintf(stderr,"Cleaning up, epoll.watchers=%p\n", (void *)epoll.watchers.buckets);
     close(pipefd[1]); // Close read end of pipe
     sse_free(&epoll);
     assert(epoll.fd == -1);
     assert(epoll.pending == NULL);
-    assert(epoll.watchers == NULL);
+    assert(epoll.watchers.buckets == NULL);
     assert(epoll.file == NULL);
 
     fprintf(stderr,"All tests passed successfully\n");

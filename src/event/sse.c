@@ -26,7 +26,7 @@
 
 #include <oblibs/log.h>
 #include <oblibs/queue.h>
-#include <oblibs/hash.h>
+#include <oblibs/hash2.h>
 #include <oblibs/linux.h>
 
 #include <oblibs/sse.h>
@@ -39,7 +39,7 @@ struct sse_watcher_hash_s *sse_hash_search(sse_epoll_t *p, sse_watcher_t *w)
     }
 
     struct sse_watcher_hash_s *h = NULL;
-    HASH_FIND_PTR(p->watchers, &w, h) ;
+    h = hash_find(&p->watchers, &w, sizeof w) ;
     return h ;
 }
 
@@ -63,7 +63,7 @@ int sse_hash_add(sse_watcher_t *w)
 
     memset(h, 0, sizeof(*h)) ;
     h->w = w ;
-    HASH_ADD_PTR(w->p->watchers, w, h) ;
+    hash_add(&w->p->watchers, &h->w, sizeof h->w, h) ;
 
     return 1 ;
 } ;
@@ -87,17 +87,18 @@ void sse_hash_del(sse_watcher_t *w)
         w->sdata = NULL ;
     }
 
-    HASH_DEL(w->p->watchers, s) ;
+    hash_del(&w->p->watchers, s) ;
     free(s) ;
     s = NULL ;
 }
 
-void sse_hash_free(struct sse_watcher_hash_s **hash)
+void sse_hash_free(hash_t *hash)
 {
     struct sse_watcher_hash_s *c, *tmp ;
-    HASH_ITER(hh, *hash, c, tmp) {
+    HASH_FOREACH(hash, c, tmp) {
         sse_hash_del(c->w) ;
     }
+    hash_free(hash) ;
 }
 
 int sse_epoll_add(sse_watcher_t *w)
@@ -459,7 +460,9 @@ int sse_init(sse_epoll_t *p, uint32_t maxevents)
     if (p->pending == NULL)
         log_warnusys_return(LOG_EXIT_ZERO, "init pending queue") ;
 
-    p->watchers = NULL ;
+    if (!hash_init(&p->watchers, 0, offsetof(struct sse_watcher_hash_s, node)))
+        log_warnusys_return(LOG_EXIT_ZERO, "init watchers hash") ;
+
     p->file = queue_init(p->maxevents, &sse_watcher_cmp, &sse_watcher_rmcmp) ;
     if (p->file == NULL)
         log_warnusys_return(LOG_EXIT_ZERO, "init file queue") ;
@@ -540,12 +543,12 @@ void sse_sanitize(sse_epoll_t *p)
 
 int sse_prepare(sse_epoll_t *p)
 {
-    if (!HASH_COUNT(p->watchers))
+    if (!hash_count(&p->watchers))
         return 1 ;
 
     int r = 1, e = 0 ;
     struct sse_watcher_hash_s *h, *tmp ;
-    HASH_ITER(hh, p->watchers, h, tmp) {
+    HASH_FOREACH(&p->watchers, h, tmp) {
         // zeroing epl and api error
         sse_err_zero((h->w)) ;
         switch (h->w->type) {
@@ -953,7 +956,7 @@ void sse_free(sse_epoll_t *p)
     sse_drain_deferred(p) ;
 
     struct sse_watcher_hash_s *w, *tmp ;
-    HASH_ITER(hh, p->watchers, w, tmp) {
+    HASH_FOREACH(&p->watchers, w, tmp) {
 
         switch (w->w->type) {
 
@@ -994,7 +997,6 @@ void sse_free(sse_epoll_t *p)
     queue_free_ptr(p->pending) ;
     p->pending = NULL ;
     sse_hash_free(&p->watchers);
-    p->watchers = NULL ;
     queue_free_ptr(p->file) ;
     p->file = NULL ;
     free(p->deferred) ;

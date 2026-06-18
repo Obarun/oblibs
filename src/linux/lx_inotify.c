@@ -21,13 +21,13 @@
 #include <unistd.h>
 #include <sys/inotify.h>
 
-#include <oblibs/hash.h>
+#include <oblibs/hash2.h>
 #include <oblibs/linux.h>
 #include <oblibs/io.h>
 
 static struct lx_inotify_s ei = { .fd = -1 } ;
-lx_inotify_wd_t *iwd = NULL ; // Path-based hash table
-lx_inotify_wd_t *iwd_by_wd = NULL;  // wd-based hash table
+hash_t iwd = HASH_ZERO ; // Path-based hash table
+hash_t iwd_by_wd = HASH_ZERO ;  // wd-based hash table
 
 bool lx_inotify_iterator(struct inotify_event **event)
 {
@@ -91,7 +91,7 @@ int lx_inotify_get_blength(void)
 lx_inotify_wd_t *lx_inotify_get_wd(int wd)
 {
     struct lx_inotify_wd_s *w ;
-    HASH_FIND(hh_wd, iwd_by_wd, &wd, sizeof(int), w) ;
+    w = hash_find(&iwd_by_wd, &wd, sizeof(int)) ;
     return w ;
 }
 
@@ -101,7 +101,20 @@ int lx_inotify_init(void)
         return ei.fd ;
 
     ei.fd = inotify_init1(IN_CLOEXEC | IN_NONBLOCK) ; // IN_NONBLOCK should be not necessary with epoll
-	return ei.fd ;
+    if (ei.fd < 0)
+        return ei.fd ;
+
+    // hash2 needs an explicit init (uthash created the tables lazily on first add).
+    if (!hash_init(&iwd, 0, offsetof(struct lx_inotify_wd_s, node_path)) ||
+        !hash_init(&iwd_by_wd, 0, offsetof(struct lx_inotify_wd_s, node_wd))) {
+            hash_free(&iwd) ;
+            hash_free(&iwd_by_wd) ;
+            close(ei.fd) ;
+            ei.fd = -1 ;
+            return -1 ;
+    }
+
+    return ei.fd ;
 }
 
 int lx_inotify_read(void)
@@ -125,7 +138,7 @@ int lx_inotify_add(const char *what, uint32_t imask)
         return (errno = EBADF, 0) ;
 
     struct lx_inotify_wd_s *wd ;
-    HASH_FIND(hh_path, iwd, what, strlen(what), wd) ;
+    wd = hash_find(&iwd, what, strlen(what)) ;
     if (wd != NULL)
         return wd->wd ;
 
@@ -144,8 +157,8 @@ int lx_inotify_add(const char *what, uint32_t imask)
         return (errno = ENOMEM, 0) ;
     }
 
-    HASH_ADD_KEYPTR(hh_path, iwd, wd->path, strlen(wd->path), wd) ; // Path-based hash table, uses hh_path
-    HASH_ADD(hh_wd, iwd_by_wd, wd, sizeof(int), wd) ; // wd-based hash table, uses hh_wd
+    hash_add(&iwd, wd->path, strlen(wd->path), wd) ; // Path-based hash table, node_path
+    hash_add(&iwd_by_wd, &wd->wd, sizeof(int), wd) ; // wd-based hash table, node_wd
 
     return w ;
 }
@@ -156,7 +169,7 @@ int lx_inotify_update(const char *what, uint32_t imask)
         return (errno = EBADF, 0) ;
 
     struct lx_inotify_wd_s *wd ;
-    HASH_FIND(hh_path, iwd, what, strlen(what), wd) ;
+    wd = hash_find(&iwd, what, strlen(what)) ;
     if (wd == NULL)
         return (errno = ENOENT, 0) ;
 
@@ -168,9 +181,9 @@ int lx_inotify_update(const char *what, uint32_t imask)
      * returns a new descriptor (though this is rare with inotify)
      */
     if (w != wd->wd) {
-        HASH_DELETE(hh_wd, iwd_by_wd, wd) ;
+        hash_del(&iwd_by_wd, wd) ;
         wd->wd = w ;
-        HASH_ADD(hh_wd, iwd_by_wd, wd, sizeof(int), wd) ;
+        hash_add(&iwd_by_wd, &wd->wd, sizeof(int), wd) ;
     }
 
     return w ;
@@ -188,8 +201,8 @@ int lx_inotify_del(const char *what)
     if (inotify_rm_watch(ei.fd, wd->wd) < 0)
         return 0 ;
 
-    HASH_DELETE(hh_path, iwd, wd) ;
-    HASH_DELETE(hh_wd, iwd_by_wd, wd) ;
+    hash_del(&iwd, wd) ;
+    hash_del(&iwd_by_wd, wd) ;
     free(wd->path) ;
     free(wd) ;
 
@@ -201,7 +214,7 @@ int lx_inotify_search(struct lx_inotify_wd_s **wd, const char *what)
     if (ei.fd < 0)
         return (errno = EBADF, 0) ;
 
-    HASH_FIND(hh_path, iwd, what, strlen(what), *wd) ;
+    *wd = hash_find(&iwd, what, strlen(what)) ;
     if ((*wd) == NULL)
         return (errno = ENOENT, 0) ;
 
@@ -211,18 +224,17 @@ int lx_inotify_search(struct lx_inotify_wd_s **wd, const char *what)
 void lx_inotify_end(void)
 {
     struct lx_inotify_wd_s *c, *tmp ;
-    HASH_ITER(hh_path, iwd, c, tmp) {
+    HASH_FOREACH(&iwd, c, tmp) {
         free(c->path) ;
-        HASH_DELETE(hh_path, iwd, c) ;
-        HASH_DELETE(hh_wd, iwd_by_wd, c) ;
         free(c) ;
     }
+
+    hash_free(&iwd) ; // free the bucket arrays (uthash freed at last DELETE)
+    hash_free(&iwd_by_wd) ;
 
     if (ei.fd >= 0)
         close(ei.fd) ;
 
     ei.fd = -1 ;
     ei.blen = 0 ;
-    iwd = NULL ;
-    iwd_by_wd = NULL ;
 }

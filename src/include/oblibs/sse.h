@@ -28,7 +28,7 @@
 #include <sys/types.h>
 
 #include <oblibs/queue.h>
-#include <oblibs/hash.h>
+#include <oblibs/hash2.h>
 #include <oblibs/bits.h>
 
 // earlier declaration of cron_t
@@ -120,15 +120,15 @@ struct sse_epoll_s
     struct epoll_event ea[SSE_MAX_EVENTS] ;
     bool running ;
     queue_t *pending ; // event to process indexed by priority
-    struct sse_watcher_hash_s *watchers ; // hash table of watchers
     queue_t *file ; // watchers reading stdin from file
     bool rerun_file ;
     sse_deferred_t *deferred ; // actions to run after the current dispatch returns
     size_t ndeferred ; // live entries in deferred
     size_t deferred_cap ; // allocated capacity of deferred
+    hash_t watchers ; // hash table of watchers
 } ;
 typedef struct sse_epoll_s sse_epoll_t ;
-#define SSE_EPOLL_ZERO { -1, 0, {{0}}, false, NULL, NULL, NULL, false, NULL, 0, 0 }
+#define SSE_EPOLL_ZERO { -1, 0, {{0}}, false, NULL, NULL, false, NULL, 0, 0, HASH_ZERO }
 
 /**
  * @struct sse_time_s
@@ -171,7 +171,7 @@ typedef struct sse_watcher_s sse_watcher_t ;
 struct sse_watcher_hash_s
 {
     sse_watcher_t *w ;
-    UT_hash_handle hh ;
+    hash_node_t node ;
 } ;
 
 struct sse_timer_s

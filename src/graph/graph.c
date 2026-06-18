@@ -39,14 +39,20 @@ int graph_queue_compare(const void *a, const void *b)
 int graph_init(graph *g, uint32_t glen)
 {
     g->len = glen ;
-    g->vertexes = NULL ;
     memset(g->sindex, 0, sizeof(vertex_t *) * glen) ;
-    g->qindex = queue_init(glen, graph_queue_compare, graph_queue_compare) ;
-    if (g->qindex == NULL)
+
+    if (!hash_init(&g->vertexes, glen, offsetof(vertex_t, node)))
         return 0 ;
+
+    g->qindex = queue_init(glen, graph_queue_compare, graph_queue_compare) ;
+    if (g->qindex == NULL) {
+        hash_free(&g->vertexes) ;
+        return 0 ;
+    }
 
     g->sort = malloc(sizeof(uint32_t) * glen) ;
     if (!g->sort) {
+        hash_free(&g->vertexes) ;
         queue_free(g->qindex) ;
         return (errno = ENOMEM, 0) ;
     }
@@ -68,7 +74,7 @@ int graph_add_vertex(graph *g, const char *name)
     if ((g->nvertexes + 1) > g->len)
         return (errno = EINVAL, 0) ;
 
-    HASH_FIND_STR(g->vertexes, name, s) ;
+    s = hash_find(&g->vertexes, name, strlen(name)) ;
     if (s != NULL)
         return 1 ;
 
@@ -108,7 +114,7 @@ int graph_add_vertex(graph *g, const char *name)
     s->index = index ;
     g->sindex[s->index] = s ;
 
-    HASH_ADD_STR(g->vertexes, name, s) ;
+    hash_add(&g->vertexes, s->name, strlen(s->name), s) ;
     g->nvertexes++ ;
 
     return 1 ;
@@ -118,7 +124,7 @@ int graph_remove_vertex(graph *g, const char *name, bool cldepends, bool clrequi
 {
     vertex_t *s = NULL ;
 
-    HASH_FIND_STR(g->vertexes, name, s) ;
+    s = hash_find(&g->vertexes, name, strlen(name)) ;
     if (!s)
         return 1 ;
 
@@ -150,7 +156,7 @@ int graph_remove_vertex(graph *g, const char *name, bool cldepends, bool clrequi
 
     g->sindex[s->index] = NULL ;
 
-    HASH_DEL(g->vertexes, s) ;
+    hash_del(&g->vertexes, s) ;
     free(s) ;
     g->nvertexes-- ;
 
@@ -164,8 +170,8 @@ int graph_add_edge(graph *g, const char *vertex, const char *edge, bool addedge)
     if (!vertex || !edge)
         return (errno = EINVAL, 0) ;
 
-    HASH_FIND_STR(g->vertexes, vertex, src) ;
-    HASH_FIND_STR(g->vertexes, edge, dst) ;
+    src = hash_find(&g->vertexes, vertex, strlen(vertex)) ;
+    dst = hash_find(&g->vertexes, edge, strlen(edge)) ;
     if (!addedge && ((src == NULL) || (dst == NULL))) {
         log_warn("vertex: ", src == NULL ? vertex : edge," not found") ;
         return 0 ;
@@ -174,13 +180,13 @@ int graph_add_edge(graph *g, const char *vertex, const char *edge, bool addedge)
     if (src == NULL) {
         if (!graph_add_vertex(g, vertex))
             log_warnusys("add edge: ", vertex, " to the graph selection") ;
-        HASH_FIND_STR(g->vertexes, vertex, src) ;
+        src = hash_find(&g->vertexes, vertex, strlen(vertex)) ;
     }
 
     if (dst == NULL) {
         if (!graph_add_vertex(g, edge))
             log_warnusys("add edge: ", edge, " to the graph selection") ;
-        HASH_FIND_STR(g->vertexes, edge, dst) ;
+        dst = hash_find(&g->vertexes, edge, strlen(edge)) ;
     }
 
     if (!bitset32_isvalid(&src->depends, dst->index)) {
@@ -223,14 +229,16 @@ int graph_remove_edge(graph *g, const char *vertex, const char *edge, bool cledg
     if (!vertex || !edge)
         return (errno = EINVAL, 0) ;
 
-    HASH_FIND_STR(g->vertexes, vertex, src) ;
-    HASH_FIND_STR(g->vertexes, edge, dst) ;
+    src = hash_find(&g->vertexes, vertex, strlen(vertex)) ;
+    dst = hash_find(&g->vertexes, edge, strlen(edge)) ;
     if (src == NULL || dst == NULL)
         log_warn_return(LOG_EXIT_ZERO, "find service: ", vertex, " or ", edge, " -- please make a bug report.") ;
 
-    bitset32_clear(&src->depends, dst->index) ;
-    src->ndepends-- ;
-    if (cledge) {
+    if (bitset32_isvalid(&src->depends, dst->index)) {
+        bitset32_clear(&src->depends, dst->index) ;
+        src->ndepends-- ;
+    }
+    if (cledge && bitset32_isvalid(&dst->requiredby, src->index)) {
         bitset32_clear(&dst->requiredby, src->index) ;
         dst->nrequiredby-- ;
     }
@@ -273,7 +281,7 @@ uint32_t graph_get_id(graph *g, const char *name)
         return (errno = EINVAL, 0) ;
 
     vertex_t *vertex = NULL ;
-    HASH_FIND_STR(g->vertexes, name, vertex) ;
+    vertex = hash_find(&g->vertexes, name, strlen(name)) ;
 
     if (vertex == NULL)
         return 0 ;
@@ -285,7 +293,7 @@ void graph_free(graph *g)
 {
     uint32_t i = 0 ;
 
-    HASH_CLEAR(hh, g->vertexes) ;
+    hash_free(&g->vertexes) ;
 
     for (; i < g->len ; i++) {
        if (g->sindex[i]) {
@@ -393,7 +401,7 @@ int graph_sort(graph *g, bool reverse)
         return 0 ;
 
     // Process root vertices first
-    HASH_ITER(hh, g->vertexes, c, t) {
+    HASH_FOREACH(&g->vertexes, c, t) {
 
         if (c == NULL)
             continue ;
@@ -403,7 +411,7 @@ int graph_sort(graph *g, bool reverse)
             graph_dfs(g, c->index, visited, reverse);
     }
 
-    HASH_ITER(hh, g->vertexes, c, t) {
+    HASH_FOREACH(&g->vertexes, c, t) {
 
         if (c && !visited[c->index])
             graph_dfs(g, c->index, visited, reverse) ;
@@ -417,7 +425,7 @@ void graph_show(graph *g)
 {
     vertex_t *s = NULL, *tmp = NULL ;
     log_1_warn("[DEBUG]: ") ;
-    HASH_ITER(hh, g->vertexes, s, tmp) {
+    HASH_FOREACH(&g->vertexes, s, tmp) {
         flog_1_warn("%s:%i -> ", s->name, s->index) ;
         if (s->ndepends) {
             vertex_t *list[s->ndepends] ;

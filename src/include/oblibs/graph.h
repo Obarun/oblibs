@@ -75,7 +75,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <oblibs/hash.h>
+#include <oblibs/hash2.h>
 #include <oblibs/queue.h>
 #include <oblibs/strbuf.h>
 #include <oblibs/bits.h>
@@ -118,10 +118,10 @@ struct vertex_s {
     bitset32_t requiredby ;
     uint32_t ndepends ;
     uint32_t nrequiredby ;
-    UT_hash_handle hh ;
+    hash_node_t node ;
 } ;
 
-#define VERTEX_ZERO { {0}, 0, BITSET32_ZERO, BITSET32_ZERO, 0, 0, NULL }
+#define VERTEX_ZERO { {0}, 0, BITSET32_ZERO, BITSET32_ZERO, 0, 0, HASH_NODE_ZERO }
 
 /**
  * @struct graph
@@ -155,7 +155,7 @@ typedef struct graph_s graph ;
 struct graph_s
 {
     size_t len ;
-    vertex_t *vertexes ;
+    hash_t vertexes ;
     vertex_t *sindex[UINT32_BITS_MAX] ;
     queue_t *qindex ;
     uint32_t nvertexes ;
@@ -163,7 +163,7 @@ struct graph_s
     uint32_t nsort ;
 } ;
 
-#define GRAPH_ZERO { 0, NULL, {NULL}, NULL, 0, NULL, 0 }
+#define GRAPH_ZERO { 0, HASH_ZERO, {NULL}, NULL, 0, NULL, 0 }
 
 /**
  * @brief Compares two elements for ordering in a priority queue.

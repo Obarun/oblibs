@@ -24,7 +24,7 @@
 #include <sys/types.h>
 
 
-#include <oblibs/hash.h>
+#include <oblibs/hash2.h>
 
 extern int lx_signalfd_init(void) ;
 extern ssize_t lx_signalfd_read(struct signalfd_siginfo *si) ;
@@ -52,13 +52,13 @@ struct lx_inotify_wd_s
 {
     int wd ;
     char *path ;
-    UT_hash_handle hh_path ; // For path-based hash table
-    UT_hash_handle hh_wd ; // For wd-based hash table
+    hash_node_t node_path ; // For path-based hash table
+    hash_node_t node_wd ; // For wd-based hash table
 } ;
 typedef struct lx_inotify_wd_s lx_inotify_wd_t ;
 
-extern lx_inotify_wd_t *iwd ;        // Path-based hash table
-extern lx_inotify_wd_t *iwd_by_wd ;  // wd-based hash table
+extern hash_t iwd ;        // Path-based hash table
+extern hash_t iwd_by_wd ;  // wd-based hash table
 
 #define FOREACH_INOTIFY() \
     for (struct inotify_event *event = NULL; lx_inotify_iterator(&event);)

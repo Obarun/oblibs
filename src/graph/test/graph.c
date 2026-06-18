@@ -10,7 +10,7 @@ void test_graph_init() {
     assert(graph_init(&g, 10));
     assert(g.len == 10);
     assert(g.nvertexes == 0);
-    assert(g.vertexes == NULL);
+    assert(hash_count(&g.vertexes) == 0);
     assert(g.qindex != NULL);
     graph_free(&g);
 }

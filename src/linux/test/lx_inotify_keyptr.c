@@ -13,13 +13,13 @@
  */
 
 /*
- * Regression test for the hh_path key lifetime in lx_inotify_add().
+ * Regression test for the path-key lifetime in lx_inotify_add().
  *
- * uthash does NOT copy the key: HASH_ADD_KEYPTR stores the pointer it is
- * handed (hh.key = keyptr). If lx_inotify_add() registers the caller's
+ * The hash table does NOT copy the key: hash_add stores the pointer it is
+ * handed (node->key = key). If lx_inotify_add() registers the caller's
  * transient `what` buffer as the key instead of the stable strdup'd
  * wd->path, then freeing/overwriting `what` after the call turns every
- * later HASH_FIND(hh_path, ...) into a read of dead memory.
+ * later hash_find(&iwd, ...) into a read of dead memory.
  *
  * This test frees the `what` buffer after the watch is added and then
  * looks the path up again. Under ASan it reports heap-use-after-free

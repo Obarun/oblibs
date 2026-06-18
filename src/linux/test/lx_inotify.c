@@ -25,7 +25,7 @@
 #include <stdbool.h>
 
 #include <oblibs/linux.h>
-#include <oblibs/hash.h>
+#include <oblibs/hash2.h>
 #include <oblibs/io.h>
 #include <oblibs/files.h>
 
@@ -125,7 +125,7 @@ void test_lx_inotify_add(void) {
 
     // Verify path-based lookup
     struct lx_inotify_wd_s *w_path;
-    HASH_FIND(hh_path, iwd, path, strlen(path), w_path);
+    w_path = hash_find(&iwd, path, strlen(path));
     assert(w_path == w && "Path-based hash table lookup failed");
 
     // Test adding same path again
@@ -204,7 +204,7 @@ void test_lx_inotify_del(void) {
     struct lx_inotify_wd_s *w = NULL ;
     assert(lx_inotify_search(&w, path) == 0 && "Watch should not exist after deletion");
     struct lx_inotify_wd_s *w_wd;
-    HASH_FIND(hh_wd, iwd_by_wd, &wd, sizeof(wd), w_wd);
+    w_wd = hash_find(&iwd_by_wd, &wd, sizeof(wd));
     assert(w_wd == NULL && "wd-based hash table should be empty after deletion");
 
     // Test deleting non-existent watch
@@ -356,8 +356,8 @@ void test_lx_inotify_end(void) {
     assert(lx_inotify_get_wd(wd) == NULL && "Watch should be cleared after end");
 
     // Verify hash tables are empty
-    assert(iwd == NULL && "Path-based hash table should be NULL after end");
-    assert(iwd_by_wd == NULL && "wd-based hash table should be NULL after end");
+    assert(iwd.buckets == NULL && "Path-based hash table should be torn down after end");
+    assert(iwd_by_wd.buckets == NULL && "wd-based hash table should be torn down after end");
 
     file_tryunlink(path);
     free((void *)path);
