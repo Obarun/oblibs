@@ -505,7 +505,8 @@ int parse_cron(const char *expression, cron_t *expr, const char *tz)
             return (errno = EINVAL, 0) ;
         }
     } else {
-        auto_strings(raw.s, expression) ;
+        if (!strbuf_copys(&raw, expression) || !strbuf_uncounted(&raw))
+            return (errno = ENOMEM, 0) ;
     }
 
     /* clean from @raw into @e (separate buffers: no aliasing) */
