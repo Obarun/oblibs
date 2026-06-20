@@ -24,7 +24,7 @@
 #include <sys/types.h>
 
 
-#include <oblibs/hash2.h>
+#include <oblibs/hash.h>
 
 extern int lx_signalfd_init(void) ;
 extern ssize_t lx_signalfd_read(struct signalfd_siginfo *si) ;

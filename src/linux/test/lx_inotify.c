@@ -25,7 +25,7 @@
 #include <stdbool.h>
 
 #include <oblibs/linux.h>
-#include <oblibs/hash2.h>
+#include <oblibs/hash.h>
 #include <oblibs/io.h>
 #include <oblibs/files.h>
 

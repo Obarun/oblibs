@@ -21,7 +21,7 @@
 #include <unistd.h>
 #include <sys/inotify.h>
 
-#include <oblibs/hash2.h>
+#include <oblibs/hash.h>
 #include <oblibs/linux.h>
 #include <oblibs/io.h>
 
@@ -104,7 +104,7 @@ int lx_inotify_init(void)
     if (ei.fd < 0)
         return ei.fd ;
 
-    // hash2 needs an explicit init (uthash created the tables lazily on first add).
+    // hash needs an explicit init (uthash created the tables lazily on first add).
     if (!hash_init(&iwd, 0, offsetof(struct lx_inotify_wd_s, node_path)) ||
         !hash_init(&iwd_by_wd, 0, offsetof(struct lx_inotify_wd_s, node_wd))) {
             hash_free(&iwd) ;

@@ -26,7 +26,7 @@
 
 #include <oblibs/log.h>
 #include <oblibs/queue.h>
-#include <oblibs/hash2.h>
+#include <oblibs/hash.h>
 #include <oblibs/linux.h>
 
 #include <oblibs/sse.h>

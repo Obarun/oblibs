@@ -28,7 +28,7 @@
 #include <sys/types.h>
 
 #include <oblibs/queue.h>
-#include <oblibs/hash2.h>
+#include <oblibs/hash.h>
 #include <oblibs/bits.h>
 
 // earlier declaration of cron_t

@@ -1,5 +1,5 @@
 /*
- * hash2.c
+ * hash.c
  *
  * Copyright (c) 2026 Eric Vidal <eric@obarun.org>
  *
@@ -18,7 +18,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <oblibs/hash2.h>
+#include <oblibs/hash.h>
 
 #define HASH_MIN_BUCKETS 8
 
