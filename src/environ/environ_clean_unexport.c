@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  */
 
 #include <stdint.h>
@@ -36,20 +36,20 @@ uint8_t environ_clean_unexport(strbuf *modifs)
         size_t len = strlen(line) ;
         ssize_t r = get_len_until(line, '=') ;
         if (r < 0)
-            return 0 ;
+            return (errno = EINVAL, 0) ;
 
         if (line[r + 1] == VAR_UNEXPORT) {
 
             if (!strbuf_catb(&stk, line, ++r) ||
                 !strbuf_catb(&stk, line + (r + 1), len - (r + 1)) ||
                 !strbuf_terminate(&stk))
-                    return 0 ;
+                    return (errno = EOVERFLOW, 0) ;
 
         } else {
 
             if (!strbuf_catb(&stk, line, len) ||
                 !strbuf_terminate(&stk))
-                    return 0 ;
+                    return (errno = EOVERFLOW, 0) ;
         }
     }
 
