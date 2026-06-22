@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  */
 
 #include <sys/types.h>
@@ -29,7 +29,8 @@ int get_groupbygid(gid_t gid,strbuf *name)
         if (!errno) errno = ESRCH ;
         return 0 ;
     }
-    strbuf_cats(name,gr->gr_name) ;
+    if (!strbuf_cats(name,gr->gr_name))
+        return 0 ;
     errno = e ;
     return 1 ;
 }

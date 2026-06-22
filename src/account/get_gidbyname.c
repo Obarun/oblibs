@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  */
 
 #include <sys/types.h>
@@ -21,6 +21,10 @@
 int get_gidbyname(char const *name,gid_t *gid)
 {
     int e = errno ;
+    if (!name) {
+        errno = EINVAL ;
+        return -1 ;
+    }
     errno = 0 ;
     struct passwd *pw = getpwnam(name) ;
     if (!pw)
