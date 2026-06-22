@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  *
  * Behavioural test for process_wait. Each case forks a real child and the parent
  * reaps it with process_wait, inspecting the returned pid and the wait status.

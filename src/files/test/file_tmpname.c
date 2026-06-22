@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  *
  * Structural test for file_tmpname: the output is random, so we check the
  * contract (return value, charset, in-place fill, uniqueness) rather than exact

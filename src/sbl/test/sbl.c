@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  *
  * Self-contained test for the sbl module (the strbuf-based replacement that
  * merged stack + sastr). The expected outputs were captured from a byte-to-byte

@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  *
  * Help generation: usage line and full help block built from the opt_t /
  * opt_cmd_t tables, so the option declaration is the single source of truth.

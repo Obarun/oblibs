@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  *
  * Native replacement for skalibs filecopy_unsafe (djbunix). Direct, non-atomic
  * copy of a regular file's contents: dst is created/truncated up front, so a

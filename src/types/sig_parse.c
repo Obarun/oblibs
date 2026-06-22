@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  *
  * Native replacement for skalibs sig0_scan (sig.h). Parses a signal given as a
  * name ("TERM"), a strict decimal number ("15"), or either with a "SIG" prefix

@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  *
  * posix_spawn(p)-only implementation: no fork() fallback, no "early return"
  * waitid workaround. We never wait()/reap the child here; the caller owns its

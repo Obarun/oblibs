@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  *
  * Spawn a child process with posix_spawn. The "in a child" counterpart of
  * oblibs/exec.h: same PATH resolution, but instead of replacing the current

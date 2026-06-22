@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  *
  * The low-level posix_spawn(p) primitive behind spawn_path / spawn_path_merge.
  * Same contract as spawn_path -- posix_spawn alone, no fork() fallback, never

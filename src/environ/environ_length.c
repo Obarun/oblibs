@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  * this following function come from:
  * https://git.skarnet.org/cgi-bin/cgit.cgi/skalibs/tree/src/libenvexec/env_len.c
  * under license ISC. All credits go to Laurent Bercot authors of these functions.

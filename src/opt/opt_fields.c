@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  *
  * Layer 3: parsing of structured option VALUES ("k=v:k=v,v"). Built ABOVE the
  * lexer (strbuf <- lexer <- opt_fields), so the dependency stays acyclic.
