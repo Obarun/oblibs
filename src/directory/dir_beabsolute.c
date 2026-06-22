@@ -9,7 +9,7 @@
  * the LICENSE file found in the top-level directory of this
  * distribution.
  * This file may not be copied, modified, propagated, or distributed
- * except according to the terms contained in the LICENSE file./
+ * except according to the terms contained in the LICENSE file.
  */
 
 #include <unistd.h>
@@ -50,6 +50,5 @@ int dir_beabsolute(char *dst,char const *dir)
     return 1 ;
     err:
         close_fd(fd) ;
-        errno = e ;
         return 0 ;
 }
