@@ -19,8 +19,11 @@
  * node-for-node (type, mode, content, symlink target), so the committed test
  * links no skalibs. Coverage: regular files (several modes), nested dirs, an
  * empty dir, a fifo, a symlink (copied NOT followed) and a dangling symlink; a
- * pre-existing destination directory; copying a single file. Device/socket
- * nodes need privileges (mknod) and are not exercised here. */
+ * pre-existing destination directory; copying a single file; idempotent re-copy
+ * onto a fully populated destination (every node type already present, including
+ * an existing symlink that must be replaced) and the fatal path when that
+ * replacement cannot proceed. Device/socket nodes need privileges (mknod) and
+ * are not exercised here. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -185,6 +188,81 @@ static void test_single_file(void)
     TEST_END() ;
 }
 
+/* Re-copying onto a populated destination must be idempotent for the SYMLINK
+ * case: an existing destination symlink (the regression — hiercopy succeeded,
+ * the first tree_copy port did not, breaking 66 snapshot on a service with an
+ * [Environment] section) must be replaced, not error out, like existing files
+ * (O_TRUNC) and dirs (EEXIST tolerated). The tree here mirrors that real shape
+ * (dir + versioned subdir + a "version" symlink) and contains NO fifo: only the
+ * symlink branch is meant to become idempotent, so an unrelated node type must
+ * not muddy the assertion. */
+static void test_idempotent_recopy(void)
+{
+    TEST_START("test_idempotent_recopy") ;
+
+    char src[512], dst[512] ;
+    jp(src, sizeof src, sandbox, "src3") ;
+    jp(dst, sizeof dst, sandbox, "dst3") ;
+
+    char p[1100] ;
+    TEST_ASSERT(mkdir(src, 0755) == 0, "mkdir src3") ;
+    jp(p, sizeof p, src, "0.1") ; TEST_ASSERT(mkdir(p, 0755) == 0, "mkdir 0.1") ;
+    { char f[1200] ; jp(f, sizeof f, p, "data") ; wr(f, "v1", 0644) ; }
+    jp(p, sizeof p, src, "version") ; TEST_ASSERT(symlink("0.1", p) == 0, "src version symlink") ;
+
+    TEST_ASSERT(tree_copy(src, dst) == 1, "first copy") ;
+    /* Second copy onto the now-populated destination: the "version" symlink
+     * already exists. It must still succeed. */
+    errno = 0 ;
+    TEST_ASSERT(tree_copy(src, dst) == 1, "recopy onto populated dst (symlink idempotence)") ;
+    same_node(src, dst) ;
+
+    /* Repoint the source symlink, recopy, and assert the destination symlink was
+     * actually replaced (not left stale at its old target). */
+    jp(p, sizeof p, src, "version") ;
+    TEST_ASSERT(unlink(p) == 0, "drop src symlink") ;
+    TEST_ASSERT(symlink("0.2", p) == 0, "repoint src symlink") ;
+    TEST_ASSERT(tree_copy(src, dst) == 1, "recopy after repoint") ;
+    char dlp[1100], tgt[256] ;
+    jp(dlp, sizeof dlp, dst, "version") ;
+    ssize_t tl = readlink(dlp, tgt, sizeof tgt - 1) ;
+    TEST_ASSERT(tl > 0, "readlink dst symlink") ;
+    tgt[tl] = 0 ;
+    TEST_ASSERT(!strcmp(tgt, "0.2"), "dst symlink replaced, not stale") ;
+
+    TEST_END() ;
+}
+
+/* A genuine error in the symlink branch must stay fatal: if the existing
+ * destination symlink cannot be removed (its parent dir is not writable),
+ * tree_copy fails rather than silently succeeding. */
+static void test_symlink_replace_fatal(void)
+{
+    TEST_START("test_symlink_replace_fatal") ;
+
+    char src[512], dst[512] ;
+    jp(src, sizeof src, sandbox, "src4") ;
+    jp(dst, sizeof dst, sandbox, "dst4") ;
+
+    /* src: a directory holding a single symlink. */
+    TEST_ASSERT(mkdir(src, 0755) == 0, "mkdir src4") ;
+    char p[1100] ;
+    jp(p, sizeof p, src, "lnk") ; TEST_ASSERT(symlink("whatever", p) == 0, "src symlink") ;
+
+    /* dst: same shape, already populated, then lock the parent dir read-only so
+     * unlink() of the existing symlink fails with EACCES. */
+    TEST_ASSERT(mkdir(dst, 0755) == 0, "mkdir dst4") ;
+    jp(p, sizeof p, dst, "lnk") ; TEST_ASSERT(symlink("stale", p) == 0, "dst symlink") ;
+    TEST_ASSERT(chmod(dst, 0500) == 0, "lock dst dir") ;
+
+    errno = 0 ;
+    int r = tree_copy(src, dst) ;
+    TEST_ASSERT(chmod(dst, 0755) == 0, "unlock dst dir") ;   /* restore for cleanup */
+    TEST_ASSERT(r == 0, "unremovable existing symlink is a fatal error") ;
+
+    TEST_END() ;
+}
+
 static void test_missing_src(void)
 {
     TEST_START("test_missing_src") ;
@@ -209,6 +287,8 @@ int main(void)
     test_full_copy() ;
     test_existing_dst() ;
     test_single_file() ;
+    test_idempotent_recopy() ;
+    test_symlink_replace_fatal() ;
     test_missing_src() ;
 
     TEST_ASSERT(dir_destroy(sandbox) == 1, "sandbox cleanup") ;

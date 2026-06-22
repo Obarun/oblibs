@@ -13,10 +13,13 @@
  *
  * Native replacement for skalibs hiercopy/hiercopy_internal (djbunix): a
  * recursive hierarchy copy (cp -a semantics) preserving type, mode and
- * ownership. It mirrors the skalibs state machine byte-for-byte but uses
- * opendir/readdir + strbuf (the slurp-then-recurse pattern of dir_destroy)
- * instead of sals/satmp, so no skalibs/stralloc dependency remains. Symlinks
- * are copied verbatim, never followed (lstat). Credit: skalibs (ISC, Laurent
+ * ownership. It follows the skalibs state machine but uses opendir/readdir +
+ * strbuf (the slurp-then-recurse pattern of dir_destroy) instead of sals/satmp,
+ * so no skalibs/stralloc dependency remains. Symlinks are copied verbatim,
+ * never followed (lstat). It diverges from skalibs in two ways: a child copy
+ * failure is propagated (skalibs swallows it), and the copy is idempotent into
+ * a populated destination (existing regular files truncated, existing dirs
+ * tolerated, existing symlinks replaced). Credit: skalibs (ISC, Laurent
  * Bercot).
  */
 
@@ -120,8 +123,14 @@ static int copy_node(strbuf *src, strbuf *dst)
         if (n < 0)
             return 0 ;
         target[n] = 0 ;
-        if (symlink(target, dst->s) < 0)
-            return 0 ;
+        if (symlink(target, dst->s) < 0) {
+            /* Idempotent like file_copy (O_TRUNC) and dircopy (EEXIST tolerated):
+             * an already-present destination must not fail. Replace it, but let
+             * any other error (e.g. EISDIR on unlink, EACCES) stay fatal. */
+            if (errno != EEXIST) return 0 ;
+            if (unlink(dst->s) < 0) return 0 ;
+            if (symlink(target, dst->s) < 0) return 0 ;
+        }
     }
     else if (S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode) || S_ISSOCK(st.st_mode)) {
         if (mknod(dst->s, st.st_mode, st.st_rdev) < 0)
