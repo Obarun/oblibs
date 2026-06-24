@@ -142,7 +142,7 @@ int sbl_dir_get_element(strbuf *sb, char const *srcdir, char const *element, mod
 
     DIR *dir = opendir(srcdir) ;
     if (!dir)
-        return 0 ;
+        return -1 ;
 
     int fdsrc = dirfd(dir) ;
 
@@ -176,7 +176,7 @@ int sbl_dir_get_element(strbuf *sb, char const *srcdir, char const *element, mod
         dir_close(dir) ;
         if (wasnull) strbuf_free(sb) ;
         else sb->len = base ;
-        return 0 ;
+        return -1 ;
 }
 
 int sbl_dir_drop_child(strbuf *sb)

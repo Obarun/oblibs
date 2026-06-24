@@ -14,7 +14,6 @@
 
 #include <string.h>
 
-#include <oblibs/string.h>
 #include <oblibs/sbl.h>
 
 int sbl_sort(strbuf *sb)
@@ -23,29 +22,29 @@ int sbl_sort(strbuf *sb)
         return 0 ;
 
     size_t nel = sbl_count(sb), idx = 0, a = 0, b = 0, pos = 0 ;
-    char names[nel][4096] ;
-    char tmp[4096] ;
+    /* Sort an array of pointers INTO sb->s: no per-element length cap, and the
+     * stack cost is nel pointers instead of nel * 4096 bytes. */
+    char const *names[nel] ;
 
-    for (; pos < sb->len && idx < nel ; pos += strlen(sb->s + pos) + 1, idx++) {
-        size_t l = strlen(sb->s + pos) ;
-        memcpy(names[idx], sb->s + pos, l) ;
-        names[idx][l] = 0 ;
-    }
+    for (; pos < sb->len && idx < nel ; pos += strlen(sb->s + pos) + 1, idx++)
+        names[idx] = sb->s + pos ;
 
     for (a = 0 ; a + 1 < nel ; a++)
         for (b = a + 1 ; b < idx ; b++)
             if (strcmp(names[a], names[b]) > 0) {
-                auto_strings(tmp, names[a]) ;
-                auto_strings(names[a], names[b]) ;
-                auto_strings(names[b], tmp) ;
+                char const *t = names[a] ;
+                names[a] = names[b] ;
+                names[b] = t ;
             }
 
-    sb->len = 0 ;
+    /* names[] alias sb->s, so build the sorted list in a scratch buffer and copy
+     * it back rather than overwriting sb->s while still reading from it. */
+    _alloc_strbuf_(tmp, sb->len) ;
     for (a = 0 ; a < nel ; a++)
-        if (!sbl_add(sb, names[a]))
+        if (!sbl_add(&tmp, names[a]))
             return 0 ;
 
-    return 1 ;
+    return strbuf_copy(sb, &tmp) ;
 }
 
 int sbl_drop_duplicate(strbuf *sb)

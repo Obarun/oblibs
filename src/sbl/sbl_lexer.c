@@ -46,7 +46,7 @@ int sbl_split_string_in_nline(strbuf *sb)
 
 int sbl_replace(strbuf *sb, char const *regex, char const *by)
 {
-    if (!sb->len || !regex || !strcmp(regex, by))
+    if (!sb->len || !regex || !by || !strcmp(regex, by))
         return (errno = EINVAL, 0) ;
 
     size_t pos = 0, bylen = strlen(by) ;
