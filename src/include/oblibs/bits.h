@@ -78,9 +78,6 @@
  * `bitset32_init()` enforces on the requested word count.
  */
 #define BITSET32_ARRAY_SIZE ((UINT32_BITS_MAX + (UINT32_BITS - 1)) / UINT32_BITS)  // Round up to nearest multiple of 32
-#define UINT32_BITS_MAX 1024
-#define BITSET32_WORDS_SIZE(n) ((n + (UINT32_BITS - 1)) / UINT32_BITS)
-#define BITSET32_ARRAY_SIZE ((UINT32_BITS_MAX + (UINT32_BITS - 1)) / UINT32_BITS)  // Round up to nearest multiple of 32
 
 /**
  * @struct bitset32_s
