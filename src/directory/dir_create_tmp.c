@@ -22,7 +22,7 @@
 char *dir_create_tmp(strbuf *sb, char const *dst, char const *tname)
 {
     if (dst[0] != '/')
-        return (errno = EINVAL, 0) ;
+        return (errno = EINVAL, (char *)0) ;
 
     if (!auto_strbuf(sb, dst, "/",tname, ":", "XXXXXX"))
         return 0 ;
