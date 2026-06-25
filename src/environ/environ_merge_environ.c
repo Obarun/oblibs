@@ -18,8 +18,9 @@
 #include <string.h>
 
 #include <oblibs/sbl.h>
-#include <oblibs/lexer.h>
 #include <oblibs/environ.h>
+
+#include "environ-internal.h"
 
 uint8_t environ_merge_environ(strbuf *modifs, strbuf *new)
 {
@@ -32,31 +33,24 @@ uint8_t environ_merge_environ(strbuf *modifs, strbuf *new)
     if (!strbuf_catb(&sa, new->s, new->len))
         return (errno = EOVERFLOW, 0) ;
 
-    if (!environ_rebuild(new))
-        return 0 ;
-
-    lexer_config c = LEXER_CONFIG_ZERO ;
-    _alloc_strbuf_(nkey, new->len + 1) ;
+    _alloc_strbuf_(nval, new->len + 1) ;
 
     /**
-     * Search from @modifs environment if a
-     * same key=value pair exist comparing their
-     * respective keys name.
+     * For each @modifs entry, keep it only if its key is absent from @new
+     * (@new takes precedence on a shared key). The lookup is done directly on
+     * the @new sbl -- no \n-join, no re-decode.
      */
     FOREACH_SBL(modifs, pos) {
 
         char *line = modifs->s + pos ;
         _alloc_strbuf_(ekey, strlen(line) + 1) ;
-        lexer_reset_hard(&c) ;
 
         // get the @modifs environment key
         if (!environ_get_key(&ekey, line))
             return 0 ;
 
-        // search for the @modifs key to the new environment
-        if (!environ_search_key(&nkey, new->s, ekey.s, &c)) {
-            if (errno == EOVERFLOW)
-                return (errno = EOVERFLOW, 0) ;
+        // keep the @modifs entry only when @new has no such key
+        if (!environ_sbl_value(&nval, new->s, new->len, ekey.s)) {
             if (!sbl_add(&sa, line))
                 return 0 ;
         }

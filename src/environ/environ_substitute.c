@@ -26,6 +26,8 @@
 #include <oblibs/genbuf.h>
 #include <oblibs/subst.h>
 
+#include "environ-internal.h"
+
 /* Is @name (a C string) one of the NUL-separated names already in @names? */
 static int name_present(strbuf const *names, const char *name)
 {
@@ -73,7 +75,7 @@ static int dollar_recursive(strbuf *value, const char *key, const char *old, siz
     _alloc_strbuf_(nvalue, olen + 1) ;
     _alloc_strbuf_(nkey, klen + 4) ;
 
-    if (!environ_search_value(&nvalue, old, key))
+    if (!environ_sbl_value(&nvalue, old, olen, key))
         /** don't die here. If it doesn't exist, leave it as it*/
         return 2 ;
 
@@ -141,7 +143,7 @@ static int dollar_replace(strbuf *old, const char *line, const char *mkey, subst
                 }
 
                 /** don't die here. If it doesn't exist, leave it as it*/
-                if (!environ_search_value(&value, old->s, regex.s))
+                if (!environ_sbl_value(&value, old->s, old->len, regex.s))
                     continue ;
 
             } else {
@@ -222,9 +224,6 @@ uint8_t environ_substitute(strbuf *modifs, subst_t *info)
         !strbuf_uncounted(&new))
             return (errno = EOVERFLOW, 0) ;
 
-    if (!environ_rebuild(&new))
-        return 0 ;
-
     FOREACH_SBL(modifs, pos) {
 
         char *line = modifs->s + pos ;
@@ -268,7 +267,7 @@ uint8_t environ_substitute(strbuf *modifs, subst_t *info)
             return 0 ;
 
         _alloc_strbuf_(nval, new.len + 1) ;
-        if (!environ_search_value(&nval, new.s, mkey.s))
+        if (!environ_sbl_value(&nval, new.s, new.len, mkey.s))
             return 0 ;
 
         nval.s[strlen(nval.s)] = 0 ;
@@ -303,9 +302,6 @@ uint8_t environ_substitute(strbuf *modifs, subst_t *info)
             return 0 ;
         }
     }
-
-    if (!sbl_split_string_in_nline(&new))
-        return 0 ;
 
     if (!strbuf_copyb(modifs, new.s, new.len) ||
         !strbuf_uncounted(modifs))

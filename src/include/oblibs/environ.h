@@ -161,9 +161,9 @@ extern uint8_t environ_parse_file(strbuf *sb, const char *file) ;
  * @return 1 on success (including the empty-@modifs case).
  * @return 0 on failure:
  *      - errno `EOVERFLOW` when a `strbuf`/`sbl` copy or append cannot grow
- *      - errno as left by a failing sub-call (`environ_rebuild`,
- *        `environ_get_key`, `environ_get_value`, `environ_search_value`,
- *        `dollar_replace`, `genbuf_append`); see those for the exact value
+ *      - errno as left by a failing sub-call (`environ_get_key`,
+ *        `environ_get_value`, `environ_search_value`, `dollar_replace`,
+ *        `genbuf_append`); see those for the exact value
  *        (e.g. `EINVAL` from `environ_get_value` when an entry has no `=`)
  */
 extern uint8_t environ_substitute(strbuf *modifs, subst_t *info) ;
@@ -329,22 +329,6 @@ extern int environ_untrim(strbuf *out, strbuf const *sbl) ;
 extern uint8_t environ_search_value(strbuf *sb, const char *str, const char *key) ;
 
 /**
- * @brief Rejoin a NUL-separated key=value list into one newline-separated block.
- *
- * Walks the `sbl` entries of @sb and rebuilds a single string where the entries
- * are separated by `\n` (no trailing newline; the last separator is replaced by
- * a NUL). @sb is replaced in place with the result. An empty @sb is a no-op
- * success.
- *
- * @param[in,out] sb  Buffer to rebuild in place.
- *
- * @return 1 on success (including the empty case).
- * @return 0 on failure if any `strbuf` append or the final copy fails; errno is
- *         NOT set by this function on those paths.
- */
-extern uint8_t environ_rebuild(strbuf *sb) ;
-
-/**
  * @brief Merge the key=value entries of a file into @modifs.
  *
  * Parses @file (via `environ_parse_file`) and merges its entries into @modifs.
@@ -473,14 +457,13 @@ extern uint8_t environ_merge_dir_g(strbuf *modifs, const char *path) ;
  * the source report).
  *
  * @param[in,out] modifs  Accumulator environment; rewritten in place.
- * @param[in,out] new     Environment whose entries take precedence; rebuilt
- *                        in place by `environ_rebuild` as a side effect.
+ * @param[in] new         Environment whose entries take precedence; read only
+ *                        (its keys are looked up directly on its sbl).
  *
  * @return 1 on success (including the empty-@modifs case).
  * @return 0 on failure:
  *      - errno `EOVERFLOW` on a `strbuf`/`sbl` copy or append that cannot grow
- *      - failure forwarded from `environ_rebuild` (no errno set),
- *        `environ_get_key`, or `environ_search_key`
+ *      - failure forwarded from `environ_get_key`
  */
 extern uint8_t environ_merge_environ(strbuf *modifs, strbuf *new) ;
 
