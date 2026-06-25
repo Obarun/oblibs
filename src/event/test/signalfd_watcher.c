@@ -35,8 +35,9 @@ static void test_signal_callback(sse_watcher_t *w, void *cbdata, int event) {
 
 /* File-local recorder: captures the signo carried by the dispatched siginfo so
  * a test can assert WHICH signal was delivered, not merely that some callback
- * ran. sse_dispatch_signal coalesces (keeps the last siginfo) and calls the
- * callback once, so g_last_signo is that last signal's number. */
+ * ran. sse_dispatch_signal reads one siginfo per dispatch and fires the callback
+ * once for it, so g_last_signo is the signal delivered on the latest cycle and
+ * g_signal_calls counts total deliveries. */
 static int g_last_signo = 0 ;
 static int g_signal_calls = 0 ;
 
@@ -47,6 +48,27 @@ static void record_signal_cb(sse_watcher_t *w, void *cbdata, int event) {
         g_last_signo = (int)s->si.ssi_signo ;
         g_signal_calls++ ;
     }
+}
+
+/* Multi-recorder: appends every delivered signo across callbacks so a test can
+ * assert that EACH distinct pending signal reaches the consumer, not just the
+ * last one drained from the signalfd. */
+#define ASEEN_MAX 16
+static int aseen[ASEEN_MAX] ;
+static int anseen = 0 ;
+
+static void collect_signal_cb(sse_watcher_t *w, void *cbdata, int event) {
+    (void) cbdata ; (void) event ;
+    if (w->sdata && anseen < ASEEN_MAX) {
+        sse_signal_t *s = (sse_signal_t *)w->sdata ;
+        aseen[anseen++] = (int)s->si.ssi_signo ;
+    }
+}
+
+static bool aseen_has(int signo) {
+    for (int i = 0 ; i < anseen ; i++)
+        if (aseen[i] == signo) return true ;
+    return false ;
 }
 
 /* Drain the loop until the recorder fires or the iteration budget runs out. */
@@ -88,8 +110,42 @@ static bool test_signal_watchers_comprehensive(void) {
     return true;
 }
 
-/* A burst of the same standard signal collapses to a single pending instance;
- * the delivery must still surface and carry the right signo. */
+/* Regression: two DISTINCT signals pending before a single dispatch must BOTH
+ * reach the consumer. The signalfd is level-triggered and the dispatch reads one
+ * siginfo per cycle, so the second signal re-pends and is delivered on a later
+ * cycle. The old code drained the whole queue keeping only the last siginfo,
+ * silently losing the other distinct signal. */
+static bool test_signal_distinct_no_loss(void) {
+    sse_epoll_t loop;
+    sse_watcher_t w;
+
+    TEST_ASSERT(sse_new(&loop, 10), "Failed to create epoll loop");
+    loop.running = true;
+
+    TEST_ASSERT(sse_start_signal(&loop, &w, collect_signal_cb, NULL, 1), "Failed to start signal watcher");
+    TEST_ASSERT(sse_attach_signal(&w, SIGUSR1), "Failed to attach SIGUSR1");
+    TEST_ASSERT(sse_attach_signal(&w, SIGUSR2), "Failed to attach SIGUSR2");
+
+    anseen = 0 ;
+    /* Both pending before ANY dispatch. */
+    TEST_ASSERT(kill(getpid(), SIGUSR1) == 0, "Failed to send SIGUSR1");
+    TEST_ASSERT(kill(getpid(), SIGUSR2) == 0, "Failed to send SIGUSR2");
+
+    int it = 20 ;
+    while (it-- > 0 && anseen < 2)
+        if (!sse_run(&loop, 50)) break ;
+
+    TEST_ASSERT(anseen == 2, "Both distinct pending signals must be delivered (no loss)");
+    TEST_ASSERT(aseen_has(SIGUSR1), "SIGUSR1 must reach the callback");
+    TEST_ASSERT(aseen_has(SIGUSR2), "SIGUSR2 must reach the callback");
+
+    sse_free(&loop);
+    return true;
+}
+
+/* A burst of the same standard signal collapses (in the KERNEL, before the
+ * signalfd: standard signals are not queued) to a single pending instance; the
+ * delivery must still surface and carry the right signo. */
 static bool test_signal_coalescing(void) {
     sse_epoll_t loop;
     sse_watcher_t w;
@@ -197,6 +253,7 @@ static bool test_signal_watchers_lifecycle(void) {
 
 TEST_SUITE_BEGIN("SSE Signal Watcher Tests - Single Loop Multiple Signals")
     RUN_TEST(test_signal_watchers_comprehensive);
+    RUN_TEST(test_signal_distinct_no_loss);
     RUN_TEST(test_signal_coalescing);
     RUN_TEST(test_signal_watchers_error_handling);
     RUN_TEST(test_signal_watchers_lifecycle);

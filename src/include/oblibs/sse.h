@@ -195,6 +195,17 @@ struct sse_child_s
 } ;
 typedef struct sse_child_s sse_child_t ;
 
+/**
+ * @brief Per-watcher signal state for a signal watcher.
+ *
+ * @var sse_signal_s::si
+ *   The signalfd_siginfo of the ONE signal delivered to the callback for the
+ *   current dispatch cycle. The dispatch reads exactly one siginfo per cycle, so
+ *   on entry to the callback `si.ssi_signo` is the signal number being delivered
+ *   now (not a coalesced "last of many"). When several distinct signals are
+ *   pending at once, each is delivered on its own dispatch cycle with its own
+ *   callback invocation — read `si.ssi_signo` every time the callback fires.
+ */
 struct sse_signal_s
 {
     struct signalfd_siginfo si ;
@@ -537,6 +548,27 @@ extern void sse_free(sse_epoll_t *p) ;
  * // ... (other sse_free_<type> declarations follow same pattern)
  */
 
+/**
+ * @brief Start a signal watcher on the process-wide signalfd.
+ *
+ * Delivery contract: the callback is invoked once per pending signal, not once
+ * per epoll cycle. Each dispatch reads a single siginfo from the signalfd and
+ * fires the callback for it; because the signalfd is watched level-triggered,
+ * any other distinct signals still pending re-arm the watcher and are delivered
+ * on the following sse_run() cycles, one callback each. No distinct pending
+ * signal is dropped. Read the delivered signal from
+ * `((sse_signal_t *)w->sdata)->si.ssi_signo` inside the callback. Repeated
+ * instances of the SAME standard signal are collapsed by the kernel before the
+ * signalfd (standard signals are not queued) and surface as a single delivery.
+ *
+ * @param p Event loop to register with
+ * @param w Zero-initialized watcher to initialize
+ * @param cb Callback invoked once per delivered signal
+ * @param cbdata User context passed to the callback
+ * @param priority Event processing priority
+ *
+ * @return 1 on success, 0 on failure (errno set)
+ */
 extern int sse_start_signal(sse_epoll_t *p, sse_watcher_t *w, sse_callback_t *cb, void *cbdata, int priority) ;
 extern int sse_attach_signal(sse_watcher_t *w, int signal) ;
 extern int sse_detach_signal(sse_watcher_t *w, int signal) ;

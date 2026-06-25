@@ -617,12 +617,15 @@ static void sse_dispatch_signal(sse_watcher_t *w)
     }
 
     sse_signal_t *s = (sse_signal_t *)w->sdata ;
-    struct signalfd_siginfo si ;
-    ssize_t n ;
 
-    while ((n = lx_signalfd_read(&si)) > 0)
-        s->si = si ;  // Coalesce: keep last signal
-
+    /* Read exactly ONE siginfo per dispatch, then let the callback run once for
+     * it. The signalfd is registered level-triggered (SSE_READ, no SSE_EDGE):
+     * any further distinct signals still pending keep the fd readable, so epoll
+     * re-reports the watcher on the next sse_run() cycle and each pending signal
+     * reaches the callback in turn. Draining the whole queue here and keeping
+     * only the last siginfo would silently drop every other distinct pending
+     * signal — the kernel queue is emptied and they never re-pend. */
+    ssize_t n = lx_signalfd_read(&s->si) ;
     if (n < 0) {
         sse_err(w, errno) ;
         sse_stop_signal(w) ;
