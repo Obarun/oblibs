@@ -68,20 +68,59 @@ static void test_basic(void)
     TEST_END() ;
 }
 
-/* The reimplemented escape branch: each letter -> its control byte. */
+/* The reimplemented escape branch: each letter -> its control byte. The \n
+ * letter escape is NOT tested here: a decoded newline is rejected (see
+ * test_newline_rejected); the other six letters map to their control byte. */
 static void test_escapes(void)
 {
     TEST_START("test_escapes") ;
     _alloc_strbuf_(stk, 64) ;
-    TEST_ASSERT(environ_trim(&stk, "K=\"\\a\\b\\t\\n\\v\\f\\r\""), "trim") ;
-    TEST_ASSERT(!strcmp(stk.s, "K=\a\b\t\n\v\f\r"), "escape mapping") ;
+    TEST_ASSERT(environ_trim(&stk, "K=\"\\a\\b\\t\\v\\f\\r\""), "trim") ;
+    TEST_ASSERT(!strcmp(stk.s, "K=\a\b\t\v\f\r"), "escape mapping") ;
     TEST_ASSERT((unsigned char)stk.s[2] == 7,  "\\a -> BEL") ;
     TEST_ASSERT((unsigned char)stk.s[3] == 8,  "\\b -> BS") ;
     TEST_ASSERT((unsigned char)stk.s[4] == 9,  "\\t -> TAB") ;
-    TEST_ASSERT((unsigned char)stk.s[5] == 10, "\\n -> LF") ;
-    TEST_ASSERT((unsigned char)stk.s[6] == 11, "\\v -> VT") ;
-    TEST_ASSERT((unsigned char)stk.s[7] == 12, "\\f -> FF") ;
-    TEST_ASSERT((unsigned char)stk.s[8] == 13, "\\r -> CR") ;
+    TEST_ASSERT((unsigned char)stk.s[5] == 11, "\\v -> VT") ;
+    TEST_ASSERT((unsigned char)stk.s[6] == 12, "\\f -> FF") ;
+    TEST_ASSERT((unsigned char)stk.s[7] == 13, "\\r -> CR") ;
+    TEST_END() ;
+}
+
+/* A value that decodes to a reserved separator byte -- NUL (0x00, the sbl entry
+ * separator) or newline (0x0a, the line separator) -- is rejected, whatever
+ * escape form produced it: the \n letter escape, or octal/hex (\0 \012 \x00 \x0a).
+ * (A literal newline inside quotes is already a syntax error, and a literal NUL
+ * cannot occur in the C-string input; this pins the decoded-byte rejection added
+ * on top.) On rejection the stack is rolled back to entry. */
+static void test_separator_byte_rejected(void)
+{
+    TEST_START("test_separator_byte_rejected") ;
+
+    char const *cases[] = {
+        "K=\"a\\nb\"",      /* \n letter escape -> 0x0a */
+        "K=\"a\\012b\"",    /* octal \012 == 0x0a */
+        "K=\"a\\x0ab\"",    /* hex \x0a */
+        "K=\"\\n\"",        /* value is just a newline */
+        "A=1\nK=\"x\\ny\"", /* a good entry then a newline-bearing one */
+        "K=\"a\\0b\"",      /* octal \0 == 0x00 (sbl separator) */
+        "K=\"a\\000b\"",    /* octal \000 == 0x00 */
+        "K=\"a\\x00b\"",    /* hex \x00 */
+        "K=\"\\0\"",        /* value is just a NUL */
+        "A=1\nK=\"x\\000y\"", /* a good entry then a NUL-bearing one */
+    } ;
+    for (size_t i = 0 ; i < sizeof(cases)/sizeof(*cases) ; i++) {
+        _alloc_strbuf_(stk, 64) ;
+        TEST_ASSERT(environ_trim(&stk, cases[i]) == 0, cases[i]) ;
+        TEST_ASSERT(stk.len == 0, "stack rolled back on separator-byte rejection") ;
+    }
+
+    /* the same escapes that do NOT produce 0x0a are still accepted: octal/hex
+     * of a non-newline byte, and the \n-adjacent octal \011 (TAB) / \013 (VT). */
+    {
+        _alloc_strbuf_(stk, 64) ;
+        TEST_ASSERT(environ_trim(&stk, "K=\"a\\011b\\013c\""), "non-newline escapes ok") ;
+        TEST_ASSERT(!strcmp(stk.s, "K=a\tb\vc"), "octal \\011 -> TAB, \\013 -> VT") ;
+    }
     TEST_END() ;
 }
 
@@ -260,6 +299,7 @@ int main(void)
 
     test_basic() ;
     test_escapes() ;
+    test_separator_byte_rejected() ;
     test_backslash_quote() ;
     test_hex_octal() ;
     test_whitespace() ;

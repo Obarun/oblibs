@@ -89,14 +89,24 @@ extern char **environ ;
  * https://skarnet.org/software/execline/envfile.html. On a syntax error the
  * parser stops and the function returns failure.
  *
+ * A value that decodes to contain a NUL (`0x00`) or a newline (`0x0a`) — only
+ * reachable via a `\0`/`\012`/`\x00` or `\n`/`\012`/`\x0a` escape inside a quoted
+ * value — is REJECTED as an error: an environment value must not contain either,
+ * as they are the separators the sbl layout and the joined text form reserve
+ * (used by `environ_untrim`/`environ_get_value`/`environ_substitute` to walk
+ * entries). Rejecting the newline is a deliberate divergence from execline's
+ * `envfile`, which permits it.
+ *
  * @param[in,out] sb  Destination buffer; parsed entries are appended to its
- *                    current contents (it is not cleared first).
+ *                    current contents (it is not cleared first). On the
+ *                    NUL/newline rejection it is rolled back to its length on
+ *                    entry.
  * @param[in] file    Text to parse as a C string (envfile content, not a path).
  *
  * @return 1 on success.
- * @return 0 on a syntax error in @file (a warning naming the offending line is
- *         logged; errno is NOT set by this path), or if the final
- *         `strbuf_uncounted` close fails.
+ * @return 0 on a syntax error in @file, or on a value containing a NUL (`0x00`)
+ *         or a newline (`0x0a`); a warning is logged (errno is NOT set by these
+ *         paths), or if the final `strbuf_uncounted` close fails.
  *
  * @note On `strbuf` growth failure during parsing the process is terminated via
  *       `log_die_nomem`; this is not reported as a `0` return.

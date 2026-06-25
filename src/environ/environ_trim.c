@@ -28,7 +28,7 @@
  * These functions was modified by Eric Vidal <eric@obarun.org> to use struct stack instead
  * of struct stralloc */
 
-static void environ_scanoct (strbuf *sb, size_t pos)
+static uint8_t environ_scanoct (strbuf *sb, size_t pos)
 {
     uint32_t u ;
     if (!strbuf_terminate(sb))
@@ -36,6 +36,7 @@ static void environ_scanoct (strbuf *sb, size_t pos)
     u32_oscan(sb->s + pos, &u) ;
     sb->s[pos] = u ;
     sb->len = pos+1 ;
+    return (uint8_t)u ;
 }
 
 static inline uint8_t environ_cclass (char c)
@@ -115,18 +116,29 @@ int environ_trim (strbuf *sb, char const *file)
         { 0x000f, 0x0417, 0x000f, 0x0417, 0x0417, 0x0409, 0x0405, 0x0417, 0x0417, 0x0417, 0x0417, 0x0817, 0x0417, 0x0417 }
     } ;
     unsigned int line = 1 ;
-    size_t mark = 0, pos = 0 ;
-    uint8_t state = 0 ;
+    size_t mark = 0, pos = 0, start = sb->len ;
+    uint8_t state = 0, badbyte = 0 ;
+    /* badbyte: a value byte decoded to a separator the sbl/text layout reserves --
+     * NUL (0x00, the sbl entry separator) or newline (0x0a, the line separator in
+     * the joined text form). Either one can only be produced by an escape inside a
+     * quoted value -- the \n letter escape, or octal/hex (\012, \0, \x0a, \x00) --
+     * so we reject it at each production point. A value containing one cannot round
+     * -trip through the module (environ_untrim/environ_get_value/environ_substitute
+     * walk entries by those separators), so an environment value must not contain
+     * one. The table itself cannot catch the octal/hex forms: it is keyed on the
+     * input character, not on the byte the escape computes. The letter escape only
+     * yields 0x07..0x0d, so 0x0a is the only reserved byte reachable there. */
     while (state < 14) {
         char c = environ_next(file, &pos) ;
         uint16_t what = table[state][environ_cclass(c)] ;
         state = what & 0x0f ;
-        if (what & 0x0400) environ_scanoct(sb, mark) ;
+        if (what & 0x0400) { uint8_t b = environ_scanoct(sb, mark) ; if (b == '\0' || b == '\n') { badbyte = 1 ; break ; } }
         if (what & 0x0100) mark = sb->len ;
         if (what & 0x1000) {
             static char const esc[] = "abtnvfr" ;
             char const *p = memchr(esc, c, 7) ;
             c = 7 + (p ? p - esc : 7) ;
+            if (c == '\n') { badbyte = 1 ; break ; }   /* the \n letter escape */
         }
         if (what & 0x0010) if (!strbuf_catb(sb, &c, 1)) log_die_nomem("strbuf") ;
         if (what & 0x0020) line++ ;
@@ -136,8 +148,13 @@ int environ_trim (strbuf *sb, char const *file)
         {
         sb->s[sb->len-2] = (scan_digit(sb->s[sb->len-2], 16) << 4) + scan_digit(sb->s[sb->len-1], 16) ;
         sb->len-- ;
+        if (sb->s[sb->len-1] == '\0' || sb->s[sb->len-1] == '\n') { badbyte = 1 ; break ; }   /* \x00 / \x0a hex escape */
         }
-        if (what & 0x0800) environ_scanoct(sb, mark) ;
+        if (what & 0x0800) { uint8_t b = environ_scanoct(sb, mark) ; if (b == '\0' || b == '\n') { badbyte = 1 ; break ; } }
+    }
+    if (badbyte) {
+        sb->len = start ;
+        log_warn_return(LOG_EXIT_ZERO, "a NUL or newline byte in a value is not allowed in file: ", file) ;
     }
     if (state > 14) {
         char fmt[U32_FMT] ;
