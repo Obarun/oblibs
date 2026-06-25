@@ -227,6 +227,86 @@ extern uint8_t environ_search_key(strbuf *sb, const char *str, const char *key, 
 extern uint8_t environ_get_value(strbuf *sb, const char *str) ;
 
 /**
+ * @brief Encode a raw value into envfile syntax, appended to @out.
+ *
+ * Inverse of the file decoder `environ_trim` at the value granularity: for any
+ * value this function ACCEPTS, parsing the appended bytes back reproduces @value
+ * byte-for-byte (proven for every byte `0x01..0xff` except `0x0a`). A "clean"
+ * value (non-empty, no leading/trailing space, and free of `"`, `\`, bytes
+ * `< 0x20` and `0x7f`) is appended verbatim so common values stay unquoted and
+ * readable; otherwise it is wrapped in double quotes with a single canonical
+ * escape per byte (`\"`, `\\`, the letter escapes `\a \b \t \v \f \r` for
+ * `0x07,0x08,0x09,0x0b,0x0c,0x0d`, and 3-digit octal `\OOO` for any other control
+ * byte). `#`, `=` and high (UTF-8) bytes are NOT escaped: the parser keeps them
+ * literal in a value. The empty value appends nothing (decodes back to "").
+ *
+ * A value containing a literal newline (`0x0a`) is REJECTED with errno `EINVAL`
+ * and nothing is appended: an environment value must not contain a newline. The
+ * module's NUL-separated/newline-joined value duality (`environ_get_value`,
+ * `environ_untrim`, `environ_substitute`) uses `0x0a` as the entry separator, so
+ * a newline-bearing value could not round-trip through the whole module; refusing
+ * it at the encode boundary makes that an explicit, caller-handled error instead
+ * of silent downstream corruption. The guarantee is therefore total: every value
+ * this function accepts round-trips on every decode path of the module.
+ *
+ * @param[in,out] out   Destination buffer; the encoded value is appended to its
+ *                      current contents (it is not cleared first). Left unchanged
+ *                      on the `EINVAL` rejection.
+ * @param[in] value     Raw value to encode (a C string; no embedded NUL).
+ *
+ * @return 1 on success.
+ * @return 0 on failure:
+ *      - errno `EINVAL` if @value contains a literal newline (`0x0a`)
+ *      - a `strbuf` append failure (errno as left by the strbuf call, typically
+ *        `ERANGE`)
+ */
+extern uint8_t environ_untrim_value(strbuf *out, char const *value) ;
+
+/**
+ * @brief Append a full `key=value` entry, value-encoded and newline-terminated.
+ *
+ * Appends `@key`, `=`, the `environ_untrim_value` encoding of @value, then `\n`
+ * to @out. @key is appended verbatim and must be a valid envfile key (no `=`, no
+ * `\n`, no surrounding whitespace, not starting with `#`); the function does not
+ * validate it. @value is subject to `environ_untrim_value`'s newline rejection.
+ *
+ * @param[in,out] out   Destination buffer; the entry is appended. May be left
+ *                      partially appended (key and `=`) on a @value rejection.
+ * @param[in] key       Entry key, appended verbatim.
+ * @param[in] value     Raw value, encoded via `environ_untrim_value`.
+ *
+ * @return 1 on success.
+ * @return 0 on failure:
+ *      - errno `EINVAL` if @value contains a literal newline (`0x0a`), forwarded
+ *        from `environ_untrim_value`
+ *      - a `strbuf` append failure (errno as left by the strbuf call, typically
+ *        `ERANGE`)
+ */
+extern uint8_t environ_untrim_kv(strbuf *out, char const *key, char const *value) ;
+
+/**
+ * @brief Serialize a NUL-separated key=value list into envfile text. Inverse of
+ *        `environ_trim`.
+ *
+ * Walks the `sbl` entries of @sbl (as produced by `environ_trim`) and appends,
+ * for each, a `key=<encoded value>\n` line to @out (via `environ_untrim_kv`).
+ * Each value is re-encoded with `environ_untrim_value`, so parsing the result
+ * back with `environ_trim` reproduces @sbl byte-for-byte. The key is appended
+ * verbatim. An empty @sbl appends nothing.
+ *
+ * @param[in,out] out  Destination buffer; the envfile text is appended to its
+ *                     current contents (it is not cleared first).
+ * @param[in] sbl      Source entries as a NUL-separated key=value list.
+ *
+ * @return 1 on success (including the empty case).
+ * @return 0 on failure:
+ *      - errno `EINVAL` if an entry has no `=`, or forwarded from
+ *        `environ_untrim_value` if a value contains a newline (`0x0a`)
+ *      - a `strbuf` append failure (errno as left by the strbuf call)
+ */
+extern int environ_untrim(strbuf *out, strbuf const *sbl) ;
+
+/**
  * @brief Look up the value associated with @key inside raw environment text.
  *
  * Locates the entry whose key is @key (via `environ_search_key`), parses that
