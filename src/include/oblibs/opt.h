@@ -76,8 +76,13 @@ struct opt_scan_s {
     char const  *arg ;     /* argument of the option just returned (0 if OPT_NONE) */
     int          id ;      /* id of the option just returned */
     char const  *problem ; /* offending token, set on OPT_UNKNOWN / OPT_MISSARG */
+    bool         terminated ; /* set when OPT_END is caused by a "--" terminator
+                               * (every remaining token is an operand), as opposed
+                               * to stopping at a plain positional. Lets a caller
+                               * tell "options ended here on purpose" from "options
+                               * ended because an operand appeared". */
 } ;
-#define OPT_SCAN_ZERO { .ind = 1, .pos = 0, .arg = 0, .id = 0, .problem = 0 }
+#define OPT_SCAN_ZERO { .ind = 1, .pos = 0, .arg = 0, .id = 0, .problem = 0, .terminated = 0 }
 
 /** opt_scan return codes (besides the matched option's id, which is >= 0). */
 enum {
@@ -94,6 +99,8 @@ enum {
  * subcommand. Handles short clustering (-zt), glued/separate arguments
  * (-tfoo / -t foo), long options (--tree foo / --tree=foo / --color), and the
  * "--" terminator. A lone "-" is treated as a positional (returns OPT_END).
+ * On OPT_END, st->terminated tells whether the stop was a "--" terminator (all
+ * remaining tokens are operands) rather than a plain positional.
  *
  * @return >= 0 : opts[i].id of the matched option (st->arg set if OPT_REQUIRED).
  *         OPT_END / OPT_UNKNOWN / OPT_MISSARG otherwise.

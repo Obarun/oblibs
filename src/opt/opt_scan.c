@@ -36,6 +36,7 @@ int opt_scan(int argc, char const *const *argv, opt_t const *opts, size_t n, opt
 {
     st->arg = 0 ;
     st->id = 0 ;
+    st->terminated = false ;
 
     /* Done with the chars of the current short cluster? advance to next token. */
     if (st->pos && (st->ind >= argc || !argv[st->ind] || !argv[st->ind][st->pos])) {
@@ -57,6 +58,7 @@ int opt_scan(int argc, char const *const *argv, opt_t const *opts, size_t n, opt
 
             if (!tok[2]) {                   /* "--" terminator */
                 st->ind++ ;
+                st->terminated = true ;
                 return OPT_END ;
             }
 

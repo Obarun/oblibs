@@ -82,6 +82,17 @@ static int dispatch(int argc, char const *const *argv, opt_cmd_t const *cmd, voi
         return opt_emit_usage(prog, cmd) ;
     }
 
+    if (!st.terminated)
+        for (int i = 1 ; i < argc ; i++) {
+            char const *tok = argv[i] ;
+            if (!tok || tok[0] != '-' || !tok[1])
+                continue ; // operand, or lone "-"
+            if (tok[1] == '-' && !tok[2])
+                break ; // "--" : the rest are operands
+            log_fatal("option after operands: ", tok) ;
+            return opt_emit_usage(prog, cmd) ;
+        }
+
     if (cmd->fn)
         return cmd->fn(argc, argv, data) ;
 
