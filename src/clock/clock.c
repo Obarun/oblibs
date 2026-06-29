@@ -37,6 +37,37 @@ size_t clock_tai64n_fmt(char *s, struct timespec const *ts)
                             (unsigned long)(uint32_t)ts->tv_nsec) ;
 }
 
+int clock_tai64n_scan(char const *s, struct timespec *ts)
+{
+    if (s[0] != '@')
+        return 0 ;
+
+    uint64_t label = 0 ;
+    uint32_t nano = 0 ;
+
+    for (unsigned int i = 1 ; i <= 16 ; i++) {
+        unsigned char d = scan_digit((unsigned char)s[i], 16) ;
+        if (d >= 16)
+            return 0 ;
+        label = (label << 4) | d ;
+    }
+
+    for (unsigned int i = 17 ; i <= 24 ; i++) {
+        unsigned char d = scan_digit((unsigned char)s[i], 16) ;
+        if (d >= 16)
+            return 0 ;
+        nano = (nano << 4) | d ;
+    }
+
+    if (nano >= 1000000000U)
+        return 0 ;
+
+    ts->tv_sec = (time_t)(label - 0x4000000000000000ULL - CLOCK_TAI_UTC) ;
+    ts->tv_nsec = (long)nano ;
+
+    return 1 ;
+}
+
 size_t clock_local_fmt(char *s, struct timespec const *ts)
 {
     struct tm tm ;

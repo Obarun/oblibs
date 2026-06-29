@@ -80,6 +80,27 @@ extern int clock_now(struct timespec *ts) ;
 extern size_t clock_tai64n_fmt(char *s, struct timespec const *ts) ;
 
 /**
+ * @brief Parse a TAI64N external stamp ('@' + 24 hex) from @s into @ts.
+ *
+ * Exact inverse of clock_tai64n_fmt: expects `@`, then a 16-hex-digit TAI64
+ * label, then an 8-hex-digit nanosecond field, and reconstructs @ts->tv_sec as
+ * `label - 2^62 - CLOCK_TAI_UTC` and @ts->tv_nsec as the decoded nanoseconds.
+ * Hex digits are accepted in either case. The scan is NUL-safe: a non-hex byte
+ * (the terminating NUL included) ends parsing with a rejection, so the function
+ * reads at most the 25 stamp bytes of a NUL-terminated string and never past the
+ * NUL. Bytes after the 24th hex digit are not inspected; the caller delimits the
+ * stamp (its width is the constant `CLOCK_TAI64N_LEN`).
+ *
+ * @param[in] s String to parse. Must not be NULL (no NULL check).
+ * @param[out] ts Receives the decoded time on success; left untouched on failure.
+ *                Must not be NULL on the success path.
+ * @return 1 if @s holds a well-formed stamp with nanoseconds in `[0, 1e9)`.
+ * @return 0 if @s does not start with `@`, contains a non-hex digit within the
+ *         24-digit body, or the nanosecond field is `>= 1e9`. Sets no errno.
+ */
+extern int clock_tai64n_scan(char const *s, struct timespec *ts) ;
+
+/**
  * @brief Write the local time of @ts as "YYYY-MM-DD HH:MM:SS.nnnnnnnnn" into @s.
  *
  * Converts @ts->tv_sec to broken-down local time with `localtime_r` (TZ-aware),

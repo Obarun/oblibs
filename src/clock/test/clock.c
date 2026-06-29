@@ -81,6 +81,43 @@ static void test_golden(void)
     TEST_END() ;
 }
 
+/* clock_tai64n_scan is the exact inverse of clock_tai64n_fmt: every golden
+ * stamp must scan back to its captured {sec, nano}, and malformed stamps must
+ * be rejected. */
+static void test_tai64n_scan(void)
+{
+    TEST_START("test_tai64n_scan") ;
+
+    for (size_t i = 0 ; i < sizeof gold / sizeof *gold ; i++) {
+        struct timespec ts ;
+        TEST_ASSERT(clock_tai64n_scan(gold[i].tai, &ts), "golden stamp must scan") ;
+        TEST_ASSERT(ts.tv_sec == gold[i].sec, "scanned tv_sec round-trips fmt") ;
+        TEST_ASSERT(ts.tv_nsec == gold[i].nano, "scanned tv_nsec round-trips fmt") ;
+
+        /* fmt(scan(x)) == x for every golden input. */
+        char a[CLOCK_TAI64N_LEN + 1] ;
+        clock_tai64n_fmt(a, &ts) ;
+        TEST_ASSERT(!strcmp(a, gold[i].tai), "fmt(scan(stamp)) == stamp") ;
+    }
+
+    struct timespec ts ;
+    /* missing '@' */
+    TEST_ASSERT(!clock_tai64n_scan("40000000586846a500000000", &ts), "missing @ rejected") ;
+    /* non-hex inside the 16-digit label */
+    TEST_ASSERT(!clock_tai64n_scan("@g0000000586846a500000000", &ts), "non-hex in label rejected") ;
+    /* non-hex inside the 8-digit nanosecond field */
+    TEST_ASSERT(!clock_tai64n_scan("@40000000586846a50000000g", &ts), "non-hex in nano rejected") ;
+    /* nanoseconds == 1e9 (0x3b9aca00) must be rejected */
+    TEST_ASSERT(!clock_tai64n_scan("@40000000586846a53b9aca00", &ts), "nano >= 1e9 rejected") ;
+    /* truncated stamp (NUL before the 24th digit) */
+    TEST_ASSERT(!clock_tai64n_scan("@40000000586846a5", &ts), "short stamp rejected") ;
+    /* uppercase hex must scan identically (case-insensitive body) */
+    TEST_ASSERT(clock_tai64n_scan("@40000000586846A500000000", &ts), "uppercase hex accepted") ;
+    TEST_ASSERT(ts.tv_sec == 1483228800 && ts.tv_nsec == 0, "uppercase decodes same value") ;
+
+    TEST_END() ;
+}
+
 /* clock_now must succeed and produce well-formed, self-consistent stamps. */
 static void test_now(void)
 {
@@ -297,6 +334,7 @@ int main(void)
     printf("=== clock test suite ===\n\n") ;
 
     test_golden() ;
+    test_tai64n_scan() ;
     test_now() ;
     test_constant() ;
     test_pack() ;
