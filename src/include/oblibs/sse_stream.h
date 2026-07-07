@@ -448,9 +448,15 @@ extern int sse_stream_get_error(const sse_stream_t *stream) ;
 /**
  * @brief Create a Unix domain server socket.
  *
- * Uses `socketunix_create`, `socketunix_bind`, and `socketunix_listen` to create,
- * bind to the specified path (unlinks path first), and listen on a non-blocking,
- * CLOEXEC socket. Uses a default backlog if the provided one is 0.
+ * Uses `socketunix_create`, `socketunix_bind_reuse`, and `socketunix_listen` to
+ * create, bind to the specified path, and listen on a non-blocking, CLOEXEC
+ * socket. Uses a default backlog if the provided one is 0.
+ *
+ * Binding goes through `socketunix_bind_reuse`: it takes an exclusive lock on a
+ * sidecar file `"<path>.lock"`, unlinks any stale socket node, then binds. A
+ * restart over an orphan socket node therefore succeeds instead of failing with
+ * `EADDRINUSE`, while a second live binder is rejected with `EBUSY` rather than
+ * stealing the bound socket.
  *
  * @param path    Null-terminated path to bind
  * @param backlog Listen backlog (use 0 for default)
@@ -459,10 +465,13 @@ extern int sse_stream_get_error(const sse_stream_t *stream) ;
  * @retval -1 errno is set
  *
  * @errno EINVAL if path is NULL
- * @errno EADDRINUSE if path already bound
+ * @errno EBUSY if another process already holds the bind lock
  *
- * @note Unlinks path on creation — suitable for transient services.
- *       Caller must unlink manually on shutdown if desired.
+ * @note The bind lock fd is `O_CLOEXEC` and is held for the lifetime of the
+ *       process (released at exit or exec); the server is expected to run its
+ *       accept loop in the same process. A `"<path>.lock"` file is left beside
+ *       the socket, and the socket node itself is not unlinked on shutdown —
+ *       remove both manually if desired.
  */
 extern int sse_streamux_create_server(const char *path, int backlog) ;
 

@@ -41,7 +41,8 @@ int sse_streamux_create_server(const char *path, int backlog)
     if (fd < 0)
         return -1 ;
 
-    if (socketunix_bind(fd, path) < 0) {
+    int fdlock ;
+    if (socketunix_bind_reuse(fd, path, &fdlock) < 0) {
         close(fd) ;
         return -1 ;
     }
