@@ -396,22 +396,30 @@ static void test_streamux_helpers(void) {
     file_tryunlink(TEST_SOCKET_PATH);
 
     // Test 1: Create server
-    int server_fd = sse_streamux_create_server(TEST_SOCKET_PATH, 5);
+    int fdlock = -1;
+    int server_fd = sse_streamux_create_server(TEST_SOCKET_PATH, 5, &fdlock);
     TEST_ASSERT(server_fd >= 0, "Failed to create server socket");
+    TEST_ASSERT(fdlock >= 0, "Bind lock fd not returned");
 
     // Verify socket exists
     struct stat st;
     TEST_ASSERT(stat(TEST_SOCKET_PATH, &st) == 0, "Socket file not created");
     TEST_ASSERT(S_ISSOCK(st.st_mode), "Not a socket file");
 
+    close(fdlock);
     close(server_fd);
     file_tryunlink(TEST_SOCKET_PATH);
 
     // Test 2: Test invalid parameters
     errno = 0;
-    int invalid_fd = sse_streamux_create_server(NULL, 5);
+    int invalid_fd = sse_streamux_create_server(NULL, 5, &fdlock);
     TEST_ASSERT(invalid_fd < 0, "Should fail with NULL path");
     TEST_ASSERT(errno == EINVAL, "Should set EINVAL for NULL path");
+
+    errno = 0;
+    invalid_fd = sse_streamux_create_server(TEST_SOCKET_PATH, 5, NULL);
+    TEST_ASSERT(invalid_fd < 0, "Should fail with NULL fdlock");
+    TEST_ASSERT(errno == EINVAL, "Should set EINVAL for NULL fdlock");
 
     errno = 0;
     invalid_fd = sse_streamux_create_client(NULL);

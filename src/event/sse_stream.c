@@ -32,26 +32,28 @@ static void sse_stream_cleanup_internal(sse_stream_t *stream) ;
 static sse_stream_t *sse_stream_ref(sse_stream_t *stream) ;
 static void sse_stream_unref(sse_stream_t *stream) ;
 
-int sse_streamux_create_server(const char *path, int backlog)
+int sse_streamux_create_server(const char *path, int backlog, int *fdlock)
 {
-    if (!path)
+    if (!path || !fdlock)
         return (errno = EINVAL, -1) ;
 
     int fd = socketunix_create(O_CLOEXEC | O_NONBLOCK) ;
     if (fd < 0)
         return -1 ;
 
-    int fdlock ;
-    if (socketunix_bind_reuse(fd, path, &fdlock) < 0) {
+    int lock ;
+    if (socketunix_bind_reuse(fd, path, &lock) < 0) {
         close(fd) ;
         return -1 ;
     }
 
     if (socketunix_listen(fd, backlog ? backlog : SOCKETUNIX_BACKLOG) < 0) {
+        close(lock) ; // release the flock we just took, otherwise rebind is bricked
         close(fd) ;
         return -1 ;
     }
 
+    *fdlock = lock ;
     return fd ;
 }
 

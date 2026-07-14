@@ -460,20 +460,25 @@ extern int sse_stream_get_error(const sse_stream_t *stream) ;
  *
  * @param path    Null-terminated path to bind
  * @param backlog Listen backlog (use 0 for default)
+ * @param fdlock  Out: descriptor of the held bind lock, owned by the caller
  *
  * @return File descriptor on success, -1 on error
  * @retval -1 errno is set
  *
- * @errno EINVAL if path is NULL
+ * @errno EINVAL if path or fdlock is NULL
  * @errno EBUSY if another process already holds the bind lock
  *
- * @note The bind lock fd is `O_CLOEXEC` and is held for the lifetime of the
- *       process (released at exit or exec); the server is expected to run its
- *       accept loop in the same process. A `"<path>.lock"` file is left beside
- *       the socket, and the socket node itself is not unlinked on shutdown —
- *       remove both manually if desired.
+ * @note On success `*fdlock` receives the bind lock fd, now owned by the caller
+ *       for the lifetime of the server; on failure `*fdlock` is left untouched.
+ *       The lock fd is `O_CLOEXEC`, so an exec always releases it — but a forked
+ *       child that runs to `_exit` WITHOUT exec inherits it and keeps the
+ *       `flock` held. The caller MUST therefore close `*fdlock` explicitly in
+ *       any such child; otherwise the orphan keeps the lock and bricks a later
+ *       rebind (`EBUSY`). A `"<path>.lock"` file is left beside the socket, and
+ *       the socket node itself is not unlinked on shutdown — remove both
+ *       manually if desired.
  */
-extern int sse_streamux_create_server(const char *path, int backlog) ;
+extern int sse_streamux_create_server(const char *path, int backlog, int *fdlock) ;
 
 /**
  * @brief Connect to a Unix domain server.
