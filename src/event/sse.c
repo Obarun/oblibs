@@ -953,6 +953,7 @@ void sse_free(sse_epoll_t *p)
     if (!p)
        return ;
 
+    int e = errno ;
     /* Run any still-pending deferred action first, while the loop state is
      * coherent, so a deferred free (e.g. a stream closed just before shutdown)
      * is not leaked. */
@@ -1012,4 +1013,6 @@ void sse_free(sse_epoll_t *p)
         close(p->fd) ;
 
     p->fd = -1 ;
+
+    errno = e ;
 }
