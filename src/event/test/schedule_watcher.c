@@ -164,13 +164,18 @@ static bool test_schedule_watchers_comprehensive(void) {
      * The previous assertion (last_event & SSE_READ) was vacuous: the watcher
      * is registered with SSE_READ, so any dispatch necessarily carries that
      * flag. Assert observable effects instead:
-     *   1. exactly one fire happened (one-shot timer, no interval),
+     *   1. exactly one fire has happened so far. Each arm of the timerfd is
+     *      one-shot (it_interval == 0); on expiration sse_dispatch_schedule
+     *      recomputes the next cron occurrence and rearms. test_expr is
+     *      "* * * * ?" (every minute), so the rearm lands at the next top of
+     *      minute -- up to 60s away -- hence still a single fire at this point.
      *   2. the dispatch timestamp was actually stamped and is not before the
      *      creation timestamp (sse_dispatch sets w->time.dispatched before the
      *      callback),
-     *   3. the expiration was drained: an immediate re-poll on the now-disarmed
-     *      timer yields no further callback. */
-    TEST_ASSERT_EQ(1, test_data.call_count, "One-shot schedule must fire exactly once");
+     *   3. the rearm is in the future: an immediate non-blocking re-poll must
+     *      not produce a second callback. (Repeated firing itself is proven in
+     *      test_schedule_rearms_repeatedly with an every-second cron.) */
+    TEST_ASSERT_EQ(1, test_data.call_count, "Schedule must have fired exactly once so far");
     TEST_ASSERT(timespec_set(&test_schedule.time.dispatched),
                "Dispatch timestamp must be stamped on fire");
     TEST_ASSERT(test_schedule.time.dispatched.tv_sec > test_schedule.time.created.tv_sec ||
@@ -179,11 +184,11 @@ static bool test_schedule_watchers_comprehensive(void) {
                "Dispatch time must not precede creation time");
 
     int prev_count = test_data.call_count;
-    /* Drain any stray readiness without blocking; the one-shot timer is disarmed. */
+    /* Poll without blocking; the rearm is ~a minute out, so no second fire yet. */
     sse_run(&loop, 0);
     sse_run(&loop, 0);
     TEST_ASSERT_EQ(prev_count, test_data.call_count,
-               "Disarmed one-shot schedule must not fire again");
+               "Rearmed schedule must not fire again before its next occurrence");
 
     /* === Test watcher stop/restart === */
     TEST_ASSERT(sse_stop_schedule(&hourly), "Failed to stop hourly schedule");
@@ -486,10 +491,63 @@ static bool test_schedule_clock_change_handling(void) {
     return true;
 }
 
+/* Regression guard for the one-shot-schedule bug: a schedule armed on a cron
+ * expression fired once and then went silent, because sse_dispatch_schedule
+ * only rearmed on the ECANCELED (clock-change) path -- never on a normal
+ * expiration. The timerfd is intentionally one-shot (it_interval == 0), so
+ * without an explicit rearm the second occurrence never comes.
+ *
+ * Use a 6-field "every second" cron so several occurrences fit in a short
+ * window. Two properties are asserted:
+ *   - the callback fires at least twice  -> the schedule was rearmed
+ *     (the bug fired exactly once),
+ *   - it does NOT fire far more than once per second over the window ->
+ *     cron_next() returns an occurrence strictly after now, so the rearm never
+ *     lands in the past and the loop does not spin. */
+static bool test_schedule_rearms_repeatedly(void) {
+    sse_epoll_t loop;
+    sse_watcher_t sec_watcher;
+    struct test_callback_data sec_data;
+    cron_t sec_expr = CRON_EXPR_ZERO;
+
+    test_callback_init(&sec_data);
+
+    TEST_ASSERT(sse_new(&loop, 10), "Failed to create epoll loop");
+    loop.running = true ;
+
+    /* Every second: 6 fields, the leading column is seconds. */
+    int r = parse_cron("* * * * * ?", &sec_expr, NULL);
+    TEST_ASSERT(r, "Failed to parse every-second cron expression");
+
+    TEST_ASSERT(sse_start_schedule(&loop, &sec_watcher, test_schedule_callback, &sec_data,
+                                  &sec_expr, 1),
+               "Failed to start every-second schedule");
+
+    /* Drive the loop for a fixed wall-clock window regardless of how many times
+     * the callback fired. A single-fire regression stops at 1; a rearm-in-the-
+     * past busy-loop would inflate the count far beyond one per second. */
+    const int window = 4 ;
+    time_t start = time(NULL) ;
+    while (time(NULL) - start < window) {
+        if (!sse_run(&loop, 100))
+            break ;
+    }
+
+    TEST_ASSERT(sec_data.call_count >= 2,
+               "schedule must rearm and fire repeatedly, not exactly once");
+    TEST_ASSERT(sec_data.call_count <= 2 * window,
+               "schedule must not busy-loop (cron_next must be strictly after now)");
+
+    sse_free(&loop);
+
+    return true;
+}
+
 TEST_SUITE_BEGIN("SSE Schedule Watcher Tests - Single Loop Multiple Schedules")
     RUN_TEST(test_schedule_watchers_comprehensive);
     RUN_TEST(test_schedule_watchers_error_handling);
     RUN_TEST(test_schedule_cron_patterns);
     RUN_TEST(test_schedule_getfire_contract);
     RUN_TEST(test_schedule_clock_change_handling);
+    RUN_TEST(test_schedule_rearms_repeatedly);
 TEST_SUITE_END()

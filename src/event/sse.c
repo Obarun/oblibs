@@ -761,6 +761,14 @@ static void sse_dispatch_schedule(sse_watcher_t *w)
         sse_err(w, e) ;
         return ;
     }
+
+    time_t when = sse_getfire_schedule(w) ;
+    if (!sse_modify_schedule(w, when)) {
+        sse_err(w, errno) ;
+        sse_stop_schedule(w) ;
+        return ;
+    }
+    sse_err_zero(w) ;
 }
 
 static void sse_dispatch_eventfd(sse_watcher_t *w)
