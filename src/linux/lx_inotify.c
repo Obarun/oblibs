@@ -62,8 +62,7 @@ bool lx_inotify_iterator(struct inotify_event **event)
         size_t event_size = sizeof(struct inotify_event) + name_len ;
         len += event_size ;
 
-        // Skip events with no mask or IN_IGNORED
-        if (!(*event)->mask || (*event)->mask & IN_IGNORED) {
+        if (!(*event)->mask) {
             continue ;
         }
 
@@ -205,6 +204,23 @@ int lx_inotify_del(const char *what)
     hash_del(&iwd_by_wd, wd) ;
     free(wd->path) ;
     free(wd) ;
+
+    return 1 ;
+}
+
+int lx_inotify_forget(int wd)
+{
+    struct lx_inotify_wd_s *w ;
+    w = hash_find(&iwd_by_wd, &wd, sizeof(int)) ;
+    if (w == NULL)
+        return (errno = ENOENT, 0) ;
+
+    /* The kernel already removed this watch (IN_IGNORED); do NOT call
+     * inotify_rm_watch -- the wd is stale. Just drop our bookkeeping. */
+    hash_del(&iwd, w) ;
+    hash_del(&iwd_by_wd, w) ;
+    free(w->path) ;
+    free(w) ;
 
     return 1 ;
 }

@@ -338,6 +338,64 @@ void test_lx_inotify_read_iterator_dir(void) {
     free((void *)dir_path);
 }
 
+// Test that IN_IGNORED (runtime watch death) is surfaced by the iterator and
+// that lx_inotify_forget() drops the dead wd from both hash tables.
+void test_lx_inotify_ignored_forget(void) {
+    printf("Testing IN_IGNORED surfacing and lx_inotify_forget...\n");
+    // Ensure clean state
+    lx_inotify_end();
+
+    const char *path = create_temp_file();
+    assert(path != NULL && "Failed to create temp file for ignored test");
+
+    int fd = lx_inotify_init();
+    assert(fd >= 0 && "Failed to initialize inotify for ignored test");
+
+    int wd = lx_inotify_add(path, IN_MODIFY);
+    assert(wd > 0 && "Failed to add inotify watch for ignored test");
+
+    // Kill the watched path at runtime: the kernel removes the watch and
+    // delivers IN_IGNORED carrying its wd.
+    assert(unlink(path) == 0 && "Failed to unlink watched file");
+
+    int retries = 5;
+    bool found_ignored = false;
+    while (retries-- > 0 && !found_ignored) {
+        int ret = lx_inotify_read();
+        assert(ret >= 0 && "lx_inotify_read failed or returned error");
+
+        FOREACH_INOTIFY() {
+            if (!(event->mask & IN_IGNORED))
+                continue;
+            assert(event->wd == wd && "IN_IGNORED wd mismatch");
+
+            // The wd must still resolve to its path at surfacing time so the
+            // consumer can identify which watch died.
+            struct lx_inotify_wd_s *w = lx_inotify_get_wd(event->wd);
+            assert(w != NULL && "Dead wd must still resolve before forget");
+            assert(strcmp(w->path, path) == 0 && "Dead wd path mismatch");
+
+            found_ignored = true;
+        }
+        if (!found_ignored)
+            usleep(100000);
+    }
+    assert(found_ignored && "IN_IGNORED event was not surfaced by the iterator");
+
+    // Consumer drops the dead entry: both hash tables must be cleared.
+    assert(lx_inotify_forget(wd) == 1 && "lx_inotify_forget failed on live dead wd");
+    assert(lx_inotify_get_wd(wd) == NULL && "wd-based hash still holds forgotten wd");
+    struct lx_inotify_wd_s *w_path = hash_find(&iwd, path, strlen(path));
+    assert(w_path == NULL && "path-based hash still holds forgotten wd");
+
+    // Forgetting an unknown wd fails with ENOENT.
+    errno = 0;
+    assert(lx_inotify_forget(wd) == 0 && errno == ENOENT && "Expected ENOENT forgetting unknown wd");
+
+    lx_inotify_end();
+    free((void *)path);
+}
+
 // Test lx_inotify_end
 void test_lx_inotify_end(void) {
     printf("Testing lx_inotify_end...\n");
@@ -374,6 +432,7 @@ int main(void) {
     test_lx_inotify_del();
     test_lx_inotify_read_iterator();
     test_lx_inotify_read_iterator_dir();
+    test_lx_inotify_ignored_forget();
     test_lx_inotify_end();
     printf("All tests passed successfully!\n");
     return 0;

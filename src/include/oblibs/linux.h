@@ -68,6 +68,7 @@ extern int lx_inotify_read(void) ;
 extern int lx_inotify_add(const char *what, uint32_t imask) ;
 extern int lx_inotify_update(const char *what, uint32_t imask) ;
 extern int lx_inotify_del(const char *what) ;
+extern int lx_inotify_forget(int wd) ;
 extern void lx_inotify_end(void) ;
 extern int lx_inotify_search(struct lx_inotify_wd_s **wd, const char *what) ;
 extern int lx_inotify_get_fd(void) ;
