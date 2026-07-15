@@ -31,6 +31,11 @@ int sse_start_inotify(sse_epoll_t *p, sse_watcher_t *w, sse_callback_t *cb, void
     if (h != NULL)
         return 1 ;
 
+    if (lx_inotify_get_fd() >= 0) {
+        errno = EEXIST ;
+        log_warnsys_return(LOG_EXIT_ZERO, "an inotify watcher already exists: attach paths to it with sse_attach_inotify instead of creating a second watcher") ;
+    }
+
     int fd = lx_inotify_init() ;
     if (fd < 0)
         log_warnusys_return(LOG_EXIT_ZERO, "initiate inotify") ;

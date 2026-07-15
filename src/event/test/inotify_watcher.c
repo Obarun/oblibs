@@ -12,6 +12,7 @@
  * except according to the terms contained in the LICENSE file.
  */
 
+#include <errno.h>
 #include <string.h>
 #include <sys/inotify.h>
 #include <sys/stat.h>
@@ -514,9 +515,64 @@ static bool test_inotify_path_management(void) {
     return true;
 }
 
+/* Guard: a second, distinct inotify watcher must be refused.
+ *
+ * The inotify backend is a process-global singleton (one fd multiplexing every
+ * watch), so a single fd maps to a single epoll entry. A second watcher could
+ * never receive events -- epoll_ctl(ADD) fails with EEXIST and keeps its
+ * data.ptr on the first watcher. sse_start_inotify must reject it explicitly
+ * (return 0, errno EEXIST, watcher left inactive) rather than silently marking
+ * it active. Multi-path monitoring is done by attaching paths to the single
+ * watcher, not by creating more watchers. */
+static bool test_inotify_second_watcher_refused(void) {
+    sse_epoll_t loop;
+    sse_watcher_t watcher1, watcher2;
+    struct test_callback_data cb_data1, cb_data2;
+
+    test_callback_init(&cb_data1);
+    test_callback_init(&cb_data2);
+
+    cleanup_test_dirs();
+    TEST_ASSERT(create_test_dirs(), "Failed to create test directories");
+
+    TEST_ASSERT(sse_new(&loop, 10), "Failed to create epoll loop");
+
+    /* First watcher takes ownership of the singleton inotify instance. */
+    TEST_ASSERT(sse_start_inotify(&loop, &watcher1, test_inotify_callback, &cb_data1, 1),
+               "Failed to start first inotify watcher");
+
+    /* Second, distinct watcher on the same (or any) loop must be refused. */
+    errno = 0;
+    TEST_ASSERT(!sse_start_inotify(&loop, &watcher2, test_inotify_callback, &cb_data2, 1),
+               "Second inotify watcher must be refused");
+    TEST_ASSERT_EQ(EEXIST, errno, "Refusal must set errno to EEXIST");
+    TEST_ASSERT(!sse_watcher_active(&watcher2), "Refused watcher must stay inactive");
+
+    /* The first watcher must remain fully functional after the refusal. */
+    TEST_ASSERT(sse_attach_inotify(&watcher1, "/tmp/sse_test_dir1", IN_CREATE),
+               "First watcher must still accept path attachments");
+
+    int fd = open("/tmp/sse_test_dir1/guard_probe", O_CREAT | O_WRONLY, 0644);
+    TEST_ASSERT(fd >= 0, "Failed to create probe file");
+    close(fd);
+
+    int max_iterations = 15;
+    while (max_iterations-- > 0 && !cb_data1.callback_called) {
+        if (!sse_run(&loop, 50))
+            break;
+    }
+    TEST_ASSERT(cb_data1.callback_called, "First watcher must keep receiving events");
+
+    sse_free(&loop);
+    cleanup_test_dirs();
+
+    return true;
+}
+
 TEST_SUITE_BEGIN("SSE Inotify Watcher Tests - Single Watcher Multiple Paths")
     RUN_TEST(test_inotify_watcher_comprehensive);
     RUN_TEST(test_inotify_watcher_error_handling);
     RUN_TEST(test_inotify_event_types);
     RUN_TEST(test_inotify_path_management);
+    RUN_TEST(test_inotify_second_watcher_refused);
 TEST_SUITE_END()
