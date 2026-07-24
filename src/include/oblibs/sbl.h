@@ -213,12 +213,38 @@ extern int sbl_remove(strbuf *sb, char const *s) ;
 extern int sbl_reverse(strbuf *sb) ;
 
 /**
- * @brief Sort the elements lexicographically in ascending order.
+ * @brief Sort the elements in ascending order according to @cmp.
  *
  * Builds a VLA of pointers into `sb->s` (one per element), selection-sorts those
- * pointers with `strcmp` (ascending), then rebuilds @sb from the sorted pointers
- * via a scratch buffer copied back over @sb. There is no per-element length
- * limit: elements may be of any size.
+ * pointers with @cmp (ascending), then rebuilds @sb from the sorted pointers via
+ * a scratch buffer copied back over @sb. There is no per-element length limit:
+ * elements may be of any size. This is the general form of `sbl_sort`, which is
+ * just this function called with `strcmp`.
+ *
+ * @param[in,out] sb Target sbl.
+ * @param[in] cmp Comparator following the `strcmp` convention: given two element
+ *                C strings @a and @b, it returns < 0 if @a must precede @b, 0 if
+ *                they are equivalent, and > 0 if @a must follow @b. Equivalent
+ *                elements keep their relative order (the sort uses `> 0`, i.e. it
+ *                is a strict, non-reordering comparison for ties).
+ * @return 1 on success.
+ * @return 0 in two distinct cases:
+ *      - the list is empty (`sb->len == 0`); `errno` is NOT set. An empty list
+ *        is reported as 0, not 1.
+ *      - building or copying back the scratch buffer failed; `errno` is the
+ *        strbuf failure errno (`ERANGE` on size overflow, else the allocator
+ *        errno).
+ * @note The pointer table is a VLA sized by the element count, so a list with a
+ *       very large number of elements can exhaust the C stack.
+ */
+extern int sbl_sort_cmp(strbuf *sb, int (*cmp)(char const *a, char const *b)) ;
+
+/**
+ * @brief Sort the elements lexicographically in ascending order.
+ *
+ * Thin wrapper over `sbl_sort_cmp` called with `strcmp`, sorting the elements by
+ * ascending byte order. See `sbl_sort_cmp` for the full mechanics (VLA of
+ * pointers, scratch rebuild) and the shared return/errno contract.
  *
  * @param[in,out] sb Target sbl.
  * @return 1 on success.
@@ -230,6 +256,7 @@ extern int sbl_reverse(strbuf *sb) ;
  *        errno).
  * @note The pointer table is a VLA sized by the element count, so a list with a
  *       very large number of elements can exhaust the C stack.
+ * @see sbl_sort_cmp
  */
 extern int sbl_sort(strbuf *sb) ;
 

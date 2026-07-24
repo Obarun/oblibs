@@ -28,6 +28,7 @@
 #include <oblibs/sbl.h>
 #include <oblibs/strbuf.h>
 #include <oblibs/files.h>
+#include <oblibs/types.h>
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -237,6 +238,60 @@ static void test_sort_duplicates(void)
         check_list(&sb, exp, 3) ;
         strbuf_free(&sb) ;
     }
+    TEST_END() ;
+}
+
+/* Numeric comparator for sbl_sort_cmp: scan both operands as decimal u64 and
+ * order by value, so "9" precedes "10" and "33" precedes "1000" -- an ordering
+ * that strcmp (byte order) cannot produce for mixed-length decimal strings. */
+static int cmp_numeric(char const *a, char const *b)
+{
+    uint64_t ua = 0, ub = 0 ;
+    u64_scan(a, &ua) ;
+    u64_scan(b, &ub) ;
+    return ua < ub ? -1 : ua > ub ? 1 : 0 ;
+}
+
+/* sbl_sort_cmp with a numeric comparator yields value order, and sbl_sort on the
+ * very same data yields lexicographic (byte) order -- proving the comparator is
+ * honoured and that the two orderings genuinely differ on this dataset. */
+static void test_sort_cmp(void)
+{
+    TEST_START("test_sort_cmp") ;
+    /* mixed-length decimals where value order and byte order disagree */
+    char const *un[] = { "10", "2", "1000", "9", "33" } ;
+    {
+        strbuf sb = STRBUF_ZERO ;
+        build(&sb, un, 5) ;
+        errno = 0 ;
+        TEST_ASSERT(sbl_sort_cmp(&sb, cmp_numeric), "sbl_sort_cmp numeric") ;
+        char const *exp[] = { "2", "9", "10", "33", "1000" } ;
+        check_list(&sb, exp, 5) ;
+        strbuf_free(&sb) ;
+    }
+    {
+        /* non-regression: the same input through plain sbl_sort stays byte-sorted */
+        strbuf sb = STRBUF_ZERO ;
+        build(&sb, un, 5) ;
+        TEST_ASSERT(sbl_sort(&sb), "sbl_sort lexicographic") ;
+        char const *exp[] = { "10", "1000", "2", "33", "9" } ;
+        check_list(&sb, exp, 5) ;
+        strbuf_free(&sb) ;
+    }
+    TEST_END() ;
+}
+
+/* Like sbl_sort, sbl_sort_cmp reports the empty list as 0 WITHOUT setting errno
+ * (the "if (!sb->len) return 0" guard runs before the comparator is ever used). */
+static void test_sort_cmp_empty(void)
+{
+    TEST_START("test_sort_cmp_empty") ;
+    strbuf sb = STRBUF_ZERO ;
+    errno = 0 ;
+    TEST_ASSERT(sbl_sort_cmp(&sb, cmp_numeric) == 0, "empty list returns 0") ;
+    TEST_ASSERT(errno == 0, "empty list leaves errno untouched") ;
+    TEST_ASSERT(sb.len == 0, "empty list stays empty") ;
+    strbuf_free(&sb) ;
     TEST_END() ;
 }
 
@@ -532,6 +587,8 @@ int main(void)
     test_sort() ;
     test_sort_empty() ;
     test_sort_duplicates() ;
+    test_sort_cmp() ;
+    test_sort_cmp_empty() ;
     test_dropdup_sortndrop() ;
     test_dir_drop_child() ;
     test_rebuild() ;

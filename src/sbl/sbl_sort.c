@@ -16,7 +16,7 @@
 
 #include <oblibs/sbl.h>
 
-int sbl_sort(strbuf *sb)
+int sbl_sort_cmp(strbuf *sb, int (*cmp)(char const *a, char const *b))
 {
     if (!sb->len)
         return 0 ;
@@ -31,7 +31,7 @@ int sbl_sort(strbuf *sb)
 
     for (a = 0 ; a + 1 < nel ; a++)
         for (b = a + 1 ; b < idx ; b++)
-            if (strcmp(names[a], names[b]) > 0) {
+            if (cmp(names[a], names[b]) > 0) {
                 char const *t = names[a] ;
                 names[a] = names[b] ;
                 names[b] = t ;
@@ -45,6 +45,11 @@ int sbl_sort(strbuf *sb)
             return 0 ;
 
     return strbuf_copy(sb, &tmp) ;
+}
+
+int sbl_sort(strbuf *sb)
+{
+    return sbl_sort_cmp(sb, strcmp) ;
 }
 
 int sbl_drop_duplicate(strbuf *sb)
