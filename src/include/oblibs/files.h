@@ -61,10 +61,19 @@ extern int file_write(char const *file, char const *content, size_t len) ;
 
 /** Like file_write but atomic: write @content to a temporary in the same
  * directory then rename() it onto @file, so @file appears all-or-nothing and a
- * failure leaves any previous @file untouched.
+ * failure leaves any previous @file untouched. Equivalent to
+ * file_write_atomic_at() with the directory part of @file as temporary
+ * directory: the temporary is named "<file>.XXXXXX".
  * @Return 1 on success
  * @Return 0 on fail and set errno */
 extern int file_write_atomic(char const *file, char const *content, size_t len) ;
+
+/** Like file_write_atomic but the temporary is created in @tmpdir instead of the
+ * directory of @file. The temporary is named "<tmpdir>/<basename of file>.XXXXXX";
+ *
+ * @Return 1 on success
+ * @Return 0 and set errno on failure; @file is left untouched */
+extern int file_write_atomic_at(char const *tmpdir, char const *file, char const *content, size_t len) ;
 
 /** file_read of @dir/@name (composes @dir "/" @name). */
 extern ssize_t file_read_at(char const *dir, char const *name, char *buf, size_t n) ;

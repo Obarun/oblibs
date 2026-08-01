@@ -14,42 +14,23 @@
 
 #include <stddef.h>
 #include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <errno.h>
 
 #include <oblibs/files.h>
-#include <oblibs/string.h>
-#include <oblibs/io.h>
-#include <oblibs/fd.h>
 
 int file_write_atomic(char const *file, char const *content, size_t len)
 {
-    size_t flen = strlen(file) ;
-    char tmp[flen + 7 + 1] ;                 /* "<file>.XXXXXX" + NUL */
-    auto_strings(tmp, file, ".XXXXXX") ;
+    char const *slash = strrchr(file, '/') ;
+    // dirname of @file: "." with no slash, "/" for a root-level file
+    size_t dlen = !slash || slash == file ? 1 : (size_t)(slash - file) ;
+    char tmpdir[dlen + 1] ;
 
-    int fd = mkstemp(tmp) ;                   /* temp in the same dir -> atomic rename */
-    if (fd < 0)
-        return 0 ;
-
-    if (fchmod(fd, 0644) < 0) {               /* mkstemp creates 0600 */
-        close_fd(fd) ;
-        file_tryunlink(tmp) ;
-        return 0 ;
+    if (!slash) {
+        tmpdir[0] = '.' ;
+    } else {
+        memcpy(tmpdir, file, dlen) ; // slash == file copies the leading '/'
     }
 
-    if (!io_writenclose(fd, content, len)) {  /* writes then closes fd */
-        file_tryunlink(tmp) ;
-        return 0 ;
-    }
+    tmpdir[dlen] = 0 ;
 
-    if (rename(tmp, file) < 0) {
-        file_tryunlink(tmp) ;
-        return 0 ;
-    }
-
-    return 1 ;
+    return file_write_atomic_at(tmpdir, file, content, len) ;
 }
