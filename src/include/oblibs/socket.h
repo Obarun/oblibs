@@ -86,12 +86,12 @@ int socket_unsetfd_flags(int fd, int flags) ;
 /**
  * @brief Set the close-on-exec flag (`FD_CLOEXEC`) on a file descriptor.
  *
- * Convenience macro using `socket_setfd()`.
+ * Convenience macro using `socket_setfd_flags()`.
  *
  * @param[in] fd File descriptor.
  * @return 1 on success, 0 on failure.
  *
- * @see socket_setfd
+ * @see socket_setfd_flags
  */
 #define socket_set_coe(fd) socket_setfd_flags(fd, FD_CLOEXEC)
 
