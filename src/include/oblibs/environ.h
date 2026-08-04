@@ -589,4 +589,49 @@ extern int environ_make (char const **v, size_t argc, char const *s, size_t len)
  */
 extern size_t environ_merge (char const **v, size_t vmax, char const *const *envp, size_t envlen, char const *modifs, size_t modiflen) ;
 
+/**
+ * @brief Append a live `char **environ` to @modifs, skipping what the module
+ *        cannot represent.
+ *
+ * Walks the NULL-terminated array @env and appends each entry to @modifs,
+ * NUL-terminated, producing the `sbl` layout. The same append as
+ * `environ_import_arguments`, plus the validation a REAL environment needs: such
+ * an array has been through no parser of this module.
+ *
+ * Two kinds of entry are skipped, each with a warning:
+ *  - an entry carrying no KEY, i.e. holding no `=` at all (`novalue`) or opening
+ *    on one (`=value`, `=`): `environ_get_key` rejects both, and either would
+ *    make `environ_substitute` fail on the whole accumulator. `execve` validates
+ *    nothing, so a real environment can carry them. An entry with an empty VALUE
+ *    (`KEY=`) is legitimate and IS kept;
+ *  - an entry whose value holds a newline (`0x0a`): `environ_get_value` copies up
+ *    to the first one, so the value would reach the consumers TRUNCATED.
+ *    `environ_parse_file` refuses those on its own path; this is the same rule,
+ *    applied at the raw-import boundary.
+ *
+ * Skipping is not losing: a caller that later overlays @modifs onto the original
+ * array (`environ_create_environ`) still delivers the skipped entry verbatim. It
+ * is only absent from what @modifs feeds -- typically the substitution table of
+ * `environ_substitute`.
+ *
+ * No parsing, no expansion, no deduplication: entries are appended verbatim, in
+ * order. Seed @modifs with this before merging the other sources, so that they
+ * override it -- `environ_merge_environ` and friends make the later source win.
+ *
+ * @param[in,out] modifs  Accumulator environment; entries are appended to its
+ *                        current contents (it is not cleared first).
+ * @param[in] env         NULL-terminated array of `key=value` C strings. An EMPTY
+ *                        array (`env[0] == NULL`) is a success appending nothing:
+ *                        a program may legitimately be started with no
+ *                        environment at all. This is a deliberate divergence from
+ *                        `environ_import_arguments`, which rejects that case.
+ *
+ * @return 1 on success, including when every entry was skipped.
+ * @return 0 on failure:
+ *      - errno `EINVAL` if @env is NULL
+ *      - a `strbuf` copy/append failure (errno as left by the strbuf call,
+ *        typically `ERANGE`); @modifs then keeps the entries appended so far
+ */
+extern uint8_t environ_import_environ(strbuf *modifs, char const *const *env) ;
+
 #endif
