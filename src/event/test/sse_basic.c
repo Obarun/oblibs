@@ -23,6 +23,7 @@
 #include <sys/wait.h>
 #include <sys/inotify.h>
 
+#include <oblibs/log.h>
 #include <oblibs/sse.h>
 #include <oblibs/files.h>
 
@@ -529,6 +530,9 @@ void test_sse_inotify_trigger(void) {
 // --- Main ---
 
 int main(void) {
+
+    VERBOSITY = LOG_LEVEL_WARN;
+    PROG = "sse_basic";
     printf("=== Running SSE Unit Tests ===\n");
 
     test_sse_hash_ops();

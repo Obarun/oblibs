@@ -20,9 +20,13 @@
 #include <string.h>
 #include <stdbool.h>
 #include <sys/wait.h>
+#include <sys/prctl.h>
+#include <signal.h>
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
+
+#include <oblibs/log.h>
 
 int test_count = 0;
 int test_failures = 0;
@@ -80,6 +84,8 @@ int test_failures = 0;
 
 #define TEST_SUITE_BEGIN(suite_name) \
     int main(void) { \
+        VERBOSITY = LOG_LEVEL_WARN; \
+        PROG = suite_name; \
         printf("=== %s ===\n", suite_name); \
         test_count = 0; \
         test_failures = 0;
@@ -103,10 +109,16 @@ static inline void test_sleep_ms(int ms) {
     nanosleep(&ts, NULL);
 }
 
-/* Test process spawning helper */
 static inline pid_t test_spawn_child(void (*child_func)(void)) {
+    pid_t parent = getpid();
     pid_t pid = fork();
     if (pid == 0) {
+        prctl(PR_SET_PDEATHSIG, SIGKILL);
+        /* The parent may have died between the fork and the prctl, in which case
+         * the signal will never come: re-check, a reparented child sees another
+         * ppid. */
+        if (getppid() != parent)
+            _exit(1);
         child_func();
         exit(0);
     }

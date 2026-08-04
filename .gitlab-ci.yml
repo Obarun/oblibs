@@ -12,7 +12,7 @@ stages:
 request:
   stage: request
   script:
-  - meson setup build -D test=true -D pkg-config=true
+  - meson setup build -D test=true -D with-pkgconfig=true
   - meson compile -C build
   - DESTDIR=gitlab-ci meson install -C build
 
@@ -23,9 +23,9 @@ request:
 build:
   stage: build
   script:
-  - meson setup build -D test=true -D pkg-config=true
+  - meson setup build -D test=true -D with-pkgconfig=true
   - meson compile -C build
-  - meson test -C build
+  - meson test -C build --print-errorlogs
   - DESTDIR=gitlab-ci meson install -C build
 
   only:
@@ -35,9 +35,9 @@ build:
 release:
   stage: release
   script:
-  - meson setup build -D test=true -D pkg-config=true
+  - meson setup build -D test=true -D with-pkgconfig=true
   - meson compile -C build
-  - meson test -C build
+  - meson test -C build --print-errorlogs
   - DESTDIR=gitlab-ci meson install -C build
 
   only:
