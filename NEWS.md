@@ -2,6 +2,193 @@
 
 ---
 
+# In 0.4.0.0
+
+This is a major release. oblibs is now **self-contained**: the skalibs and
+execline dependencies are removed entirely and replaced by native modules.
+Consumers must adapt — many interfaces changed name or signature.
+
+- Dependency removal (breaking):
+    - Drop the skalibs dependency entirely; drop the skalibs installation scheme.
+    - Drop the execline dependency (native `environ` substitution engine).
+    - Prune unused includes across the tree; drop obsolete meson options and
+      `build_toolchain.sh` after the removals.
+    - Remove `get_nbline`, `get_wasted_line`, `scan_isspace`, `scan_timeout`,
+      `scan_uid`, `scan_uint32`, `version_cmp`, `version_scan`.
+    - Remove the deprecated `graph2.h` compatibility header.
+
+- New event-loop and streaming APIs:
+    - `sse`: complete epoll-driven event loop unifying I/O, signals, timers,
+      child processes, inotify, eventfd and cron-based scheduling through fd
+      readiness. Includes a Quartz Scheduler cron-expression parser with
+      next-fire-time computation.
+    - `sse_stream` / `stream_message`: SSE-integrated stream I/O with ring
+      buffering, fd passing and structured messaging.
+    - `sse_streamux`: unix-socket multiplexing helpers on top of `sse_stream`
+      (`sse_streamux_create_server`, `sse_streamux_create_client`,
+      `sse_streamux_accept`).
+    - `rbuffer`, `io_rb`, `io_message`: native ring-buffer primitives and
+      structured message parsing over them.
+
+- New native modules (skalibs replacements):
+    - `strbuf`: growable buffer replacing `stralloc`.
+    - `genbuf`: typed growable array replacing `genalloc`.
+    - `sbl`: merged `stack` + `sastr`, backed by `strbuf`.
+    - `stream` (`istream` / `ostream`): buffered fd I/O, three-layer read API.
+    - `fd`: native descriptor helpers (`close_fd`, `chdir_fd`, `move_fd`,
+      `lock_fd`, `remap_fds`, `cloexec_fd`/`uncloexec_fd`, ...).
+    - `ocdb`: native constant database (DJB/skalibs cdb port).
+    - `opt`: native command-line argument parser (operands, dynamic help
+      alignment, hidden options, dispatched sub-command help, epilog, ...).
+    - `spawn` / `exec`: posix_spawn-only child API and execve-with-PATH.
+    - `attributes`: native compiler-attribute macros.
+    - `clock`: native timestamps and timespec helpers (`clock_tai64n_scan`).
+    - `hash`: native hash module replacing uthash.
+    - `types`: self-contained int/uid/gid/pid conversions, strict scan family,
+      `sig_parse` (native `sig0_scan` replacement), endian pack/unpack helpers.
+    - `lx_inotify`, `lx_signalfd`, `lx_signal`: inotify/signalfd/signal APIs.
+
+- New functions:
+    - `io`: `io_read_result`, `io_write_result`, `io_open_mode`, `io_readv`,
+      `io_writev`, `io_allread`/`io_allwrite`, `io_readnclose`/`io_writenclose`.
+    - `files`: native `file_copy`, `tree_copy`, `file_tmpname`, `file_tryunlink`;
+      path-based whole-file read/write over `io_*nclose`; `file_write_atomic_at`,
+      atomic write with a caller-chosen temporary directory, so the target
+      directory never shows a partial or supernumerary file to a concurrent
+      scanner.
+    - `socket`: `socket_private`, `socket_setfd_flags`, `socket_unsetfd_flags`,
+      `socketunix_getucred`, `socketunix_bind_reuse`.
+    - `queue`: `queue_insert_ptr`, `queue_remove_ptr`, `queue_free_ptr`.
+    - `bitset`: add `bitset8_t` and bit-count tracking.
+    - `process`: `process_wait` (blocking waitpid with EINTR retry).
+    - `log`: formatted `flog_*` macros.
+    - `environ`: the envfile value encoder, inverse of `environ_trim` —
+      `environ_untrim_value` (one raw value to envfile syntax, verbatim when
+      clean, double-quoted with canonical escapes otherwise),
+      `environ_untrim_kv` (one `key=value` entry) and `environ_untrim` (a whole
+      NUL-separated sbl back to envfile text). Parsing the output reproduces any
+      accepted value byte-for-byte; a value containing a newline is rejected
+      with EINVAL.
+    - `environ_import_environ`: append a live `char **environ` to an accumulator,
+      skipping with a warning what the module cannot represent — an entry with no
+      key (no `=`, or a leading one), and an entry whose value holds a newline
+      (`environ_get_value` would truncate it silently). A raw environment has been
+      through no parser of this module, so the validation belongs at that
+      boundary; an empty array is a success appending nothing, unlike
+      `environ_import_arguments`.
+    - `sbl`: `sbl_sort_cmp`, the general form of `sbl_sort` taking a
+      caller-supplied comparator.
+    - `strbuf`: `strbuf_uncounted`, the C-string terminator idiom (a NUL written
+      past the counted length).
+    - `string`: `str_search` (native `bytestr` replacement), `auto_strbuf` /
+      `auto_strbuf_builder` for strbuf list-append.
+    - `directory`: `dir_close` (native `direntry` replacement), native
+      `dir_destroy` replacing skalibs `rm_rf`.
+    - `spawn`: `spawn_path_full`, taking file actions and a SETSID flag.
+    - `istream`: `istream_getall` for resumable fixed-size reads.
+    - `attributes`: `attribute_fallthrough`, `attribute_sentinel`,
+      `attribute_format`.
+
+- Interface changes:
+    - `io`: rename `io_set_flags`/`io_unset_flags` to `io_setfl`/`io_unsetfl`;
+      change `io_read`/`io_write` parameter order to match `read`/`write`.
+    - `socket`: rename `socket_accept`/`socket_bind` to `socketunix_accept`/
+      `socketunix_bind`; define `SOCKETUNIX_PATH_MAX`, rename `SOCK_BACKLOG` to
+      `SOCKETUNIX_BACKLOG`.
+    - `queue`: accept a single-element queue at `queue_sort`.
+    - `bitset`: rename `bitset_t` to `bitset32_t`.
+    - `types` (breaking): rename `uid_fmt`/`gid_fmt`/`pid_fmt` and their `scan`
+      counterparts to `uid_format`/`uid_parse` (plus `*_format_base` /
+      `*_parse_base` for an explicit base); drop the octal/hex/binary
+      convenience variants. The old names collided as macros with
+      `skalibs/types.h`, breaking any translation unit including both.
+    - `opt`: an option placed after an operand is now reported as a usage error
+      at the leaf instead of being silently dropped. `opt_scan` stops at the
+      first operand (POSIX) and reports a consumed `--` terminator through
+      `opt_scan_t.terminated`, so operands forced by `--` are left untouched.
+    - `sbl`: `sbl_insert` rejects an offset at or past the list length, and the
+      empty list, with EINVAL — appending is `sbl_add`'s job. Rename
+      `sbl_replace_g` to `sbl_replace_nline`, which states what it does (split
+      per line, replace, rejoin).
+    - `lx_inotify`: `lx_inotify_del` takes a path instead of a wd; add
+      `lx_inotify_search` (path to wd, ENOENT when unknown) and
+      `lx_inotify_forget` to drop a dead watch's bookkeeping.
+      `lx_inotify_iterator` no longer skips `IN_IGNORED`, so consumers see a
+      watch dying at runtime; those that do not handle watch death must now
+      filter `IN_IGNORED` explicitly.
+    - `lx_signalfd`: `lx_signalfd_read` returns `ssize_t` and fills a
+      caller-provided `signalfd_siginfo` (1 read, 0 nothing pending, -1 fatal),
+      instead of conflating signal number and status in an `int`.
+    - `sse`: the caller owns EPOLLHUP/EPOLLRDHUP handling and resource freeing;
+      `SSE_EPOLL_ZERO` and `SSE_WATCHER_ZERO` initialisers are provided; the
+      loop is set running at creation; `sse_poll` takes an explicit timeout
+      instead of hardcoding `SSE_TIMEOUT_INFINITE`;
+      `sse_streamux_create_server` returns the bind lock fd through a required
+      out-parameter so the caller can close it in a non-exec child.
+    - `log`: the `flog_*` macros are reentrant. They formatted into a static
+      per-translation-unit buffer declared in the header; they now format into
+      their own stack buffer via a `log_fmt` helper in `log.c`.
+    - `environ_substitute` is re-entrant on the same `subst_t`: several sources
+      may be fed to it in a row, the call order carrying the precedence, and the
+      last entry for a name wins on all three effects. A name appears at most
+      once in `info->vars`, carries at most one entry in `info->data` (rewritten
+      in place), and at most one occurrence in the unexport list `info->modifs`,
+      where a value without the `!` marker now REMOVES the key instead of leaving
+      it — a key re-exported by a later source must stop being unset. Previously a
+      repeated name appended an entry whose `var` offset pointed past the names
+      blob: the substitution engine read out of bounds, and a name appended later
+      bound that stale entry to the wrong variable. Idempotence is on the table,
+      not on the content: each source must still be passed exactly once.
+
+- Bug fixes:
+    - `environ_substitute`: detect indirect cyclic references.
+    - `environ`: reject NUL and newline bytes in parsed values; make
+      `environ_get_value` a pure extractor (no re-parse).
+    - graph: fix cycle-detection indexing and per-search visited reset; guard the
+      zero-length VLA in `check_cycle_recursive`.
+    - `io_coe`/`io_uncoe` act on `FD_CLOEXEC` via `F_GETFD`/`F_SETFD`.
+    - `parse_cron`: stack-buffer-overflow on an expression of 256 bytes or more,
+      copied into a fixed strbuf stack seed through an unbounded raw write.
+    - `cron_next`: honour `expr->tz` across the whole computation.
+    - `lexer_loop`: the style branch read past the searched string when fewer
+      bytes remained than the pattern length; reached through `sbl_replace` from
+      `environ_substitute`'s recursive path.
+    - `sse_modify_io`: an fd change was silently ignored — the new fd was never
+      added to epoll and the old one stayed armed.
+    - `sse_dispatch_schedule`: a cron-armed schedule fired once and went silent;
+      the one-shot timerfd is now re-armed on normal expiration too. Clock-change
+      recovery keys on ECANCELED (a `TFD_TIMER_CANCEL_ON_SET` timer never returns
+      EOF), so a schedule no longer stops firing after the wall clock is set.
+    - `sse_dispatch_signal`: deliver every distinct pending signal instead of
+      draining the signalfd queue and keeping only the last siginfo.
+    - `sse_dispatch`: free-safe inside callbacks (self-free, sibling-free);
+      `sse_stream` defers the stream free and skips already-closed streams.
+    - `sse_start_inotify`: refuse a second watcher with EEXIST. The inotify
+      backend is a process-global singleton, so a second watcher could never
+      receive events yet was accepted and marked active.
+    - `lx_inotify_add`: store the stable path copy as the `hh_path` hash key.
+    - `io_rb_encode_cmsg`: stop double-consuming `fdout` on flush, which
+      overran the read pointer and emitted phantom `SCM_RIGHTS` descriptors from
+      stale memory; add `rbuffer_peek`. Enforce the fd-passing contract with
+      explicit guards, stop faulting in ring-buffer storage on init and shrink
+      the fd-passing rings to their actual need.
+    - `strbuf_insertb`: guard the memmoves against zero-length NULL calls.
+    - `socket_set_coe`: expanded to the undeclared `socket_setfd`; it now calls
+      `socket_setfd_flags`, so any use of the macro compiles.
+    - `sbl`: `sbl_dir_get_element` returns -1 on error, distinguishable from the
+      "no match" success; `sbl_replace` rejects a NULL replacement with EINVAL
+      instead of dereferencing it; `sbl_sort` sorts pointers rather than copying
+      each element into a fixed 4096-byte slot, removing the per-element cap.
+    - `tree_copy`: replace an existing destination symlink instead of erroring.
+    - Error reporting: `account`, `directory` and `environ_clean_unexport` now
+      report failures through errno.
+
+- Documentation:
+    - Doxygen contracts on the public headers: for every function, the meaning
+      of each return value and the errno set on each failure path.
+
+---
+
 # In 0.3.4.0
 
 - Bug Fixes:
