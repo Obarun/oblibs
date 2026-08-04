@@ -663,6 +663,7 @@ static void sse_dispatch_child(sse_watcher_t *w)
     if (r > 0) {
         // Child exited, store status
         ((sse_child_t *)w->sdata)->status = wstat ;
+        sse_stop_child(w) ;
 
     } else if (!r) {
         // Child still running
