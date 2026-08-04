@@ -240,6 +240,17 @@ static void test_symlink_replace_fatal(void)
 {
     TEST_START("test_symlink_replace_fatal") ;
 
+    /* The premise below is a permission: a directory stripped of its write bit
+     * so unlink() fails. Root is exempt from that check (CAP_DAC_OVERRIDE), so
+     * the unlink succeeds, tree_copy succeeds, and the case tests nothing. It
+     * cannot be made to hold for root -- skip rather than assert a falsehood.
+     * CI runs its jobs as root inside a container; this test only ever ran
+     * unprivileged. */
+    if (!geteuid()) {
+        printf(" SKIP (root: chmod cannot make unlink fail)\n") ;
+        return ;
+    }
+
     char src[512], dst[512] ;
     jp(src, sizeof src, sandbox, "src4") ;
     jp(dst, sizeof dst, sandbox, "dst4") ;
