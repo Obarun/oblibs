@@ -37,9 +37,22 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <oblibs/strbuf.h>
+#include <oblibs/sbl.h>
+#include <oblibs/genbuf.h>
+#include <oblibs/subst.h>
 #include <oblibs/environ.h>
 
 #include "../environ-internal.h"
+
+#define TEST_ASSERT(condition, message) \
+    do { \
+        if (!(condition)) { \
+            printf("FAIL: %s - %s\n", __func__, message) ; \
+            printf("      Line %d: %s\n", __LINE__, #condition) ; \
+            if (errno) printf("      errno: %d (%s)\n", errno, strerror(errno)) ; \
+            exit(1) ; \
+        } \
+    } while(0)
 
 /* Run substitution on @a and assert the resulting sbl equals the sbl decoded
  * from @b. Both sides are decoded by environ_trim (via environ_merge_string),
@@ -235,12 +248,6 @@ empty=t" ;
     compare(&sa, a, b) ;
 }
 
-/* Indirect cycle: dollar_replace tracks the keys expanded in one chain, so a
- * two-step (or longer) cycle is caught instead of looping forever -- value used
- * to oscillate between ${A} and ${B}. The reaching of this assertion at all is
- * the regression guard: a re-introduced loop would hang the suite. The cyclic
- * variables are left literal and an indirect cycle is reported as failure (0),
- * unlike a direct self-reference which succeeds (1) and is left as-is. */
 void cyclic_reference()
 {
     printf("Running test cyclic_reference...\n") ;
@@ -263,10 +270,6 @@ void cyclic_reference()
     subst_free(&info2) ;
 }
 
-/* Direct self-reference A=${A}: the anti-loop guard in dollar_replace
- * ("if (!strcmp(mkey, regex.s)) ... continue") catches a variable that refers to
- * itself and leaves the ${A} literal instead of recursing forever. Without the
- * guard this would loop; with it, A=${A} comes out verbatim. */
 void self_reference()
 {
     printf("Running test self_reference...\n") ;
@@ -277,12 +280,6 @@ void self_reference()
     compare(&sa, "A=x${A}y", "A=x${A}y") ;
 }
 
-/* Escaping is DEAD at the config-value pipeline (environ_merge -> environ_trim ->
- * environ_substitute): environ_trim consumes the backslash inside the quotes
- * before substitution ever runs, so "\${VAR}" is indistinguishable from ${VAR}
- * and the variable IS substituted. This pins the documented behavior -- a
- * backslash does NOT protect a variable here (escaping only survives in the
- * run-script pipeline, a different code path). */
 void escape_is_dead()
 {
     printf("Running test escape_is_dead...\n") ;
@@ -295,14 +292,6 @@ ArgsConfFile=!-f /etc/bluetooth/main.conf" ;
     compare(&sa, a, b) ;
 }
 
-/* Refactor fix #1: a value carrying a LITERAL backslash plus a ${ref}.
- * Raw envfile: A="path\\to ${B}"  (the C source doubles every backslash again).
- * environ_trim decodes "\\" to one '\', leaving the decoded value  path\to ${B}.
- * environ_substitute then resolves ${B} via environ_sbl_value, which returns B's
- * value VERBATIM, giving  path\to ok. The old engine re-ran environ_trim on the
- * stored value during lookup and the literal '\' did not survive -- this case
- * failed before the refactor and must pass now. Expected envfile re-encodes the
- * single '\' as "\\" inside quotes so both sides decode to the same byte. */
 void backslash_with_ref()
 {
     printf("Running test backslash_with_ref...\n") ;
@@ -314,9 +303,6 @@ void backslash_with_ref()
     compare(&sa, a, b) ;
 }
 
-/* Refactor fix #2: a value with a literal double-quote (via \") plus a ${ref}.
- * Raw envfile: A="say \"hi\" ${B}"  -> decoded A = say "hi" ${B}, then ${B}->ok.
- * The verbatim lookup must keep the '"' bytes; a re-trim on lookup would choke. */
 void quote_with_ref()
 {
     printf("Running test quote_with_ref...\n") ;
@@ -326,9 +312,6 @@ void quote_with_ref()
     compare(&sa, a, b) ;
 }
 
-/* Refactor fix #3: '#' and '=' literal inside a value, plus a ${ref}. Neither
- * is escaped by the encoder and both are kept literal by the parser; the value
- * lookup must return them verbatim and still substitute ${B}. */
 void hash_and_equal_with_ref()
 {
     printf("Running test hash_and_equal_with_ref...\n") ;
@@ -339,9 +322,6 @@ void hash_and_equal_with_ref()
     compare(&sa, a, b) ;
 }
 
-/* Prefix collision: X=${FOO} must resolve to FOO's value, never FOOBAR's. This
- * exercises the exact-length match in environ_sbl_value at the substitution
- * level: a prefix match would wrongly pick FOOBAR. */
 void prefix_collision()
 {
     printf("Running test prefix_collision...\n") ;
@@ -351,10 +331,6 @@ void prefix_collision()
     compare(&sa, a, b) ;
 }
 
-/* Key with surrounding whitespace: environ_get_key trims the key when building
- * the sbl, so "  Key  =val" stores key "Key"; a ${Key} reference must still
- * resolve. (The decoded sbl already holds the trimmed key, so this also pins
- * that environ_trim trims the key.) */
 void key_whitespace()
 {
     printf("Running test key_whitespace...\n") ;
@@ -364,8 +340,6 @@ void key_whitespace()
     compare(&sa, a, b) ;
 }
 
-/* getenv precedence: a ${VAR} set in the process environment wins over an entry
- * of the same name in the sbl. dollar_replace calls getenv first. */
 void getenv_precedence()
 {
     printf("Running test getenv_precedence...\n") ;
@@ -389,6 +363,192 @@ void getenv_precedence()
     assert(unsetenv("OB_TEST_PRECEDENCE") == 0) ;
 }
 
+static void feed(subst_t *info, const char *txt)
+{
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
+    TEST_ASSERT(environ_merge_string(&sa, txt) == 1, "merge_string should succeed") ;
+    TEST_ASSERT(environ_substitute(&sa, info) == 1, "environ_substitute should succeed") ;
+}
+
+static void expect_entry(subst_t *info, size_t i, size_t var, const char *name, size_t value, const char *val, unsigned int n)
+{
+    subst_entry_t *d = genbuf_s(subst_entry_t, &info->data) ;
+
+    TEST_ASSERT(i < genbuf_len(subst_entry_t, &info->data), "entry index out of range") ;
+    TEST_ASSERT(d[i].var == var, "entry var offset mismatch") ;
+    TEST_ASSERT(d[i].value == value, "entry value offset mismatch") ;
+    TEST_ASSERT(d[i].n == n, "entry n mismatch") ;
+    /* the offset must land on the intended bytes, inside the blob */
+    TEST_ASSERT(var + strlen(name) < info->vars.len, "var offset outside vars") ;
+    TEST_ASSERT(!strcmp(info->vars.s + var, name), "var offset points at another name") ;
+    if (n) {
+        TEST_ASSERT(value + strlen(val) < info->values.len, "value offset outside values") ;
+        TEST_ASSERT(!strcmp(info->values.s + value, val), "value offset points at another value") ;
+    }
+}
+
+static void expect_blob(strbuf *sb, const char *bytes, size_t len, const char *what)
+{
+    TEST_ASSERT(sb->len == len, what) ;
+    /* a zero-length blob may still have a NULL .s: never hand it to memcmp */
+    TEST_ASSERT(!len || !memcmp(sb->s, bytes, len), what) ;
+}
+
+void duplicate_in_one_source()
+{
+    printf("Running test duplicate_in_one_source...\n") ;
+
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
+    subst_t info = SUBST_ZERO ;
+
+    TEST_ASSERT(environ_merge_string(&sa, "FOO=1\nFOO=2") == 1, "merge_string should succeed") ;
+    /* the decoder keeps both entries: the duplicate really reaches the engine */
+    expect_blob(&sa, "FOO=1\0FOO=2\0", 12, "source sbl must hold both entries") ;
+
+    TEST_ASSERT(environ_substitute(&sa, &info) == 1, "environ_substitute should succeed") ;
+
+    expect_blob(&info.vars, "FOO\0\0", 5, "the name must be stored exactly once") ;
+    TEST_ASSERT(genbuf_len(subst_entry_t, &info.data) == 1, "exactly one entry per name") ;
+    /* values holds "1\0" twice: the first resolution, then the rewritten one */
+    expect_blob(&info.values, "1\0" "1\0", 4, "values blob") ;
+    expect_entry(&info, 0, 0, "FOO", 2, "1", 1) ;
+
+    subst_free(&info) ;
+}
+
+void duplicate_in_one_source_by_effect()
+{
+    printf("Running test duplicate_in_one_source_by_effect...\n") ;
+
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
+    _cleanup_strbuf_ strbuf out = STRBUF_ZERO ;
+    subst_t info = SUBST_ZERO ;
+
+    TEST_ASSERT(environ_merge_string(&sa, "FOO=1\nFOO=2") == 1, "merge_string should succeed") ;
+    TEST_ASSERT(environ_substitute(&sa, &info) == 1, "environ_substitute should succeed") ;
+
+    TEST_ASSERT(subst(&out, "x=${FOO}\0", 9, &info) == 1, "exactly one word produced") ;
+    expect_blob(&out, "x=1\0", 4, "substituted word") ;
+
+    subst_free(&info) ;
+}
+
+void two_calls_overlapping()
+{
+    printf("Running test two_calls_overlapping...\n") ;
+
+    subst_t info = SUBST_ZERO ;
+
+    feed(&info, "A=1\nB=2") ;
+    expect_blob(&info.vars, "A\0\0B\0\0", 6, "names after the first call") ;
+    TEST_ASSERT(genbuf_len(subst_entry_t, &info.data) == 2, "two entries after the first call") ;
+
+    feed(&info, "B=9") ;
+
+    /* the names blob is untouched: B reused its offset, A is still intact */
+    expect_blob(&info.vars, "A\0\0B\0\0", 6, "names must be unchanged by the second call") ;
+    TEST_ASSERT(genbuf_len(subst_entry_t, &info.data) == 2, "no entry added for a known name") ;
+    /* the superseded "2" stays in the blob, unreferenced */
+    expect_blob(&info.values, "1\0" "2\0" "9\0", 6, "values blob") ;
+    expect_entry(&info, 0, 0, "A", 0, "1", 1) ;   /* first call, untouched */
+    expect_entry(&info, 1, 3, "B", 4, "9", 1) ;   /* rewritten in place */
+
+    subst_free(&info) ;
+}
+
+void two_calls_disjoint()
+{
+    printf("Running test two_calls_disjoint...\n") ;
+
+    subst_t info = SUBST_ZERO ;
+
+    feed(&info, "A=1") ;
+    feed(&info, "B=2") ;
+
+    expect_blob(&info.vars, "A\0\0B\0\0", 6, "both names appended") ;
+    expect_blob(&info.values, "1\0" "2\0", 4, "both values appended") ;
+    TEST_ASSERT(genbuf_len(subst_entry_t, &info.data) == 2, "two entries") ;
+    expect_entry(&info, 0, 0, "A", 0, "1", 1) ;
+    expect_entry(&info, 1, 3, "B", 2, "2", 1) ;
+
+    subst_free(&info) ;
+}
+
+void unexport_both_ways()
+{
+    printf("Running test unexport_both_ways...\n") ;
+
+    {   /* unexport then export: the key must be gone */
+        subst_t info = SUBST_ZERO ;
+        feed(&info, "FOO=!1") ;
+        expect_blob(&info.modifs, "FOO\0\0", 5, "the marker registers the key") ;
+        feed(&info, "FOO=2") ;
+        expect_blob(&info.modifs, "\0", 1, "no marker must remove the key") ;
+        TEST_ASSERT(sbl_search(&info.modifs, "FOO") == -1, "FOO must not be a record any more") ;
+        subst_free(&info) ;
+    }
+
+    {   /* export then unexport: the key must appear */
+        subst_t info = SUBST_ZERO ;
+        feed(&info, "FOO=1") ;
+        expect_blob(&info.modifs, "", 0, "no marker, nothing registered") ;
+        feed(&info, "FOO=!2") ;
+        expect_blob(&info.modifs, "FOO\0\0", 5, "the marker registers the key") ;
+        TEST_ASSERT(sbl_search(&info.modifs, "FOO") == 0, "FOO recorded at offset 0") ;
+        subst_free(&info) ;
+    }
+
+    {   /* unexport twice: a single occurrence */
+        subst_t info = SUBST_ZERO ;
+        feed(&info, "FOO=!1") ;
+        feed(&info, "FOO=!2") ;
+        expect_blob(&info.modifs, "FOO\0\0", 5, "the key must not be recorded twice") ;
+        subst_free(&info) ;
+    }
+}
+
+void empty_value_on_second_call()
+{
+    printf("Running test empty_value_on_second_call...\n") ;
+
+    _cleanup_strbuf_ strbuf out = STRBUF_ZERO ;
+    subst_t info = SUBST_ZERO ;
+
+    feed(&info, "FOO=1") ;
+    expect_entry(&info, 0, 0, "FOO", 0, "1", 1) ;
+
+    feed(&info, "FOO=") ;
+
+    TEST_ASSERT(genbuf_len(subst_entry_t, &info.data) == 1, "still one entry") ;
+    expect_blob(&info.values, "1\0", 2, "an empty value must not grow the blob") ;
+    /* n == 0, so value is never dereferenced; it holds the blob end */
+    expect_entry(&info, 0, 0, "FOO", 2, 0, 0) ;
+
+    /* by effect: the word carrying ${FOO} expands to nothing, "y" survives */
+    TEST_ASSERT(subst(&out, "x=${FOO}\0y\0", 11, &info) == 1, "one word left") ;
+    expect_blob(&out, "y\0", 2, "the empty variable must swallow its word") ;
+
+    subst_free(&info) ;
+}
+
+void single_call_unchanged()
+{
+    printf("Running test single_call_unchanged...\n") ;
+
+    subst_t info = SUBST_ZERO ;
+
+    feed(&info, "A=1\nB=${A}x") ;
+
+    expect_blob(&info.vars, "A\0\0B\0\0", 6, "names blob") ;
+    expect_blob(&info.values, "1\0" "1x\0", 5, "values blob") ;
+    expect_blob(&info.modifs, "", 0, "no unexport") ;
+    TEST_ASSERT(genbuf_len(subst_entry_t, &info.data) == 2, "two entries") ;
+    expect_entry(&info, 0, 0, "A", 0, "1", 1) ;
+    expect_entry(&info, 1, 3, "B", 2, "1x", 1) ;
+
+    subst_free(&info) ;
+}
+
 int main() {
 
     basic() ;
@@ -410,6 +570,13 @@ int main() {
     prefix_collision() ;
     key_whitespace() ;
     getenv_precedence() ;
+    duplicate_in_one_source() ;
+    duplicate_in_one_source_by_effect() ;
+    two_calls_overlapping() ;
+    two_calls_disjoint() ;
+    unexport_both_ways() ;
+    empty_value_on_second_call() ;
+    single_call_unchanged() ;
 
     printf("All tests passed successfully.\n") ;
 

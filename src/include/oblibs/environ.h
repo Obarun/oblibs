@@ -145,18 +145,63 @@ extern uint8_t environ_parse_file(strbuf *sb, const char *file) ;
  * then from the other entries of @modifs. A variable referencing itself
  * directly is skipped with a warning; an indirect cycle (A=${B}, B=${A}) is
  * detected and broken with a warning. Values starting with `VAR_UNEXPORT`
- * (`'!'`) are tracked: their key is appended to `info->modifs` and the marker
+ * (`'!'`) are tracked: their key is recorded in `info->modifs` and the marker
  * is stripped before storing the value. On success @modifs is rewritten with
  * the expanded, NUL-separated entries.
+ *
+ * @par Re-entrance: the last entry wins.
+ * The function is RE-ENTRANT on the same @info: several sources may be fed to
+ * it in a row (inherited environment, service section, imported files, values
+ * published at runtime), the CALL ORDER carrying the precedence. For a name
+ * registered by more than one source, the LATEST call wins, on all three
+ * effects. This is the module's policy throughout — see `environ_merge_environ`,
+ * `environ_merge_dir` and `environ_create_environ`. Three invariants hold
+ * without exception:
+ *  - `info->vars`: a name appears AT MOST ONCE. A name already recorded reuses
+ *    its offset instead of being appended again.
+ *  - `info->data`: AT MOST ONE entry per name. A name already carrying an entry
+ *    has it REWRITTEN (new `value` offset, `n` recomputed) rather than getting a
+ *    second one. `n` is 0 when the resolved value is empty (nothing is then
+ *    appended to `info->values`), 1 otherwise.
+ *  - `info->modifs`: AT MOST ONE occurrence per key, same policy applied
+ *    symmetrically. A value carrying `VAR_UNEXPORT` adds the key if absent; a
+ *    value WITHOUT the marker REMOVES it if present — a real removal from the
+ *    NUL-separated list, since a caller reads those records as bare `KEY`
+ *    entries that UNSET the variable, so a key re-exported by a later source
+ *    must leave the list.
+ *
+ * The resolved value is always APPENDED at the end of `info->values`, so the
+ * offsets already handed out stay valid; rewriting an entry therefore leaves its
+ * former value unreferenced in the blob. Those few dead bytes are deliberate:
+ * the context is short-lived and reindexing would cost far more.
+ *
+ * @warning The idempotence is on the TABLE, not on the CONTENT: each source must
+ * be passed EXACTLY ONCE. Re-passing an already expanded @modifs would expand it
+ * a second time — a reference left literal on the first pass because the variable
+ * did not exist yet would get resolved on the second. A caller adding a source to
+ * an accumulated environment must pass that source ALONE, then merge it into its
+ * accumulator; it must not re-submit the whole accumulator.
+ *
+ * @note Within a SINGLE @modifs, a key present more than once yields one entry
+ * (the invariant above), but its value is the one `environ_sbl_value` resolves,
+ * i.e. that of the FIRST occurrence in @modifs — the value is looked up by key
+ * over the whole source, not taken from the entry being walked.
+ *
+ * @pre No value may contain a newline (`0x0a`). `environ_get_value` copies up to
+ * the first `'\n'`, so such a value would be silently TRUNCATED in the table.
+ * `environ_parse_file` already rejects them, so the normal pipeline is safe; a
+ * raw import (an actual `char **environ`) can introduce one and it is the
+ * CALLER's job to filter it out. No guard is enforced here.
  *
  * @param[in,out] modifs  Environment to expand, as a NUL-separated key=value
  *                        list; rewritten in place on success. An empty @modifs
  *                        is a no-op success.
  * @param[in,out] info    Substitution context that accumulates the resolved
  *                        variables, values, unexport markers and per-entry
- *                        metadata. On any failure after entries were appended,
- *                        `info->vars` and `info->values` are rolled back to the
- *                        lengths recorded for the current entry.
+ *                        metadata. On any failure, `info->vars` and
+ *                        `info->values` are rolled back to the lengths they had
+ *                        when the failing entry was entered; `info->modifs` and
+ *                        `info->data` are NOT rolled back.
  *
  * @return 1 on success (including the empty-@modifs case).
  * @return 0 on failure:

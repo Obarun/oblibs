@@ -28,19 +28,6 @@
 
 #include "environ-internal.h"
 
-/* Is @name (a C string) one of the NUL-separated names already in @names? */
-static int name_present(strbuf const *names, const char *name)
-{
-    size_t i = 0 ;
-    while (i < names->len) {
-        const char *p = names->s + i ;
-        if (!strcmp(p, name))
-            return 1 ;
-        i += strlen(p) + 1 ;
-    }
-    return 0 ;
-}
-
 static int dollar_find(strbuf *regex, const char *line)
 {
     lexer_config cfg = LEXER_CONFIG_ZERO ;
@@ -68,7 +55,12 @@ static int dollar_find(strbuf *regex, const char *line)
      return 0 ;
 }
 
-static int dollar_recursive(strbuf *value, const char *key, const char *old, size_t olen, subst_t *info, subst_entry_t *blah)
+/* @varsback/@valuesback are the LENGTHS info->vars/info->values had when the
+ * current entry was entered -- the rollback point. They are deliberately NOT the
+ * entry's var/value offsets: since a repeated name reuses the offset of a name
+ * recorded earlier, truncating to that offset would destroy already registered
+ * names. */
+static int dollar_recursive(strbuf *value, const char *key, const char *old, size_t olen, subst_t *info, size_t varsback, size_t valuesback)
 {
     size_t klen = strlen(key) ;
     _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
@@ -88,8 +80,8 @@ static int dollar_recursive(strbuf *value, const char *key, const char *old, siz
     uint8_t unexport = (nvalue.s[0] == VAR_UNEXPORT) ? 1 : 0 ;
 
     if (!sbl_replace(&sa, nkey.s, nvalue.s + unexport)) {
-        info->vars.len = blah->var ;
-        info->values.len = blah->value ;
+        info->vars.len = varsback ;
+        info->values.len = valuesback ;
         return 0 ;
     }
 
@@ -101,7 +93,8 @@ static int dollar_recursive(strbuf *value, const char *key, const char *old, siz
     return 1 ;
 }
 
-static int dollar_replace(strbuf *old, const char *line, const char *mkey, subst_t *info, subst_entry_t *blah)
+/* @varsback/@valuesback: see dollar_recursive. */
+static int dollar_replace(strbuf *old, const char *line, const char *mkey, subst_t *info, size_t varsback, size_t valuesback)
 {
 
     int r ;
@@ -174,7 +167,7 @@ static int dollar_replace(strbuf *old, const char *line, const char *mkey, subst
                     if (!sbl_add(&seen, nregex.s))
                         return (errno = EOVERFLOW, 0) ;
 
-                    r = dollar_recursive(&value, nregex.s, old->s, old->len, info, blah) ;
+                    r = dollar_recursive(&value, nregex.s, old->s, old->len, info, varsback, valuesback) ;
                     if (!r)
                       return 0 ;
 
@@ -192,8 +185,8 @@ static int dollar_replace(strbuf *old, const char *line, const char *mkey, subst
                 uint8_t unexport = (value.s[0] == VAR_UNEXPORT) ? 1 : 0 ;
 
                 if (!sbl_replace(&new, key.s, value.s + unexport)) {
-                    info->vars.len = blah->var ;
-                    info->values.len = blah->value ;
+                    info->vars.len = varsback ;
+                    info->values.len = valuesback ;
                     return 0 ;
                 }
 
@@ -242,28 +235,54 @@ uint8_t environ_substitute(strbuf *modifs, subst_t *info)
         if (mval.s[0] == VAR_UNEXPORT)
             unexport = 1 ;
 
-        blah.var = info->vars.len ;
-        blah.value = info->values.len ;
+        /* Rollback point of THIS entry: the blob lengths on arrival. Kept apart
+         * from blah.var/blah.value, which are the entry's offsets and may point
+         * back into what a previous entry (or a previous call) registered. */
+        size_t varsback = info->vars.len ;
+        size_t valuesback = info->values.len ;
 
-        if (!name_present(&info->vars, mkey.s)) {
+        /* One name at most in info->vars: reuse the offset when it is already
+         * recorded, append it otherwise. */
+        ssize_t namepos = sbl_search(&info->vars, mkey.s) ;
+
+        if (namepos < 0) {
+
+            blah.var = info->vars.len ;
 
             if (!strbuf_catb(&info->vars, mkey.s, mkey.len + 1)) {
-                info->vars.len = blah.var ;
-                info->values.len = blah.value ;
+                info->vars.len = varsback ;
+                info->values.len = valuesback ;
                 return 0 ;
             }
+
+        } else {
+
+            blah.var = (size_t)namepos ;
         }
 
+        /* One occurrence at most in info->modifs, last source wins: the marker
+         * adds the key, its absence removes it. A caller reads that list as bare
+         * KEY records that UNSET the variable, so a key re-exported by a later
+         * source has to leave it. */
         if (unexport) {
 
-            if (!strbuf_catb(&info->modifs, mkey.s, mkey.len + 1)) {
-                info->vars.len = blah.var ;
-                info->values.len = blah.value ;
-                return (errno = EOVERFLOW, 0) ;
+            if (sbl_search(&info->modifs, mkey.s) < 0) {
+
+                if (!strbuf_catb(&info->modifs, mkey.s, mkey.len + 1)) {
+                    info->vars.len = varsback ;
+                    info->values.len = valuesback ;
+                    return (errno = EOVERFLOW, 0) ;
+                }
             }
+
+        } else {
+
+            /* cannot fail: a no-op when absent, and sbl_remove_at only rejects
+             * an offset sbl_search did not return */
+            sbl_remove(&info->modifs, mkey.s) ;
         }
 
-        if (!dollar_replace(&new, line, mkey.s, info, &blah))
+        if (!dollar_replace(&new, line, mkey.s, info, varsback, valuesback))
             return 0 ;
 
         _alloc_strbuf_(nval, new.len + 1) ;
@@ -271,6 +290,13 @@ uint8_t environ_substitute(strbuf *modifs, subst_t *info)
             return 0 ;
 
         nval.s[strlen(nval.s)] = 0 ;
+
+        /* The new value is always appended at the END of info->values, so the
+         * offsets already handed out stay valid. Overwriting an entry therefore
+         * leaves its former value unreferenced in the blob; those few dead bytes
+         * are accepted, the context is short-lived and reindexing would cost far
+         * more. */
+        blah.value = info->values.len ;
 
         if (!nval.s[0]) {
 
@@ -280,26 +306,44 @@ uint8_t environ_substitute(strbuf *modifs, subst_t *info)
 
             unexport = (nval.s[0] == VAR_UNEXPORT) ? 1 : 0 ;
             if (!strbuf_cats(&info->values, nval.s + unexport)) {
-                info->vars.len = blah.var ;
-                info->values.len = blah.value ;
+                info->vars.len = varsback ;
+                info->values.len = valuesback ;
                 return (errno = EOVERFLOW, 0) ;
             }
 
             /* el_transform with a zero eltransforminfo only NUL-terminates the
              * value and yields a single value (n=1); reproduce that directly. */
             if (!strbuf_terminate(&info->values)) {
-                info->vars.len = blah.var ;
-                info->values.len = blah.value ;
+                info->vars.len = varsback ;
+                info->values.len = valuesback ;
                 return (errno = EOVERFLOW, 0) ;
             }
 
             blah.n = 1 ;
         }
 
-        if (!genbuf_append(subst_entry_t, &info->data, &blah)) {
-            info->vars.len = blah.var ;
-            info->values.len = blah.value ;
-            return 0 ;
+        /* Last, once every fallible append succeeded: one entry at most per name,
+         * so a name already carrying an entry has it REWRITTEN in place. Done
+         * here, there is never a half-written entry to restore. Names being
+         * unique in info->vars, blah.var identifies the entry exactly. */
+        {
+            subst_entry_t *d = genbuf_s(subst_entry_t, &info->data) ;
+            size_t n = genbuf_len(subst_entry_t, &info->data), i = 0 ;
+
+            for (; i < n ; i++)
+                if (d[i].var == blah.var)
+                    break ;
+
+            if (i < n) {
+
+                d[i] = blah ;
+
+            } else if (!genbuf_append(subst_entry_t, &info->data, &blah)) {
+
+                info->vars.len = varsback ;
+                info->values.len = valuesback ;
+                return 0 ;
+            }
         }
     }
 
