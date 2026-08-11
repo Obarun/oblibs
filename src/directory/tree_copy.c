@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <oblibs/attributes.h>
 #include <oblibs/directory.h>
 #include <oblibs/files.h>
 #include <oblibs/strbuf.h>
@@ -139,7 +140,7 @@ static int copy_node(strbuf *src, strbuf *dst)
     else
         return (errno = ENOTSUP, 0) ;
 
-    lchown(dst->s, st.st_uid, st.st_gid) ;   /* best-effort, errors ignored */
+    int attribute_unused lchown_r = lchown(dst->s, st.st_uid, st.st_gid) ;
     if (!S_ISLNK(st.st_mode))
         chmod(dst->s, st.st_mode) ;
     return 1 ;

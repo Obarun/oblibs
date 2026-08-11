@@ -19,6 +19,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <oblibs/attributes.h>
 #include <oblibs/sse.h>
 #include <oblibs/files.h>
 #include <oblibs/linux.h>
@@ -99,9 +100,10 @@ static bool create_test_dirs(void) {
 
 /* Helper to cleanup test directories */
 static void cleanup_test_dirs(void) {
-    system("rm -rf /tmp/sse_test_dir1");
-    system("rm -rf /tmp/sse_test_dir2");
-    system("rm -rf /tmp/sse_test_dir3");
+    int attribute_unused rc;
+    rc = system("rm -rf /tmp/sse_test_dir1");
+    rc = system("rm -rf /tmp/sse_test_dir2");
+    rc = system("rm -rf /tmp/sse_test_dir3");
     file_tryunlink("/tmp/sse_test_file1");
     file_tryunlink("/tmp/sse_test_file2");
 }
@@ -160,7 +162,7 @@ static bool test_inotify_watcher_comprehensive(void) {
     /* Create files in dir1 */
     fd = open("/tmp/sse_test_dir1/newfile1", O_CREAT | O_WRONLY, 0644);
     TEST_ASSERT(fd >= 0, "Failed to create file in dir1");
-    write(fd, "test data", 9);
+    TEST_ASSERT(write(fd, "test data", 9) == 9, "Failed to write file in dir1");
     close(fd);
 
     /* Create and move files in dir2 */
@@ -179,7 +181,7 @@ static bool test_inotify_watcher_comprehensive(void) {
     /* Modify the watched file */
     fd = open("/tmp/sse_test_file1", O_WRONLY | O_APPEND);
     TEST_ASSERT(fd >= 0, "Failed to open test file for modification");
-    write(fd, "additional data", 15);
+    TEST_ASSERT(write(fd, "additional data", 15) == 15, "Failed to modify test file");
     close(fd);
 
     /* Change file attributes */
@@ -390,7 +392,7 @@ static bool test_inotify_event_types(void) {
 
     fd = open("/tmp/sse_test_dir2/file_to_modify", O_WRONLY | O_APPEND);
     TEST_ASSERT(fd >= 0, "Failed to open file for modification");
-    write(fd, "modification", 12);
+    TEST_ASSERT(write(fd, "modification", 12) == 12, "Failed to write the MODIFY trigger");
     close(fd);
 
     /* DELETE event in dir3 (creation does not trigger; only the unlink does,

@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <time.h>
 
+#include <oblibs/attributes.h>
 #include <oblibs/sse.h>
 #include "framework.h"
 
@@ -105,7 +106,10 @@ static bool test_all_watchers_comprehensive(void) {
                "Failed to start eventfd watcher");
 
     /* === Setup inotify watcher === */
-    system("rm -rf /tmp/sse_all_test");
+    /* Best-effort pre-clean: the mkdir() assertion below is what proves the
+     * directory is in the expected state, so system()'s result is ignored. */
+    int attribute_unused rc;
+    rc = system("rm -rf /tmp/sse_all_test");
     TEST_ASSERT(mkdir(test_dir, 0755) == 0, "Failed to create test directory");
     TEST_ASSERT(sse_start_inotify(&loop, &inotify_watcher, test_mixed_callback, &inotify_data, 6),
                "Failed to start inotify watcher");
@@ -213,7 +217,7 @@ static bool test_all_watchers_comprehensive(void) {
     /* === Cleanup === */
     sse_free(&loop);
     close(pipefd[1]);
-    system("rm -rf /tmp/sse_all_test");
+    rc = system("rm -rf /tmp/sse_all_test");
 
     return true;
 }
@@ -253,7 +257,7 @@ static bool test_mixed_watcher_lifecycle(void) {
     TEST_ASSERT(sse_watcher_active(&watcher3), "EventFD should still be active");
 
     /* Trigger remaining active watchers */
-    write(pipefd[1], "test", 4);
+    TEST_ASSERT(write(pipefd[1], "test", 4) == 4, "Failed to trigger the I/O watcher");
     sse_write_eventfd(&watcher3);
 
     int max_iterations = 20;

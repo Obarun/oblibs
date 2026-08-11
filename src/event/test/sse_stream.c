@@ -281,7 +281,8 @@ static void test_stream_fd_passing(void) {
 
     // Verify the FD works
     const char *test_msg = "FD passing works!";
-    write(received_fd, test_msg, strlen(test_msg));
+    TEST_ASSERT(write(received_fd, test_msg, strlen(test_msg)) == (ssize_t)strlen(test_msg),
+                "Failed to write through the passed FD");
 
     char verify_buf[256] = {0};
     ssize_t n = read(pipe_fds[0], verify_buf, sizeof(verify_buf));
