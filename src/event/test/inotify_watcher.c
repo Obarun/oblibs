@@ -286,7 +286,7 @@ static bool test_inotify_watcher_comprehensive(void) {
 /* Test inotify error handling */
 static bool test_inotify_watcher_error_handling(void) {
     sse_epoll_t loop;
-    sse_watcher_t watcher1, watcher2;
+    sse_watcher_t watcher1 = {0}, watcher2 = {0};
     struct test_callback_data cb_data1, cb_data2;
 
     test_callback_init(&cb_data1);
@@ -526,7 +526,7 @@ static bool test_inotify_path_management(void) {
  * watcher, not by creating more watchers. */
 static bool test_inotify_second_watcher_refused(void) {
     sse_epoll_t loop;
-    sse_watcher_t watcher1, watcher2;
+    sse_watcher_t watcher1 = {0}, watcher2 = {0};
     struct test_callback_data cb_data1, cb_data2;
 
     test_callback_init(&cb_data1);
