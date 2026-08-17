@@ -2,6 +2,30 @@
 
 ---
 
+# In 0.4.0.1
+
+Maintenance release. No API change, no behaviour change in the library.
+
+- Build:
+    - `tree_copy`: bind the result of the best-effort `lchown`. glibc marks
+      `lchown()`, `write()` and `system()` `warn_unused_result` when
+      `_FORTIFY_SOURCE` is defined, which distribution builds do and the default
+      meson setup does not, so these warnings only surfaced downstream.
+
+- Tests:
+    - `inotify`: zero-initialize the watchers handed to calls that fail before
+      touching them. `test_inotify_second_watcher_refused` asserted on
+      `sse_watcher_active()` over an uninitialized watcher, an indeterminate read
+      that is 0 at `-O0` and non-zero once inlining moves the stack frames around
+      under `-O2 -flto`, so the test failed in distribution builds while the
+      default meson build stayed green.
+    - The `write()` calls carrying a test premise become assertions, a short
+      write silently invalidating everything asserted after it. The best-effort
+      `system()` teardown calls bind their result to a deliberately unused
+      variable.
+
+---
+
 # In 0.4.0.0
 
 This is a major release. oblibs is now **self-contained**: the skalibs and
