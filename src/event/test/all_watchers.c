@@ -106,8 +106,6 @@ static bool test_all_watchers_comprehensive(void) {
                "Failed to start eventfd watcher");
 
     /* === Setup inotify watcher === */
-    /* Best-effort pre-clean: the mkdir() assertion below is what proves the
-     * directory is in the expected state, so system()'s result is ignored. */
     int attribute_unused rc;
     rc = system("rm -rf /tmp/sse_all_test");
     TEST_ASSERT(mkdir(test_dir, 0755) == 0, "Failed to create test directory");
