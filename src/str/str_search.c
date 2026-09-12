@@ -12,9 +12,11 @@
  * except according to the terms contained in the LICENSE file.
  */
 
-#include <string.h>   /* strchrnul (_GNU_SOURCE, set project-wide) */
+#include <string.h>
 
 size_t str_search(char const *s, int c)
 {
-    return (size_t)(strchrnul(s, c) - s) ;
+    char const *p = strchr(s, c) ;
+    return p ? (size_t)(p - s) : strlen(s) ;
 }
+
