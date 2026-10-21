@@ -26,6 +26,6 @@
 /** Wait for child @pid to terminate, retrying transparently on EINTR; stores the
  * wait status in *@wstat. Replaces the skalibs wait_pid macro (waitpid_nointr).
  * @Return the reaped pid on success, or -1 with errno set on failure. */
-extern pid_t process_wait (pid_t pid, int *wstat) ;
+extern pid_t process_wait(pid_t pid, int *wstat) ;
 
 #endif
