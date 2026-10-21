@@ -14,6 +14,7 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -32,10 +33,13 @@ static inline int dot_or_dotdot(char const *name)
     return 0 ;
 }
 
-int sbl_dir_get(strbuf *sb, char const *srcdir, char const **exclude, mode_t mode)
+int sbl_dir_get(strbuf *sb, char const *srcdir, char const **exclude, uint32_t flags)
 {
     size_t base = sb->len ;
     int wasnull = !sb->s ;
+
+    if (!flags || flags & ~FLAGS_ALL)
+        return (errno = EINVAL, 0) ;
 
     DIR *dir = opendir(srcdir) ;
     if (!dir)
@@ -54,7 +58,7 @@ int sbl_dir_get(strbuf *sb, char const *srcdir, char const **exclude, mode_t mod
         if (fstatat(fdsrc, d->d_name, &st, 0) < 0)
             goto err ;
 
-        if (get_flags(mode, st.st_mode) > 0) {
+        if (mode_to_flags(st.st_mode) & flags) {
             char const *const *s = exclude ;
             while (*s)
                 if (!strcmp(d->d_name, *s++))
@@ -73,7 +77,7 @@ int sbl_dir_get(strbuf *sb, char const *srcdir, char const **exclude, mode_t mod
         return 0 ;
 }
 
-int sbl_dir_get_recursive(strbuf *sb, char const *srcdir, char const **exclude, mode_t mode, uint8_t include_path)
+int sbl_dir_get_recursive(strbuf *sb, char const *srcdir, char const **exclude, uint32_t flags, uint8_t include_path)
 {
     size_t base = sb->len ;
     int wasnull = !sb->s ;
@@ -83,6 +87,9 @@ int sbl_dir_get_recursive(strbuf *sb, char const *srcdir, char const **exclude, 
      * The malloc cost is negligible next to opendir/readdir anyway. See the
      * _alloc_strbuf_ note in strbuf.h. */
     _cleanup_strbuf_ strbuf subdir = STRBUF_ZERO ;
+
+    if (!flags || flags & ~FLAGS_ALL)
+        return (errno = EINVAL, 0) ;
 
     DIR *dir = opendir(srcdir) ;
     if (!dir)
@@ -110,11 +117,11 @@ int sbl_dir_get_recursive(strbuf *sb, char const *srcdir, char const **exclude, 
             subdir.len = 0 ;
             if (!auto_strbuf(&subdir, srcdir, "/", d->d_name))
                 goto err ;
-            if (!sbl_dir_get_recursive(sb, subdir.s, exclude, mode, include_path))
+            if (!sbl_dir_get_recursive(sb, subdir.s, exclude, flags, include_path))
                 goto err ;
         }
 
-        if (get_flags(mode, st.st_mode) > 0) {
+        if (mode_to_flags(st.st_mode) & flags) {
             if (include_path) {
                 if (!strbuf_cats(sb, srcdir) ||
                     !strbuf_cats(sb, "/"))
@@ -134,11 +141,14 @@ int sbl_dir_get_recursive(strbuf *sb, char const *srcdir, char const **exclude, 
         return 0 ;
 }
 
-int sbl_dir_get_element(strbuf *sb, char const *srcdir, char const *element, mode_t mode, uint8_t include_path)
+int sbl_dir_get_element(strbuf *sb, char const *srcdir, char const *element, uint32_t flags, uint8_t include_path)
 {
     size_t base = sb->len ;
     int wasnull = !sb->s ;
     int found = 0 ;
+
+    if (!flags || flags & ~FLAGS_ALL)
+        return (errno = EINVAL, -1) ;
 
     DIR *dir = opendir(srcdir) ;
     if (!dir)
@@ -157,7 +167,7 @@ int sbl_dir_get_element(strbuf *sb, char const *srcdir, char const *element, mod
         if (fstatat(fdsrc, d->d_name, &st, 0) < 0)
             goto err ;
 
-        if (get_flags(mode, st.st_mode) > 0) {
+        if (mode_to_flags(st.st_mode) & flags) {
             if (!strcmp(d->d_name, element)) {
                 if (include_path) {
                     if (!strbuf_cats(sb, srcdir) ||

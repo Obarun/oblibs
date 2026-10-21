@@ -13,16 +13,23 @@
  */
 
 #include <errno.h>
+#include <stdint.h>
 #include <sys/stat.h>
 
 #include <oblibs/types.h>
 
-ssize_t scan_mode(char const *str, mode_t mode)
+ssize_t scan_mode(char const *str, uint32_t flags)
 {
     struct stat st ;
-    if (stat(str,&st) == -1) return 0 ;
-    mode_t r = get_flags(mode,st.st_mode) ;
-    if (!r)
+
+    if (!flags || flags & ~FLAGS_ALL)
+        return (errno = EINVAL, 0) ;
+
+    if (stat(str, &st) == -1)
+        return 0 ;
+
+    if (!(mode_to_flags(st.st_mode) & flags))
         return (errno = EINVAL, -1) ;
-    else return  1 ;
+
+    return 1 ;
 }

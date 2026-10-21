@@ -24,6 +24,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 
 #include <oblibs/sbl.h>
 #include <oblibs/strbuf.h>
@@ -444,7 +446,7 @@ static void test_dir_get(void)
     /* dir_get: regular files, excluding "b", sorted -> {a, c} */
     {
         strbuf sb = STRBUF_ZERO ;
-        TEST_ASSERT(sbl_dir_get(&sb, dir, excl, S_IFREG), "sbl_dir_get") ;
+        TEST_ASSERT(sbl_dir_get(&sb, dir, excl, FLAGS_REG), "sbl_dir_get") ;
         TEST_ASSERT(sbl_sort(&sb), "sort") ;
         char const *exp[] = { "a", "c" } ;
         check_list(&sb, exp, 2) ;
@@ -460,7 +462,7 @@ static void test_dir_get(void)
         snprintf(ed, sizeof ed, "%s/sub/d", dir) ;
         char const *exp[] = { ea, eb, ec, ed } ;   /* no exclusion -> b kept */
         strbuf sb = STRBUF_ZERO ;
-        TEST_ASSERT(sbl_dir_get_recursive(&sb, dir, none, S_IFREG, 1), "sbl rec") ;
+        TEST_ASSERT(sbl_dir_get_recursive(&sb, dir, none, FLAGS_REG, 1), "sbl rec") ;
         TEST_ASSERT(sbl_sort(&sb), "sort") ;
         check_list(&sb, exp, 4) ;
         strbuf_free(&sb) ;
@@ -468,7 +470,7 @@ static void test_dir_get(void)
     /* dir_get_element: "a" present once */
     {
         strbuf sb = STRBUF_ZERO ;
-        int n = sbl_dir_get_element(&sb, dir, "a", S_IFREG, 0) ;
+        int n = sbl_dir_get_element(&sb, dir, "a", FLAGS_REG, 0) ;
         TEST_ASSERT(n == 1, "dir_get_element count") ;
         char const *exp[] = { "a" } ;
         check_list(&sb, exp, 1) ;
@@ -482,6 +484,306 @@ static void test_dir_get(void)
         snprintf(path, sizeof path, "%s/%s", dir, files[i]) ; unlink(path) ;
     }
     rmdir(dir) ;
+    TEST_END() ;
+}
+
+/* ---- FLAGS_* filtering of the directory walkers ----
+ * Mixed tree under a fresh temp dir R:
+ *   R/f          regular file
+ *   R/d/         directory, holding d/g (regular) and d/l2 -> g (symlink)
+ *   R/lr -> f    symlink to a regular file
+ *   R/ld -> d    symlink to a directory
+ *   R/p          fifo
+ *   R/s          unix socket
+ * sbl_dir_get and sbl_dir_get_element follow links (fstatat flag 0), so lr is
+ * a REG and ld a DIR for them, and no entry is ever a LNK. sbl_dir_get_recursive
+ * does not follow (AT_SYMLINK_NOFOLLOW): lr, ld, l2 are LNK and ld is not
+ * descended into. The old get_flags() ANDed S_IF* numbers: S_IFLNK & S_IFREG
+ * and S_IFSOCK & S_IFDIR are non-zero, so regular files leaked into a LNK
+ * listing and the socket into a DIR listing. */
+
+static char mt_root[64] ;
+
+static void mt_path(char *out, size_t len, char const *rel)
+{
+    snprintf(out, len, "%s/%s", mt_root, rel) ;
+}
+
+static void mixed_tree_create(void)
+{
+    char tmpl[] = "/tmp/sbl_flags_XXXXXX" ;
+    TEST_ASSERT(mkdtemp(tmpl) != 0, "mkdtemp") ;
+    snprintf(mt_root, sizeof mt_root, "%s", tmpl) ;
+    char p[256], q[256] ;
+    int fd ;
+    mt_path(p, sizeof p, "f") ;
+    fd = open(p, O_CREAT | O_EXCL | O_WRONLY, 0644) ; TEST_ASSERT(fd >= 0, "create f") ; close(fd) ;
+    mt_path(p, sizeof p, "d") ;
+    TEST_ASSERT(mkdir(p, 0755) == 0, "mkdir d") ;
+    mt_path(p, sizeof p, "d/g") ;
+    fd = open(p, O_CREAT | O_EXCL | O_WRONLY, 0644) ; TEST_ASSERT(fd >= 0, "create d/g") ; close(fd) ;
+    mt_path(p, sizeof p, "d/l2") ;
+    TEST_ASSERT(symlink("g", p) == 0, "symlink d/l2") ;
+    mt_path(p, sizeof p, "lr") ;
+    TEST_ASSERT(symlink("f", p) == 0, "symlink lr") ;
+    mt_path(p, sizeof p, "ld") ;
+    TEST_ASSERT(symlink("d", p) == 0, "symlink ld") ;
+    mt_path(p, sizeof p, "p") ;
+    TEST_ASSERT(mkfifo(p, 0644) == 0, "mkfifo p") ;
+    mt_path(q, sizeof q, "s") ;
+    int s = socket(AF_UNIX, SOCK_STREAM, 0) ;
+    TEST_ASSERT(s >= 0, "socket") ;
+    struct sockaddr_un sa ;
+    memset(&sa, 0, sizeof sa) ;
+    sa.sun_family = AF_UNIX ;
+    TEST_ASSERT(strlen(q) < sizeof sa.sun_path, "socket path fits") ;
+    memcpy(sa.sun_path, q, strlen(q) + 1) ;
+    TEST_ASSERT(bind(s, (struct sockaddr *)&sa, sizeof sa) == 0, "bind s") ;
+    close(s) ;
+}
+
+static void mixed_tree_destroy(void)
+{
+    char const *rel[] = { "s", "p", "ld", "lr", "d/l2", "d/g" } ;
+    char p[256] ;
+    for (size_t i = 0 ; i < sizeof rel / sizeof *rel ; i++) {
+        mt_path(p, sizeof p, rel[i]) ; unlink(p) ;
+    }
+    mt_path(p, sizeof p, "d") ; rmdir(p) ;
+    mt_path(p, sizeof p, "f") ; unlink(p) ;
+    rmdir(mt_root) ;
+}
+
+/* list @srcdir with sbl_dir_get(@flags), sort, compare to exp[0..n) */
+static void mt_check_get(uint32_t flags, char const *const *exp, size_t n)
+{
+    char const *none[] = { 0 } ;
+    strbuf sb = STRBUF_ZERO ;
+    errno = 0 ;
+    TEST_ASSERT(sbl_dir_get(&sb, mt_root, none, flags) == 1, "sbl_dir_get returns 1") ;
+    if (n) TEST_ASSERT(sbl_sort(&sb), "sort") ;
+    check_list(&sb, exp, n) ;
+    strbuf_free(&sb) ;
+}
+
+static void mt_check_rec(uint32_t flags, uint8_t include_path, char const *const *exp, size_t n)
+{
+    char const *none[] = { 0 } ;
+    strbuf sb = STRBUF_ZERO ;
+    errno = 0 ;
+    TEST_ASSERT(sbl_dir_get_recursive(&sb, mt_root, none, flags, include_path) == 1, "sbl_dir_get_recursive returns 1") ;
+    if (n) TEST_ASSERT(sbl_sort(&sb), "sort") ;
+    check_list(&sb, exp, n) ;
+    strbuf_free(&sb) ;
+}
+
+static void mt_check_elem(char const *element, uint32_t flags, uint8_t include_path, char const *exp)
+{
+    strbuf sb = STRBUF_ZERO ;
+    errno = 0 ;
+    int r = sbl_dir_get_element(&sb, mt_root, element, flags, include_path) ;
+    if (exp) {
+        TEST_ASSERT(r == 1, "sbl_dir_get_element finds exactly one") ;
+        check_list(&sb, &exp, 1) ;
+    } else {
+        TEST_ASSERT(r == 0, "sbl_dir_get_element finds none") ;
+        TEST_ASSERT(errno == 0, "no-match leaves errno unchanged") ;
+        TEST_ASSERT(sb.len == 0, "no-match appends nothing") ;
+    }
+    strbuf_free(&sb) ;
+}
+
+static void test_dir_get_flags(void)
+{
+    TEST_START("test_dir_get_flags") ;
+    mixed_tree_create() ;
+    { char const *e[] = { "d", "f", "ld", "lr" } ; mt_check_get(FLAGS_REG | FLAGS_DIR, e, 4) ; }
+    { char const *e[] = { "f", "lr" } ; mt_check_get(FLAGS_REG, e, 2) ; }
+    { char const *e[] = { "d", "ld" } ; mt_check_get(FLAGS_DIR, e, 2) ; }   /* no socket */
+    mt_check_get(FLAGS_LNK, 0, 0) ;                                        /* links followed */
+    { char const *e[] = { "s" } ; mt_check_get(FLAGS_SOCK, e, 1) ; }
+    { char const *e[] = { "p" } ; mt_check_get(FLAGS_FIFO, e, 1) ; }
+    { char const *e[] = { "d", "f", "ld", "lr", "p", "s" } ; mt_check_get(FLAGS_ALL, e, 6) ; }
+    mixed_tree_destroy() ;
+    TEST_END() ;
+}
+
+static void test_dir_get_recursive_flags(void)
+{
+    TEST_START("test_dir_get_recursive_flags") ;
+    mixed_tree_create() ;
+    { char const *e[] = { "d", "f", "g" } ; mt_check_rec(FLAGS_REG | FLAGS_DIR, 0, e, 3) ; }
+    /* the old bug: FLAGS_LNK must list links only, never f or g */
+    { char const *e[] = { "l2", "ld", "lr" } ; mt_check_rec(FLAGS_LNK, 0, e, 3) ; }
+    { char const *e[] = { "f", "g" } ; mt_check_rec(FLAGS_REG, 0, e, 2) ; }
+    { char const *e[] = { "d" } ; mt_check_rec(FLAGS_DIR, 0, e, 1) ; }    /* no socket, ld not a dir */
+    { char const *e[] = { "s" } ; mt_check_rec(FLAGS_SOCK, 0, e, 1) ; }
+    { char const *e[] = { "d", "f", "g", "l2", "ld", "lr", "p", "s" } ; mt_check_rec(FLAGS_ALL, 0, e, 8) ; }
+    {
+        char a[256], b[256], c[256] ;
+        mt_path(a, sizeof a, "d/l2") ; mt_path(b, sizeof b, "ld") ; mt_path(c, sizeof c, "lr") ;
+        char const *e[] = { a, b, c } ;
+        mt_check_rec(FLAGS_LNK, 1, e, 3) ;
+    }
+    mixed_tree_destroy() ;
+    TEST_END() ;
+}
+
+static void test_dir_get_element_flags(void)
+{
+    TEST_START("test_dir_get_element_flags") ;
+    mixed_tree_create() ;
+    mt_check_elem("lr", FLAGS_REG, 0, "lr") ;           /* followed */
+    mt_check_elem("lr", FLAGS_LNK, 0, 0) ;
+    mt_check_elem("ld", FLAGS_DIR, 0, "ld") ;
+    mt_check_elem("d", FLAGS_REG | FLAGS_DIR, 0, "d") ;
+    mt_check_elem("f", FLAGS_REG | FLAGS_DIR, 0, "f") ;
+    mt_check_elem("p", FLAGS_REG | FLAGS_DIR, 0, 0) ;
+    mt_check_elem("s", FLAGS_DIR, 0, 0) ;
+    mt_check_elem("s", FLAGS_REG, 0, 0) ;
+    mt_check_elem("s", FLAGS_SOCK, 0, "s") ;
+    mt_check_elem("p", FLAGS_ALL, 0, "p") ;
+    {
+        char a[256] ;
+        mt_path(a, sizeof a, "lr") ;
+        mt_check_elem("lr", FLAGS_REG, 1, a) ;
+    }
+    mixed_tree_destroy() ;
+    TEST_END() ;
+}
+
+/* Invalid flags are rejected before opendir: EINVAL even on a missing dir, the
+ * documented failure value, and sb untouched (same pointer, len, bytes; an
+ * empty sb stays unallocated). */
+static void test_dir_invalid_flags(void)
+{
+    TEST_START("test_dir_invalid_flags") ;
+    mixed_tree_create() ;
+    char missing[256] ;
+    mt_path(missing, sizeof missing, "missing") ;
+    char const *dirs[] = { mt_root, missing } ;
+    uint32_t const bad[] = { 0, (uint32_t)S_IFREG, (uint32_t)S_IFDIR, FLAGS_ALL + (1u << 7) } ;
+    char const *none[] = { 0 } ;
+    for (size_t i = 0 ; i < sizeof bad / sizeof *bad ; i++) {
+        for (size_t j = 0 ; j < 2 ; j++) {
+            for (int fn = 0 ; fn < 3 ; fn++) {
+                strbuf sb = STRBUF_ZERO ;
+                TEST_ASSERT(sbl_add(&sb, "keep"), "seed") ;
+                char *s0 = sb.s ;
+                strbuf empty = STRBUF_ZERO ;
+                int r = 0, re = 0 ;
+                errno = 0 ;
+                if (fn == 0) r = sbl_dir_get(&sb, dirs[j], none, bad[i]) ;
+                else if (fn == 1) r = sbl_dir_get_recursive(&sb, dirs[j], none, bad[i], 1) ;
+                else r = sbl_dir_get_element(&sb, dirs[j], "f", bad[i], 1) ;
+                TEST_ASSERT(r == (fn == 2 ? -1 : 0), "documented failure value") ;
+                TEST_ASSERT(errno == EINVAL, "EINVAL before opendir") ;
+                TEST_ASSERT(sb.s == s0 && sb.len == 5 && !memcmp(sb.s, "keep", 5), "sb untouched") ;
+                errno = 0 ;
+                if (fn == 0) re = sbl_dir_get(&empty, dirs[j], none, bad[i]) ;
+                else if (fn == 1) re = sbl_dir_get_recursive(&empty, dirs[j], none, bad[i], 0) ;
+                else re = sbl_dir_get_element(&empty, dirs[j], "f", bad[i], 0) ;
+                TEST_ASSERT(re == (fn == 2 ? -1 : 0), "documented failure value, empty sb") ;
+                TEST_ASSERT(errno == EINVAL, "EINVAL, empty sb") ;
+                TEST_ASSERT(!empty.s && !empty.len, "empty sb stays unallocated") ;
+                strbuf_free(&sb) ;
+            }
+        }
+    }
+    mixed_tree_destroy() ;
+    TEST_END() ;
+}
+
+/* A dangling link cannot be stat'ed by the following walkers: they fail with the
+ * fstatat errno and restore sb. The non-following walker lists it as a LNK. */
+static void test_dir_dangling_entry(void)
+{
+    TEST_START("test_dir_dangling_entry") ;
+    char tmpl[] = "/tmp/sbl_dang_XXXXXX" ;
+    char *dir = mkdtemp(tmpl) ;
+    TEST_ASSERT(dir != 0, "mkdtemp") ;
+    char lnk[256] ;
+    snprintf(lnk, sizeof lnk, "%s/dang", dir) ;
+    TEST_ASSERT(symlink("nowhere", lnk) == 0, "dangling symlink") ;
+    char const *none[] = { 0 } ;
+    {
+        strbuf sb = STRBUF_ZERO ;
+        TEST_ASSERT(sbl_add(&sb, "keep"), "seed") ;
+        errno = 0 ;
+        TEST_ASSERT(sbl_dir_get(&sb, dir, none, FLAGS_ALL) == 0, "sbl_dir_get fails") ;
+        TEST_ASSERT(errno == ENOENT, "fstatat ENOENT") ;
+        TEST_ASSERT(sb.len == 5 && !strcmp(sb.s, "keep"), "sb truncated back") ;
+        strbuf_free(&sb) ;
+    }
+    {
+        strbuf sb = STRBUF_ZERO ;
+        errno = 0 ;
+        TEST_ASSERT(sbl_dir_get_element(&sb, dir, "dang", FLAGS_ALL, 0) == -1, "element fails") ;
+        TEST_ASSERT(errno == ENOENT, "fstatat ENOENT") ;
+        TEST_ASSERT(!sb.s && !sb.len, "empty sb freed") ;
+    }
+    {
+        char const *e[] = { "dang" } ;
+        strbuf sb = STRBUF_ZERO ;
+        TEST_ASSERT(sbl_dir_get_recursive(&sb, dir, none, FLAGS_LNK, 0) == 1, "recursive lists it") ;
+        check_list(&sb, e, 1) ;
+        strbuf_free(&sb) ;
+    }
+    unlink(lnk) ;
+    rmdir(dir) ;
+    TEST_END() ;
+}
+
+/* A missing srcdir with valid flags: the opendir errno, the documented failure
+ * value, and sb untouched (seeded sb keeps its bytes, empty sb stays NULL). */
+static void test_dir_opendir_failure(void)
+{
+    TEST_START("test_dir_opendir_failure") ;
+    char const *none[] = { 0 } ;
+    char const *missing = "/tmp/sbl_no_such_dir_for_test" ;
+    for (int fn = 0 ; fn < 3 ; fn++) {
+        strbuf sb = STRBUF_ZERO, empty = STRBUF_ZERO ;
+        TEST_ASSERT(sbl_add(&sb, "keep"), "seed") ;
+        int r, re ;
+        errno = 0 ;
+        if (fn == 0) r = sbl_dir_get(&sb, missing, none, FLAGS_ALL) ;
+        else if (fn == 1) r = sbl_dir_get_recursive(&sb, missing, none, FLAGS_ALL, 1) ;
+        else r = sbl_dir_get_element(&sb, missing, "f", FLAGS_ALL, 1) ;
+        TEST_ASSERT(r == (fn == 2 ? -1 : 0), "documented failure value") ;
+        TEST_ASSERT(errno == ENOENT, "opendir ENOENT") ;
+        TEST_ASSERT(sb.len == 5 && !memcmp(sb.s, "keep", 5), "seeded sb untouched") ;
+        errno = 0 ;
+        if (fn == 0) re = sbl_dir_get(&empty, missing, none, FLAGS_ALL) ;
+        else if (fn == 1) re = sbl_dir_get_recursive(&empty, missing, none, FLAGS_ALL, 0) ;
+        else re = sbl_dir_get_element(&empty, missing, "f", FLAGS_ALL, 0) ;
+        TEST_ASSERT(re == (fn == 2 ? -1 : 0), "documented failure value, empty sb") ;
+        TEST_ASSERT(errno == ENOENT, "opendir ENOENT, empty sb") ;
+        TEST_ASSERT(!empty.s && !empty.len, "empty sb stays unallocated") ;
+        strbuf_free(&sb) ;
+    }
+    TEST_END() ;
+}
+
+/* Documented order of sbl_dir_get_recursive: a directory's descendants come
+ * BEFORE the directory itself (raw, unsorted output). Also: sbl_dir_get_element
+ * does not set errno when it finds the element. */
+static void test_dir_recursive_order(void)
+{
+    TEST_START("test_dir_recursive_order") ;
+    mixed_tree_create() ;
+    char const *none[] = { 0 } ;
+    strbuf sb = STRBUF_ZERO ;
+    TEST_ASSERT(sbl_dir_get_recursive(&sb, mt_root, none, FLAGS_REG | FLAGS_DIR, 0) == 1, "recursive") ;
+    ssize_t og = sbl_search(&sb, "g"), od = sbl_search(&sb, "d") ;
+    TEST_ASSERT(og >= 0 && od >= 0, "g and d listed") ;
+    TEST_ASSERT(og < od, "d/g appended before d") ;
+    strbuf_free(&sb) ;
+    strbuf e = STRBUF_ZERO ;
+    errno = EBADF ;
+    TEST_ASSERT(sbl_dir_get_element(&e, mt_root, "f", FLAGS_REG, 0) == 1, "element found") ;
+    TEST_ASSERT(errno == EBADF, "errno untouched on success") ;
+    strbuf_free(&e) ;
+    mixed_tree_destroy() ;
     TEST_END() ;
 }
 
@@ -596,6 +898,13 @@ int main(void)
     test_insert() ;
     test_rebuild_with_delim() ;
     test_dir_get() ;
+    test_dir_get_flags() ;
+    test_dir_get_recursive_flags() ;
+    test_dir_get_element_flags() ;
+    test_dir_invalid_flags() ;
+    test_dir_dangling_entry() ;
+    test_dir_opendir_failure() ;
+    test_dir_recursive_order() ;
     test_clean_string() ;
     test_split_nline() ;
     test_replace() ;

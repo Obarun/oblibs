@@ -17,13 +17,45 @@
 
 #include <sys/types.h>
 #include <stddef.h>
+#include <stdint.h>
 
-/** Scan if @str has the corresponding @mode
- * @Return 1 on success
- * @Return 0 if @str doesn't exist or stat fail
- * @Return -1 if @str haven't the corresponding @mode
- * Also warm the user if stat fail*/
-extern ssize_t scan_mode(char const *str, mode_t mode) ;
+#include <oblibs/types.h>
+
+/**
+ * @brief Check that a path is one of the file types in a FLAGS_* set.
+ *
+ * Validates @flags first, then calls `stat(str)` and tests the FLAGS_* bit of
+ * its `st_mode` (see mode_to_flags() in types.h) against @flags. The path
+ * matches if its type is ANY of the types in @flags. `stat()` follows symbolic
+ * links, so the type tested is the one of the link target: `FLAGS_LNK` can
+ * never match, and a symbolic link to a directory matches `FLAGS_DIR`. Nothing
+ * is logged.
+ *
+ * @param[in] str   Path to probe. Must not be NULL.
+ * @param[in] flags Non-empty OR of FLAGS_* bits (types.h), e.g.
+ *                  `FLAGS_REG | FLAGS_DIR`. Any bit outside `FLAGS_ALL` is
+ *                  refused, which includes every S_IF* value: an old caller
+ *                  passing `S_IFREG` or `S_IFDIR` gets the EINVAL below, before
+ *                  `stat()` is called.
+ *
+ * @return 1 if @str exists and its type is in @flags; the function does not
+ *         set `errno` on this path.
+ * @return 0 if @flags is invalid or `stat()` fails, `errno` set.
+ * @return -1 if @str exists but its type is not in @flags, `errno` set.
+ * @retval 0 `errno` is set to `EINVAL` if @flags is 0 or has a bit outside
+ *         `FLAGS_ALL`. `stat()` is not called.
+ * @retval 0 `errno` is set to the `stat(2)` errno otherwise (e.g. `ENOENT` if
+ *         @str does not exist or is a dangling symbolic link, `EACCES` if a
+ *         path component is not searchable).
+ * @retval -1 `errno` is set to `EINVAL`, the type of @str (after following
+ *         symbolic links) is not in @flags. This includes a type
+ *         mode_to_flags() does not know (it maps to 0).
+ *
+ * @note `EINVAL` is returned on two different values: 0 for a bad @flags
+ *       argument, -1 for a type mismatch. Tell them apart by the return value,
+ *       not by `errno`.
+ */
+extern ssize_t scan_mode(char const *str, uint32_t flags) ;
 
 /** @Return the size of @filename
  * @Return -1 on failure and set errno*/

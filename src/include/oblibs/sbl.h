@@ -58,6 +58,7 @@
 #include <string.h>
 
 #include <oblibs/strbuf.h>
+#include <oblibs/types.h>
 
 /**
  * @brief Iterate over each element of an sbl.
@@ -440,95 +441,149 @@ extern ssize_t sbl_element_byid(strbuf *sb, unsigned int id) ;
 extern void sbl_to_char(char *dst, strbuf *sb) ;
 
 /**
- * @brief Append the names in @srcdir matching @mode, excluding @exclude.
+ * @brief Append the names in @srcdir whose type is in @flags, excluding @exclude.
  *
- * Opens @srcdir and appends, as new sbl elements, each entry whose `st_mode`
- * file type matches @mode (per `get_flags`, using a non-following `fstatat`'s
- * `st_mode` -- see note) and whose name is not present in the @exclude list.
- * `.` and `..` are always skipped. Names are appended without any path prefix.
+ * Validates @flags, opens @srcdir, then for each entry other than `.` and `..`
+ * calls `fstatat(dirfd, name, &st, 0)`. That stat FOLLOWS symbolic links: the
+ * type tested is the one of the link target, so `FLAGS_LNK` can never match
+ * here and a symbolic link to a directory matches `FLAGS_DIR`. An entry whose
+ * type bit (mode_to_flags() in types.h) is in @flags, the match being ANY of
+ * the types in @flags, and whose name is not in @exclude is appended as a new
+ * sbl element, without any path prefix. Not recursive. The order is the
+ * `readdir()` order, which is unspecified.
  *
  * @param[in,out] sb Destination sbl; matching names are appended at `sb->len`.
  *                   May start empty (`sb->s == NULL`).
  * @param[in] srcdir Directory to read; passed to `opendir`.
  * @param[in] exclude NULL-terminated array of C strings to skip by exact name.
- *                   Must not be NULL and must end with a NULL pointer (it is
- *                   dereferenced unconditionally).
- * @param[in] mode  File-type mask matched against each entry's `st_mode &
- *                  S_IFMT` (e.g. `S_IFREG`, `S_IFDIR`); see `get_flags`.
+ *                   Must not be NULL and must end with a NULL pointer. It is
+ *                   walked for every entry whose type matches.
+ * @param[in] flags Non-empty OR of FLAGS_* bits (types.h), e.g.
+ *                  `FLAGS_REG | FLAGS_DIR`. Any bit outside `FLAGS_ALL` is
+ *                  refused, which includes every S_IF* value.
  * @return 1 on success (including when nothing matched).
- * @return 0 on failure; `errno` is left by the failing primitive:
- *      - the `opendir(srcdir)` errno if the directory cannot be opened;
- *      - the `fstatat` errno if an entry cannot be stat'ed;
+ * @return 0 on failure:
+ *      - `errno` is set to `EINVAL` if @flags is 0 or has a bit outside
+ *        `FLAGS_ALL`. Checked before `opendir()`, @sb is not touched.
+ *      - the `opendir(srcdir)` errno if the directory cannot be opened; @sb is
+ *        not touched.
+ *      - the `fstatat` errno if an entry cannot be stat'ed (e.g. `ENOENT` for a
+ *        dangling symbolic link, `ELOOP` for a symbolic link loop);
  *      - the strbuf failure errno (`ERANGE` on size overflow, else the allocator
  *        errno) if appending a name fails.
- *      On failure @sb is restored: it is freed if it was empty on entry
- *      (`sb->s == NULL`), otherwise truncated back to its entry length.
- * @see get_flags
+ *      On the last two paths @sb is restored: it is freed if `sb->s` was NULL on
+ *      entry, otherwise truncated back to its entry length. The directory is
+ *      closed with dir_close(), which preserves `errno`.
+ * @note Every entry is stat'ed before the type and @exclude tests, so a single
+ *       entry that cannot be stat'ed fails the whole call, even if its name is
+ *       in @exclude or its type would not match.
+ * @note A `readdir()` error is not detected: it ends the scan like the end of
+ *       the directory, and 1 is returned with the names collected so far.
+ * @see mode_to_flags
  */
-extern int sbl_dir_get(strbuf *sb, char const *srcdir, char const **exclude, mode_t mode) ;
+extern int sbl_dir_get(strbuf *sb, char const *srcdir, char const **exclude, uint32_t flags) ;
 
 /**
- * @brief Recursively append names under @srcdir matching @mode, excluding @exclude.
+ * @brief Recursively append names under @srcdir whose type is in @flags, excluding @exclude.
  *
- * Like `sbl_dir_get` but descends into subdirectories. Entries are stat'ed with
- * `fstatat(..., AT_SYMLINK_NOFOLLOW)` (`lstat` semantics): symlinks are not
- * followed. Every subdirectory (after the @exclude filter, regardless of @mode)
- * is recursed into; matching entries (per @mode / `get_flags`) are appended.
- * When @include_path is non-zero each appended name is prefixed with
- * `srcdir/`; otherwise the bare entry name is appended. `.` and `..` are always
- * skipped.
+ * Validates @flags, opens @srcdir, then for each entry other than `.` and `..`
+ * calls `fstatat(dirfd, name, &st, AT_SYMLINK_NOFOLLOW)` (`lstat` semantics):
+ * symbolic links are NOT followed. Unlike sbl_dir_get() and
+ * sbl_dir_get_element(), a symbolic link is therefore seen as such, and this is
+ * the only one of the three where `FLAGS_LNK` can match. For each entry:
+ *      - if its name is in @exclude it is skipped: neither appended nor, for a
+ *        directory, recursed into;
+ *      - if it is a directory (`S_ISDIR`, so never a symbolic link to one), the
+ *        path "@srcdir/name" is built and the function recurses into it with
+ *        the same @exclude, @flags and @include_path. Recursion does not depend
+ *        on @flags: every non-excluded subdirectory is descended into, even
+ *        when `FLAGS_DIR` is not in @flags;
+ *      - then, if its type bit (mode_to_flags()) is in @flags, the match being
+ *        ANY of the types in @flags, it is appended.
+ * When @include_path is non-zero each appended element is "srcdir/name", where
+ * srcdir is the directory path of that level as built from the top @srcdir
+ * (e.g. "top/sub/name"); otherwise the bare entry name is appended, at every
+ * depth. A directory's descendants are appended BEFORE the directory itself.
+ * Within a level the order is the `readdir()` order, which is unspecified.
  *
  * @param[in,out] sb Destination sbl; matches are appended at `sb->len`. May
  *                   start empty (`sb->s == NULL`).
- * @param[in] srcdir Directory to read; passed to `opendir`.
+ * @param[in] srcdir Directory to read; passed to `opendir`. Inserted verbatim
+ *                   in the built paths, a trailing '/' yields "srcdir//name".
  * @param[in] exclude NULL-terminated array of names to skip exactly. Must not be
- *                   NULL and must end with a NULL pointer (dereferenced
- *                   unconditionally). Applies to both files and subdirectories.
- * @param[in] mode  File-type mask matched against each entry's `st_mode &
- *                  S_IFMT`; see `get_flags`.
- * @param[in] include_path Non-zero to prefix each appended name with `srcdir/`,
- *                   zero to append the bare name.
+ *                   NULL and must end with a NULL pointer; it is walked for
+ *                   every entry. Applies at every depth, to files and
+ *                   subdirectories alike.
+ * @param[in] flags Non-empty OR of FLAGS_* bits (types.h), e.g.
+ *                  `FLAGS_REG | FLAGS_LNK`. Any bit outside `FLAGS_ALL` is
+ *                  refused, which includes every S_IF* value.
+ * @param[in] include_path Non-zero to prefix each appended name with its
+ *                   directory path, zero to append the bare name.
  * @return 1 on success (including when nothing matched).
- * @return 0 on failure; `errno` is left by the failing primitive:
- *      - the `opendir` errno (at any recursion level) if a directory cannot be
- *        opened;
+ * @return 0 on failure, at any recursion level:
+ *      - `errno` is set to `EINVAL` if @flags is 0 or has a bit outside
+ *        `FLAGS_ALL`. Checked before `opendir()`, @sb is not touched.
+ *      - the `opendir` errno if a directory cannot be opened (for the top
+ *        @srcdir, @sb is not touched);
  *      - the `fstatat` errno if an entry cannot be stat'ed;
  *      - the strbuf failure errno (`ERANGE` on size overflow, else the allocator
- *        errno) when building the `srcdir/name` path or appending a name fails.
- *      On failure @sb is restored: freed if it was empty on entry, otherwise
- *      truncated back to its entry length.
+ *        errno) when building the "srcdir/name" path or appending a name fails.
+ *      On any failure below the top level, @sb is restored to its state on
+ *      entry of the top call: freed if `sb->s` was NULL then, otherwise
+ *      truncated back to that length. The directories are closed with
+ *      dir_close(), which preserves `errno`.
+ * @note A single entry that cannot be stat'ed, anywhere in the tree, fails the
+ *       whole call.
+ * @note A `readdir()` error is not detected: it ends the scan of that directory
+ *       like its end, and the walk goes on; 1 can be returned with an
+ *       incomplete list.
  * @see sbl_dir_get
- * @see get_flags
+ * @see mode_to_flags
  */
-extern int sbl_dir_get_recursive(strbuf *sb, char const *srcdir, char const **exclude, mode_t mode, uint8_t include_path) ;
+extern int sbl_dir_get_recursive(strbuf *sb, char const *srcdir, char const **exclude, uint32_t flags, uint8_t include_path) ;
 
 /**
- * @brief Append every entry of @srcdir whose name equals @element and matches @mode.
+ * @brief Append every entry of @srcdir named @element whose type is in @flags.
  *
- * Opens @srcdir and appends each entry named exactly @element whose `st_mode`
- * file type matches @mode (per `get_flags`). When @include_path is non-zero the
- * appended name is prefixed with `srcdir/`. `.` and `..` are skipped. This is
- * not recursive. (A single directory holds at most one entry of a given name, so
- * the count is 0 or 1 in practice.)
+ * Validates @flags, opens @srcdir, then for each entry other than `.` and `..`
+ * calls `fstatat(dirfd, name, &st, 0)`. That stat FOLLOWS symbolic links: the
+ * type tested is the one of the link target, so `FLAGS_LNK` can never match
+ * here. An entry whose type bit (mode_to_flags()) is in @flags, the match
+ * being ANY of the types in @flags, and whose name equals @element is
+ * appended; when @include_path is non-zero it is appended as "srcdir/name".
+ * Not recursive. (A single directory holds at most one entry of a given name,
+ * so the count is 0 or 1 in practice.)
  *
  * @param[in,out] sb Destination sbl; matches are appended at `sb->len`. May
  *                   start empty (`sb->s == NULL`).
- * @param[in] srcdir Directory to read; passed to `opendir`.
- * @param[in] element Exact entry name to match.
- * @param[in] mode  File-type mask matched against `st_mode & S_IFMT`; see
- *                  `get_flags`.
+ * @param[in] srcdir Directory to read; passed to `opendir`. Inserted verbatim
+ *                   in the appended path, a trailing '/' yields "srcdir//name".
+ * @param[in] element Exact entry name to match. Must not be NULL.
+ * @param[in] flags Non-empty OR of FLAGS_* bits (types.h). Any bit outside
+ *                  `FLAGS_ALL` is refused, which includes every S_IF* value.
  * @param[in] include_path Non-zero to prefix the appended name with `srcdir/`.
  * @return The number of matching entries appended on success: a positive count,
- *         or 0 when the directory was scanned but no entry matched. `errno` is
- *         left unchanged on the no-match path.
- * @return -1 on failure; `errno` is left by the failing primitive: the `opendir`
- *         errno, the `fstatat` errno, or the strbuf failure errno (`ERANGE` on
- *         size overflow, else the allocator errno). On this path @sb is restored
- *         (freed if it was empty on entry, otherwise truncated back to its entry
- *         length).
- * @see get_flags
+ *         or 0 when the directory was scanned but no entry matched. The
+ *         function does not set `errno` on these paths.
+ * @return -1 on failure:
+ *      - `errno` is set to `EINVAL` if @flags is 0 or has a bit outside
+ *        `FLAGS_ALL`. Checked before `opendir()`, @sb is not touched.
+ *      - the `opendir(srcdir)` errno if the directory cannot be opened; @sb is
+ *        not touched.
+ *      - the `fstatat` errno if an entry cannot be stat'ed (e.g. `ENOENT` for a
+ *        dangling symbolic link);
+ *      - the strbuf failure errno (`ERANGE` on size overflow, else the allocator
+ *        errno) if appending fails.
+ *      On the last two paths @sb is restored: freed if `sb->s` was NULL on
+ *      entry, otherwise truncated back to its entry length. The directory is
+ *      closed with dir_close(), which preserves `errno`.
+ * @note Every entry is stat'ed before its name is compared to @element, so an
+ *       unrelated entry that cannot be stat'ed fails the call with -1.
+ * @note A `readdir()` error is not detected: it ends the scan like the end of
+ *       the directory, and the count found so far is returned.
+ * @see mode_to_flags
  */
-extern int sbl_dir_get_element(strbuf *sb, char const *srcdir, char const *element, mode_t mode, uint8_t include_path) ;
+extern int sbl_dir_get_element(strbuf *sb, char const *srcdir, char const *element, uint32_t flags, uint8_t include_path) ;
 
 /**
  * @brief Tokenise @string into @sb, replacing @sb's content.

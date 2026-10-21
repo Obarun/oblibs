@@ -29,7 +29,7 @@ uint8_t environ_merge_dir(strbuf *modifs, char const *path)
     _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
     char const *exclude[1] = { 0 } ;
 
-    r = sbl_dir_get(&sa,path,exclude,S_IFREG) ;
+    r = sbl_dir_get(&sa,path,exclude,FLAGS_REG) ;
     if (!r)
         return 0 ;
 

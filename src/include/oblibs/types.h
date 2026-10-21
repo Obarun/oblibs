@@ -467,7 +467,7 @@ static inline size_t pid_parse_base(char const *s, pid_t *p, uint8_t base)
 #define PID_FMT I64_FMT
 
 /* ===========================================================================
- * Bit flags helpers and mode_t comparison
+ * Bit flags helpers and file types
  * ===========================================================================*/
 
 // can be used like FLAGS_SET(has, want|want1|...)
@@ -475,10 +475,15 @@ static inline size_t pid_parse_base(char const *s, pid_t *p, uint8_t base)
 #define FLAGS_CLEAR(has, want) ((has) &= ~(want))
 // return the interger of the flag if its set, 0 otherwise
 #define FLAGS_ISSET(has, want) (((has) & (want)) == (want))
+#define FLAGS_REG   (1u << 0)
+#define FLAGS_DIR   (1u << 1)
+#define FLAGS_LNK   (1u << 2)
+#define FLAGS_CHR   (1u << 3)
+#define FLAGS_BLK   (1u << 4)
+#define FLAGS_FIFO  (1u << 5)
+#define FLAGS_SOCK  (1u << 6)
+#define FLAGS_ALL   (FLAGS_REG|FLAGS_DIR|FLAGS_LNK|FLAGS_CHR|FLAGS_BLK|FLAGS_FIFO|FLAGS_SOCK)
 
-/** compare @mode with @stmode
- * @Return @stmode if @mode == @stmode
- * otherwise @Return 0 */
-extern mode_t get_flags(mode_t mode, mode_t stmode) ;
+extern uint32_t mode_to_flags(mode_t st_mode) ;
 
 #endif
