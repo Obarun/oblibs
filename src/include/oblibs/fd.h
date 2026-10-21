@@ -65,6 +65,21 @@ extern void close_fd(int fd) ;
 extern int chdir_fd(int fd) ;
 
 /**
+ * @brief Flush a descriptor's data to its storage device.
+ *
+ * Calls `fsync(fd)`, retrying while it fails with `EINTR`. On success `errno` is
+ * restored to the value it held on entry. Replaces skalibs `fd_sync`.
+ *
+ * @param[in] fd Open descriptor to synchronize.
+ *
+ * @return 0 on success; `errno` is preserved (restored to its entry value).
+ * @return -1 on error, with `errno` set to the `fsync(2)` errno (e.g. `EBADF`
+ *         if @fd is not a valid open descriptor, `EINVAL` if @fd does not
+ *         support synchronization, such as a pipe).
+ */
+extern int sync_fd(int fd) ;
+
+/**
  * @brief Move a descriptor onto another number.
  *
  * Renumbers @from to @to: `dup2(from, to)` (retried while it fails with
