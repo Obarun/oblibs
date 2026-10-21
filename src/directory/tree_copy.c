@@ -148,8 +148,9 @@ static int copy_node(strbuf *src, strbuf *dst)
 
 int tree_copy(char const *src, char const *dst)
 {
-    _alloc_strbuf_(s, 256) ;
-    _alloc_strbuf_(d, 256) ;
+    size_t slen = strlen(src), dlen = strlen(dst) ;
+    _alloc_strbuf_(s, slen + 1) ;
+    _alloc_strbuf_(d, dlen + 1) ;
     if (!strbuf_cats(&s, src) || !term(&s))
         return 0 ;
     if (!strbuf_cats(&d, dst) || !term(&d))

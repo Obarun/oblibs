@@ -13,6 +13,7 @@
  */
 
 #include <errno.h>
+#include <stddef.h>
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -80,7 +81,8 @@ static int destroy(strbuf *path)
 
 int dir_destroy(char const *dir)
 {
-    _alloc_strbuf_(path, 256) ;
+    size_t len = strlen(dir) ;
+    _alloc_strbuf_(path, len + 1) ;
     if (!strbuf_cats(&path, dir) || !term(&path))
         return 0 ;
     return destroy(&path) < 0 ? 0 : 1 ;
