@@ -14,9 +14,6 @@
 
 #include <stddef.h>
 #include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/stat.h>
 #include <errno.h>
 
 #include <oblibs/files.h>
@@ -40,25 +37,15 @@ int file_write_atomic_at(char const *tmpdir, char const *file, char const *conte
     char tmp[dlen + sep + strlen(base) + 7 + 1] ;
     auto_strings(tmp, tmpdir, sep ? "/" : "", base, ".XXXXXX") ;
 
-    int fd = mkstemp(tmp) ;
+    int fd = file_tmp_open(tmp, 0644, (uid_t)-1, (gid_t)-1) ;
     if (fd < 0)
         return 0 ;
 
-    if (fchmod(fd, 0644) < 0) {
+    if (io_allwrite(fd, (char *)content, len) < len) {
         close_fd(fd) ;
         file_tryunlink(tmp) ;
         return 0 ;
     }
 
-    if (!io_writenclose(fd, content, len)) {
-        file_tryunlink(tmp) ;
-        return 0 ;
-    }
-
-    if (rename(tmp, file) < 0) {
-        file_tryunlink(tmp) ;
-        return 0 ;
-    }
-
-    return 1 ;
+    return file_tmp_rename(fd, tmp, file) ;
 }
