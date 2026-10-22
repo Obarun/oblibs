@@ -14,7 +14,7 @@
 
 /* Tests for the two halves of an atomic write: file_tmp_open (mkstemp then
  * cloexec_fd, optional fchown, exact fchmod independent of umask, full cleanup on
- * failure) and file_tmp_rename (checked close then rename, the temporary removed
+ * failure) and file_tmp_rename_at (checked close then rename, the temporary removed
  * on any failure, destination untouched). Every check is made on the effect:
  * stat of the files, directory listing, fd state, exact errno.
  *
@@ -418,7 +418,7 @@ static void test_open_cloexec_fail(void)
 }
 
 /* ---------------------------------------------------------------------------
- * file_tmp_rename
+ * file_tmp_rename_at
  * ------------------------------------------------------------------------- */
 
 /* a temporary holding @s, its open fd returned, its path in @t */
@@ -435,9 +435,9 @@ static int mk_tmp(char *t, size_t max, char const *dir, char const *s)
 
 /* Success over an existing destination: 1, dst is the temporary (same inode,
  * new content), the temporary name is gone, the fd is closed. */
-static void test_rename_replace(void)
+static void test_rename_at_replace(void)
 {
-    TEST_START("test_rename_replace") ;
+    TEST_START("test_rename_at_replace") ;
     char t[128], d[128] ;
     path_in(d, sizeof d, "dst") ;
     put(d, "OLD") ;
@@ -445,7 +445,7 @@ static void test_rename_replace(void)
     struct stat st_t ;
     TEST_ASSERT(fstat(fd, &st_t) == 0, "fstat failed") ;
 
-    TEST_ASSERT(file_tmp_rename(fd, t, d) == 1, "rename failed") ;
+    TEST_ASSERT(file_tmp_rename_at(fd, t, d) == 1, "rename failed") ;
     TEST_ASSERT(fd_is_closed(fd), "fd not closed") ;
     TEST_ASSERT(path_absent(t), "temporary still present") ;
     struct stat st_d ;
@@ -458,13 +458,13 @@ static void test_rename_replace(void)
 }
 
 /* Success with no previous destination. */
-static void test_rename_create(void)
+static void test_rename_at_create(void)
 {
-    TEST_START("test_rename_create") ;
+    TEST_START("test_rename_at_create") ;
     char t[128], d[128] ;
     path_in(d, sizeof d, "fresh") ;
     int fd = mk_tmp(t, sizeof t, tdir, "X") ;
-    TEST_ASSERT(file_tmp_rename(fd, t, d) == 1, "rename failed") ;
+    TEST_ASSERT(file_tmp_rename_at(fd, t, d) == 1, "rename failed") ;
     TEST_ASSERT(fd_is_closed(fd), "fd not closed") ;
     TEST_ASSERT(path_absent(t), "temporary still present") ;
     TEST_ASSERT(holds(d, "X"), "dst content wrong") ;
@@ -475,9 +475,9 @@ static void test_rename_create(void)
 
 /* close() fails (descriptor already closed, then -1): 0, EBADF, no rename, the
  * temporary removed, dst untouched. */
-static void test_rename_close_fail(void)
+static void test_rename_at_close_fail(void)
 {
-    TEST_START("test_rename_close_fail") ;
+    TEST_START("test_rename_at_close_fail") ;
     for (int k = 0 ; k < 2 ; k++) {
         char t[128], d[128] ;
         path_in(d, sizeof d, "dst") ;
@@ -486,7 +486,7 @@ static void test_rename_close_fail(void)
         TEST_ASSERT(close(fd) == 0, "close failed") ;
         if (k) fd = -1 ;
         errno = 0 ;
-        TEST_ASSERT(file_tmp_rename(fd, t, d) == 0, "rename should fail") ;
+        TEST_ASSERT(file_tmp_rename_at(fd, t, d) == 0, "rename should fail") ;
         TEST_ASSERT(errno == EBADF, "errno should be EBADF") ;
         TEST_ASSERT(path_absent(t), "temporary not removed") ;
         TEST_ASSERT(holds(d, "OLD"), "dst modified") ;
@@ -499,15 +499,15 @@ static void test_rename_close_fail(void)
 /* rename() fails: destination in a missing directory (ENOENT), destination a
  * non-empty directory (EISDIR). 0, exact errno, fd closed, temporary removed,
  * the directory destination untouched. */
-static void test_rename_fail(void)
+static void test_rename_at_fail(void)
 {
-    TEST_START("test_rename_fail") ;
+    TEST_START("test_rename_at_fail") ;
     char t[128], d[128] ;
 
     path_in(d, sizeof d, "nodir/dst") ;
     int fd = mk_tmp(t, sizeof t, tdir, "NEW") ;
     errno = 0 ;
-    TEST_ASSERT(file_tmp_rename(fd, t, d) == 0, "rename should fail") ;
+    TEST_ASSERT(file_tmp_rename_at(fd, t, d) == 0, "rename should fail") ;
     TEST_ASSERT(errno == ENOENT, "errno should be ENOENT") ;
     TEST_ASSERT(fd_is_closed(fd), "fd not closed") ;
     TEST_ASSERT(path_absent(t), "temporary not removed") ;
@@ -520,7 +520,7 @@ static void test_rename_fail(void)
     put(inner, "KEEP") ;
     fd = mk_tmp(t, sizeof t, tdir, "NEW") ;
     errno = 0 ;
-    TEST_ASSERT(file_tmp_rename(fd, t, sub) == 0, "rename should fail") ;
+    TEST_ASSERT(file_tmp_rename_at(fd, t, sub) == 0, "rename should fail") ;
     TEST_ASSERT(errno == EISDIR, "errno should be EISDIR") ;
     TEST_ASSERT(fd_is_closed(fd), "fd not closed") ;
     TEST_ASSERT(path_absent(t), "temporary not removed") ;
@@ -533,9 +533,9 @@ static void test_rename_fail(void)
 
 /* rename() across filesystems: EXDEV. Needs a writable /dev/shm on another
  * filesystem than /tmp. */
-static void test_rename_exdev(void)
+static void test_rename_at_exdev(void)
 {
-    TEST_START("test_rename_exdev") ;
+    TEST_START("test_rename_at_exdev") ;
     struct stat a, b ;
     if (stat("/dev/shm", &b) < 0 || stat(tdir, &a) < 0 || a.st_dev == b.st_dev || access("/dev/shm", W_OK) < 0) {
         errno = 0 ;
@@ -549,7 +549,7 @@ static void test_rename_exdev(void)
     put(d, "OLD") ;
     int fd = mk_tmp(t, sizeof t, shm, "NEW") ;
     errno = 0 ;
-    TEST_ASSERT(file_tmp_rename(fd, t, d) == 0, "rename should fail") ;
+    TEST_ASSERT(file_tmp_rename_at(fd, t, d) == 0, "rename should fail") ;
     TEST_ASSERT(errno == EXDEV, "errno should be EXDEV") ;
     TEST_ASSERT(fd_is_closed(fd), "fd not closed") ;
     TEST_ASSERT(path_absent(t), "temporary not removed") ;
@@ -561,9 +561,9 @@ static void test_rename_exdev(void)
 }
 
 /* The two halves together, the way file_write_atomic_at uses them. */
-static void test_open_rename_roundtrip(void)
+static void test_open_rename_at_roundtrip(void)
 {
-    TEST_START("test_open_rename_roundtrip") ;
+    TEST_START("test_open_rename_at_roundtrip") ;
     char t[128], d[128] ;
     path_in(d, sizeof d, "final") ;
     put(d, "OLD") ;
@@ -571,7 +571,7 @@ static void test_open_rename_roundtrip(void)
     int fd = file_tmp_open(t, 0640, (uid_t)-1, (gid_t)-1) ;
     TEST_ASSERT(fd >= 0, "file_tmp_open failed") ;
     TEST_ASSERT(write(fd, "NEW", 3) == 3, "write failed") ;
-    TEST_ASSERT(file_tmp_rename(fd, t, d) == 1, "rename failed") ;
+    TEST_ASSERT(file_tmp_rename_at(fd, t, d) == 1, "rename failed") ;
     struct stat st ;
     TEST_ASSERT(stat(d, &st) == 0 && (st.st_mode & 07777) == 0640, "final mode wrong") ;
     TEST_ASSERT(holds(d, "NEW"), "final content wrong") ;
@@ -788,11 +788,11 @@ static void test_open_at_owner_forwarded(void)
     TEST_END() ;
 }
 
-/* Round trip with file_tmp_rename: content written through the fd lands in the
+/* Round trip with file_tmp_rename_at: content written through the fd lands in the
  * final file with the requested mode, no temporary is left in @dir. */
-static void test_open_at_rename_roundtrip(void)
+static void test_open_at_rename_at_roundtrip(void)
 {
-    TEST_START("test_open_at_rename_roundtrip") ;
+    TEST_START("test_open_at_rename_at_roundtrip") ;
     char t[128], d[128], dd[128] ;
     path_in(d, sizeof d, "final") ;
     put(d, "OLD") ;
@@ -801,7 +801,7 @@ static void test_open_at_rename_roundtrip(void)
     TEST_ASSERT(fd >= 0, "file_tmp_open_at failed") ;
     TEST_ASSERT(count_entries() == 2, "temporary not created beside final") ;
     TEST_ASSERT(write(fd, "NEW content", 11) == 11, "write failed") ;
-    TEST_ASSERT(file_tmp_rename(fd, t, d) == 1, "rename failed") ;
+    TEST_ASSERT(file_tmp_rename_at(fd, t, d) == 1, "rename failed") ;
     TEST_ASSERT(fd_is_closed(fd), "fd not closed") ;
     TEST_ASSERT(path_absent(t), "temporary still present") ;
     struct stat st ;
@@ -817,7 +817,7 @@ int main(void)
     umask(022) ;
     TEST_ASSERT(mkdtemp(tdir) != NULL, "mkdtemp failed") ;
 
-    printf("=== file_tmp_open / file_tmp_rename test suite ===\n\n") ;
+    printf("=== file_tmp_open / file_tmp_rename_at test suite ===\n\n") ;
 
     test_open_basic() ;
     test_open_exact_mode() ;
@@ -829,12 +829,12 @@ int main(void)
     test_open_chown_fail() ;
     test_open_chmod_fail() ;
     test_open_cloexec_fail() ;
-    test_rename_replace() ;
-    test_rename_create() ;
-    test_rename_close_fail() ;
-    test_rename_fail() ;
-    test_rename_exdev() ;
-    test_open_rename_roundtrip() ;
+    test_rename_at_replace() ;
+    test_rename_at_create() ;
+    test_rename_at_close_fail() ;
+    test_rename_at_fail() ;
+    test_rename_at_exdev() ;
+    test_open_rename_at_roundtrip() ;
     test_open_at_compose() ;
     test_open_at_toolong() ;
     test_open_at_empty_dir() ;
@@ -842,7 +842,7 @@ int main(void)
     test_open_at_cloexec() ;
     test_open_at_missing_dir() ;
     test_open_at_owner_forwarded() ;
-    test_open_at_rename_roundtrip() ;
+    test_open_at_rename_at_roundtrip() ;
 
     TEST_ASSERT(rmdir(tdir) == 0, "test dir not empty at the end") ;
     printf("\nAll tests passed.\n") ;

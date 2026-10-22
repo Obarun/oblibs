@@ -118,7 +118,7 @@ extern int file_create_empty (char const *dst, char const *name,mode_t mode) ;
  *
  * file_write_atomic() and file_write_atomic_at() write through a temporary
  * file that is renamed onto the destination, built on the
- * file_tmp_open() / file_tmp_rename() pair declared below. file_copy() copies
+ * file_tmp_open() / file_tmp_rename_at() pair declared below. file_copy() copies
  * one path to another.
  *
  * To read a file into a growable buffer instead of a fixed one, use
@@ -223,7 +223,7 @@ extern int file_write_atomic(char const *file, char const *content, size_t len) 
  * file_tmp_open() (no '/' is added if @tmpdir already ends with one; the
  * basename is the part of @file after its last '/', or all of @file), writes
  * the @len bytes of @content to it with io_allwrite(), then closes it and
- * `rename()`s it onto @file with file_tmp_rename(). On success @file is
+ * `rename()`s it onto @file with file_tmp_rename_at(). On success @file is
  * replaced in one step: a reader sees either the previous content or the new
  * one, never a mix.
  *
@@ -235,7 +235,7 @@ extern int file_write_atomic(char const *file, char const *content, size_t len) 
  *     is replaced, not its target.
  *   - no fsync of the file nor of its directory: the new content is not
  *     guaranteed to be on stable storage when the function returns. Use
- *     file_tmp_open() / sync_fd() / file_tmp_rename() directly when durability
+ *     file_tmp_open() / sync_fd() / file_tmp_rename_at() directly when durability
  *     is needed.
  *   - @tmpdir must be on the same filesystem as @file, otherwise the final
  *     `rename()` fails with `EXDEV`.
@@ -260,16 +260,16 @@ extern int file_write_atomic(char const *file, char const *content, size_t len) 
  *         (e.g. `ENOSPC`); the temporary is removed. A short write without a
  *         `write()` error leaves `errno` 0 or unchanged (see the module
  *         comment).
- * @retval 0 `errno` is set by file_tmp_rename(): the `close(2)` errno or the
+ * @retval 0 `errno` is set by file_tmp_rename_at(): the `close(2)` errno or the
  *         `rename(2)` errno (e.g. `EXDEV`, `EISDIR`); the temporary is removed.
  * @see file_write_atomic
  * @see file_tmp_open
- * @see file_tmp_rename
+ * @see file_tmp_rename_at
  */
 extern int file_write_atomic_at(char const *tmpdir, char const *file, char const *content, size_t len) ;
 
 /*
- * file_tmp_open() and file_tmp_rename() are the two halves of an atomic
+ * file_tmp_open() and file_tmp_rename_at() are the two halves of an atomic
  * write, for a caller that needs more than file_write_atomic_at() offers (an
  * owner, a mode, several writes, an fsync). Composition:
  *
@@ -282,7 +282,7 @@ extern int file_write_atomic_at(char const *tmpdir, char const *file, char const
  *         file_tryunlink(tmp) ;
  *         return 0 ;
  *     }
- *     return file_tmp_rename(fd, tmp, "/dir/file") ;
+ *     return file_tmp_rename_at(fd, tmp, "/dir/file") ;
  *
  * sync_fd() is only needed when durability is required.
  */
@@ -306,18 +306,18 @@ extern int file_write_atomic_at(char const *tmpdir, char const *file, char const
  *      file's group).
  *
  * Place @tmpl on the same filesystem as the final destination: `rename()` does
- * not cross filesystems, file_tmp_rename() would fail with `EXDEV`.
+ * not cross filesystems, file_tmp_rename_at() would fail with `EXDEV`.
  *
  * @param[in,out] tmpl Template path, chosen by the caller. Must not be NULL,
  *                     must be writable and must end with "XXXXXX". Modified in
  *                     place by `mkstemp()`: on success it holds the path of the
- *                     created temporary (needed by file_tmp_rename()).
+ *                     created temporary (needed by file_tmp_rename_at()).
  * @param[in]     mode Exact permission bits of the temporary.
  * @param[in]     uid  Owner to set, or `(uid_t)-1` to keep the caller's.
  * @param[in]     gid  Group to set, or `(gid_t)-1` to keep the default one.
  *
  * @return The descriptor (>= 0), open read-write and close-on-exec, on success.
- *         The caller owns it and must pass it to file_tmp_rename(), or close it
+ *         The caller owns it and must pass it to file_tmp_rename_at(), or close it
  *         and remove @tmpl.
  * @return -1 on failure.
  * @retval -1 `errno` is set to the `mkstemp(3)` errno (e.g. `EINVAL` if @tmpl
@@ -328,7 +328,7 @@ extern int file_write_atomic_at(char const *tmpdir, char const *file, char const
  *         `fchown(2)` errno (e.g. `EPERM`) or the `fchmod(2)` errno. The
  *         descriptor is closed and the temporary is removed with
  *         file_tryunlink() (best effort, `errno` is preserved).
- * @see file_tmp_rename
+ * @see file_tmp_rename_at
  */
 extern int file_tmp_open(char *tmpl, mode_t mode, uid_t uid, gid_t gid) ;
 
@@ -338,13 +338,13 @@ extern int file_tmp_open(char *tmpl, mode_t mode, uid_t uid, gid_t gid) ;
  * Composes in @tmp the template "<dir>/XXXXXX" (no '/' is added if @dir
  * already ends with one, the same rule as file_write_atomic_at()), then
  * delegates to file_tmp_open(@tmp, @mode, @uid, @gid) and returns its result
- * unchanged. Move the temporary onto its destination with file_tmp_rename().
+ * unchanged. Move the temporary onto its destination with file_tmp_rename_at().
  *
  * @dir must be on the same filesystem as the final destination: `rename()`
- * does not cross filesystems, file_tmp_rename() would fail with `EXDEV`.
+ * does not cross filesystems, file_tmp_rename_at() would fail with `EXDEV`.
  *
  * @param[out] tmp    Buffer receiving the template, then the path of the
- *                    created temporary on success (needed by file_tmp_rename()).
+ *                    created temporary on success (needed by file_tmp_rename_at()).
  *                    Must not be NULL.
  * @param[in]  tmplen Size of @tmp in bytes, trailing NUL included.
  * @param[in]  dir    Directory of the temporary. Must not be NULL.
@@ -365,7 +365,7 @@ extern int file_tmp_open(char *tmpl, mode_t mode, uid_t uid, gid_t gid) ;
  *         created, or the cloexec_fd()/`fchown(2)`/`fchmod(2)` errno, the
  *         temporary removed.
  * @see file_tmp_open
- * @see file_tmp_rename
+ * @see file_tmp_rename_at
  */
 extern int file_tmp_open_at(char *tmp, size_t tmplen, char const *dir, mode_t mode, uid_t uid, gid_t gid) ;
 
@@ -378,7 +378,8 @@ extern int file_tmp_open_at(char *tmp, size_t tmplen, char const *dir, mode_t mo
  * `EINTR` because Linux releases the descriptor even when `close()` fails;
  * never use @fd again after the call. Does not fsync, neither the file nor the
  * parent directory: call sync_fd() (fd.h) on @fd before when durability is
- * needed.
+ * needed. For a temporary without a descriptor (a symbolic link, a directory),
+ * use file_tmp_rename(), which only renames.
  *
  * @param[in] fd  Descriptor of the temporary, as returned by file_tmp_open().
  *                Consumed.
@@ -395,8 +396,32 @@ extern int file_tmp_open_at(char *tmp, size_t tmplen, char const *dir, mode_t mo
  * @retval 0 `errno` is set to the `rename(2)` errno (e.g. `EXDEV` across
  *         filesystems, `EISDIR` if @dst is a directory).
  * @see file_tmp_open
+ * @see file_tmp_rename
  */
-extern int file_tmp_rename(int fd, char const *tmp, char const *dst) ;
+extern int file_tmp_rename_at(int fd, char const *tmp, char const *dst) ;
+
+/**
+ * @brief Rename a temporary without a descriptor onto its destination.
+ *
+ * The rename half of file_tmp_rename_at() for a temporary that has no open
+ * descriptor, such as a symbolic link or a directory: file_tmp_rename_at() closes
+ * the descriptor, checking `close()`, then renames, file_tmp_rename() only calls
+ * `rename(tmp, dst)`, which replaces @dst in one step.
+ *
+ * @param[in] tmp Path of the temporary. Must not be NULL.
+ * @param[in] dst Destination path. Must not be NULL; must be on the same
+ *                filesystem as @tmp.
+ *
+ * @return 1 on success, @dst is now what @tmp was.
+ * @return 0 on failure, @dst is left untouched.
+ * @retval 0 `errno` is set to the `rename(2)` errno (e.g. `EXDEV` across
+ *         filesystems, `ENOENT` if the directory of @dst does not exist). If
+ *         @tmp is a file or a symbolic link, it is removed with
+ *         file_tryunlink() (best effort, `errno` is preserved); if @tmp is a
+ *         directory, it is left in place for the caller.
+ * @see file_tmp_rename_at
+ */
+extern int file_tmp_rename(char const *tmp, char const *dst) ;
 
 /**
  * @brief Read up to @n bytes of the file "@dir/@name" into a buffer.

@@ -47,5 +47,5 @@ int file_write_atomic_at(char const *tmpdir, char const *file, char const *conte
         return 0 ;
     }
 
-    return file_tmp_rename(fd, tmp, file) ;
+    return file_tmp_rename_at(fd, tmp, file) ;
 }

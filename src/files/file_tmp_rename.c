@@ -13,14 +13,12 @@
  */
 
 #include <stdio.h>
-#include <unistd.h>
 
 #include <oblibs/files.h>
 
-int file_tmp_rename(int fd, char const *tmp, char const *dst)
+int file_tmp_rename(char const *tmp, char const *dst)
 {
-    // no retry on EINTR: Linux releases the descriptor even when close fails
-    if (close(fd) < 0 || rename(tmp, dst) < 0) {
+    if (rename(tmp, dst) < 0) {
         file_tryunlink(tmp) ;
         return 0 ;
     }
