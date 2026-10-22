@@ -99,24 +99,28 @@ int ocdb_make_finish(ocdbmaker *c)
         uint32_t u = 0 ;
 
         for (i = 0 ; i < 256 ; i++)
-            start[i] = u += count[i] ;   /* bounded by n */
+            start[i] = u += count[i] ;
 
         for (i = 0 ; i < 256 ; i++) {
             u = count[i] << 1 ;
             if (u > size) size = u ;
         }
 
-        size += n ;                                              /* no overflow up to here */
+        size += n ;
         u = 0xffffffffUL ; u /= sizeof(ocdb_hp) ;
-        if (size > u)
+        if (size > u) {
+            strbuf_free(&c->hplist) ;
             return (errno = ENOMEM, 0) ;
+        }
     }
 
     /* heap allocation (DJB) rather than a stack VLA (skalibs): robust whatever
      * the entry count. The byte layout produced is identical. */
     split = (ocdb_hp *)malloc((size_t)size * sizeof(ocdb_hp)) ;
-    if (!split)
+    if (!split) {
+        strbuf_free(&c->hplist) ;
         return 0 ;
+    }
 
     i = n ;
     while (i--)
@@ -129,7 +133,7 @@ int ocdb_make_finish(ocdbmaker *c)
 
         char buf[8] ;
         uint32_t k = count[i] ;
-        uint32_t len = k << 1 ;                                  /* no overflow possible */
+        uint32_t len = k << 1 ;
         ocdb_hp *p = split + start[i] ;
 
         u32_pack(final + (i << 3), c->pos) ;

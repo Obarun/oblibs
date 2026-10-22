@@ -342,11 +342,10 @@ extern int ocdb_make_add(ocdbmaker *c, char const *key, uint32_t klen, char cons
  * Builds the 256 per-bucket open-addressing hash tables from the accumulated
  * (hash, position) pairs, appends them after the record area, flushes the stream,
  * seeks back to offset 0 and writes the 2048-byte header. The (hash, position)
- * pairs are laid out into a single heap buffer (`malloc`); on the success path
- * the maker's `hplist` strbuf is freed once that buffer has been populated. On a
- * failure that occurs before that point (`ENOMEM` paths below), `hplist` is left
- * allocated; on a failure after it, `hplist` is already freed. Either way the
- * maker must not be reused after this call.
+ * pairs are laid out into a single heap buffer (`malloc`), after which the
+ * maker's `hplist` strbuf is freed. The maker's `hplist` is freed on every return
+ * path, success or failure, so the caller never has to release it. The maker
+ * must not be reused after this call.
  *
  * @param[in,out] c The maker, with all records already added via ocdb_make_add().
  * @return 1 on success (the cdb is fully written to the fd).
