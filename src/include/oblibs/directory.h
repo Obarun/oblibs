@@ -229,6 +229,50 @@ extern void dir_unslash(char *path) ;
 extern int dir_destroy (char const *dir) ;
 
 /**
+ * @brief Replace the directory @dst by the directory @src.
+ *
+ * Nothing is copied, @src becomes @dst and the previous @dst is removed
+ * entirely. @src must be prepared on the same filesystem as @dst, and @tmpdir
+ * too. Steps:
+ *   1. creates in @tmpdir an empty directory of its own, named after the last
+ *      component of @dst, with dir_create_tmp();
+ *   2. `rename(dst, <that directory>)`, the previous @dst leaves its place. If
+ *      @dst does not exist (`ENOENT`), the empty directory is removed and the
+ *      result of file_tmp_rename(@src, @dst) is returned;
+ *   3. file_tmp_rename(@src, @dst). On failure, the previous @dst is put back by
+ *      the reverse `rename()`;
+ *   4. on success, the previous @dst is removed with dir_destroy().
+ *
+ * Between steps 2 and 3, @dst briefly does not exist: a concurrent reader can
+ * see it missing. Nothing is logged, the caller decides what to report.
+ *
+ * @param[in] tmpdir Absolute directory receiving the previous @dst during the
+ *                   swap. Must not be NULL, must begin with '/'.
+ * @param[in] src    Directory to put in place. Must not be NULL.
+ * @param[in] dst    Directory to replace. Must not be NULL and must contain a
+ *                   '/' (its last component names the temporary).
+ *
+ * @return 1 on success, @dst is now what @src was. The previous @dst is removed;
+ *         if that removal fails, 1 is still returned and the previous @dst stays
+ *         in @tmpdir, for the caller to clean @tmpdir at its next opportunity.
+ * @return 0 on failure.
+ * @retval 0 `errno` is set by ob_basename() (`EINVAL` if @dst has no '/') or by
+ *         dir_create_tmp() (`EINVAL` if @tmpdir is not absolute, `ENOMEM`, the
+ *         `mkdtemp(3)` errno such as `ENOENT` if @tmpdir does not exist).
+ *         Nothing was moved.
+ * @retval 0 `errno` is set to the `rename(2)` errno of step 2, other than
+ *         `ENOENT` (e.g. `EXDEV`, `EISDIR` if @dst is not a directory). The
+ *         empty directory is removed, @dst is untouched.
+ * @retval 0 `errno` is set by file_tmp_rename() (e.g. `ENOENT` if @src does not
+ *         exist). When @dst did not exist, nothing else changed. Otherwise the
+ *         previous @dst is put back; if putting it back fails too, it stays in
+ *         @tmpdir and @dst does not exist.
+ * @see file_tmp_rename
+ * @see dir_create_tmp
+ */
+extern int dir_replace_at(char const *tmpdir, char const *src, char const *dst) ;
+
+/**
  * @brief Recursively copy the hierarchy at @src to @dst (`cp -a` semantics).
  *
  * Copies the node at @src to @dst, dispatching on its `lstat()` type and
