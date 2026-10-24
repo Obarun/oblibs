@@ -32,6 +32,19 @@ build:
     refs:
       - master
 
+test-sanitizers:
+  stage: build
+  script:
+  - meson setup build-asan -D test=true -D with-pkgconfig=true -D b_sanitize=address,undefined
+  - meson compile -C build-asan
+  - ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 meson test --print-errorlogs -C build-asan
+
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: never
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
 release:
   stage: release
   script:
