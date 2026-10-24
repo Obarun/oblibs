@@ -2,6 +2,44 @@
 
 ---
 
+# In 0.4.1.0
+
+Feature release with one breaking change: file type selection now uses
+`FLAGS_*` bits. Consumers of `scan_mode`, `sbl_dir_*` and `get_flags` must adapt.
+
+- Breaking changes:
+    - `types`: `get_flags` is removed. `S_IF*` are values of the 4 bit `S_IFMT`
+      field, not bits, so ANDing them made `S_IFDIR` match block devices and
+      sockets. It is replaced by `mode_to_flags`, which maps a `st_mode` to one
+      of the new `FLAGS_REG`, `FLAGS_DIR`, `FLAGS_LNK`, `FLAGS_CHR`,
+      `FLAGS_BLK`, `FLAGS_FIFO`, `FLAGS_SOCK` bits (`FLAGS_ALL` for any type).
+    - `scan_mode`, `sbl_dir_get`, `sbl_dir_get_recursive` and
+      `sbl_dir_get_element` take a `uint32_t` set of `FLAGS_*` instead of a
+      `mode_t`, so several file types can be selected at once.
+
+- New functions:
+    - `files`: `file_tmp_open` and `file_tmp_open_at` create a close-on-exec
+      temporary with a caller-chosen path, exact mode and owner, and return its
+      descriptor for streaming.
+    - `files`: `file_tmp_rename_at` closes the temporary's descriptor, checks
+      `close()`, then renames it onto its destination. `file_tmp_rename` only
+      renames, for a temporary without a descriptor (symbolic link, directory).
+    - `fd`: `sync_fd`, `fsync` retried on `EINTR`.
+    - `directory`: `dir_replace_at` swaps a directory in place by rename, the
+      previous one being put back on failure and removed on success.
+
+- Fixes:
+    - `cdb`: `ocdb_make_finish` frees the maker's `hplist` on every failure
+      path, it leaked on the `ENOMEM` paths.
+    - `files`: `file_write_atomic_at` is rebuilt on `file_tmp_open` and
+      `file_tmp_rename_at`, so a failing `close()` is now reported and the
+      temporary is close-on-exec.
+
+- Portability:
+    - `str_search` no longer relies on the GNU `strchrnul`.
+
+---
+
 # In 0.4.0.1
 
 Maintenance release. No API change, no behaviour change in the library.
