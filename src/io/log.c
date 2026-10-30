@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -140,6 +141,21 @@ void set_redirfd_2(char const *file)
 {
     if (file[0] == '0') REDIRFD_2 = 0 ;
     else REDIRFD_2 = file ;
+}
+
+int set_verbosity_from_env(void)
+{
+    char const *s = getenv("VERBOSITY") ;
+    uint32_t v ;
+
+    if (!s)
+        return 0 ;
+
+    if (!u32_scan_strict(s, &v))
+        return (errno = EINVAL, -1) ;
+
+    VERBOSITY = v ;
+    return 1 ;
 }
 
 void log_color_init(void)

@@ -206,6 +206,8 @@ extern void set_clock_timestamp(int enable) ;
 extern void set_redirfd_1(char const *file) ;
 // set the file to use for stderr redirection
 extern void set_redirfd_2(char const *file) ;
+// set VERBOSITY from the VERBOSITY environment variable.
+extern int set_verbosity_from_env(void) ;
 
 // general function to redirect stdout/stderr
 extern void redir_fd(int fd,char const *file) ;
