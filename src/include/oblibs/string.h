@@ -104,9 +104,9 @@ extern size_t str_search(char const *s, int c) ;
  * @Return the index of @c, or strlen(@s) if @c is not present */
 extern size_t str_rsearch(char const *s, int c) ;
 
-/** Look if @str start with the regex @regex
- * @Return 1 on success
- * @Return 0 on fail */
+/** Look if @str starts with the string @search (a plain prefix, not a regex)
+ * @Return 0 if @str starts with @search, an empty @search included
+ * @Return non-zero otherwise (strcmp convention, the sign is meaningless) */
 extern int str_start_with(char const *str, char const *search) ;
 
 #endif

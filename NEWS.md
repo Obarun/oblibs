@@ -39,6 +39,8 @@ adapt.
       `strlen` when absent.
 
 - Fixes:
+    - `string`: `str_start_with` no longer reports an empty string as
+      starting with a non-empty prefix, it returned 0 (match) for `("", "foo")`.
     - `cdb`: `ocdb_make_finish` frees the maker's `hplist` on every failure
       path, it leaked on the `ENOMEM` paths.
     - `files`: `file_write_atomic_at` is rebuilt on `file_tmp_open` and

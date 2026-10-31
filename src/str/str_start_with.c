@@ -16,7 +16,6 @@
 
 int str_start_with(char const *str, char const *regex)
 {
-    if (!*str || !*regex) return 0 ;
     size_t len = strlen(str), slen = strlen(regex) ;
     if (len < slen)
         return 1 ;
