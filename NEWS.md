@@ -27,6 +27,8 @@ Feature release with one breaking change: file type selection now uses
     - `fd`: `sync_fd`, `fsync` retried on `EINTR`.
     - `directory`: `dir_replace_at` swaps a directory in place by rename, the
       previous one being put back on failure and removed on success.
+    - `string`: `str_rsearch`, offset of the last occurrence of a character,
+      `strlen` when absent.
 
 - Fixes:
     - `cdb`: `ocdb_make_finish` frees the maker's `hplist` on every failure
