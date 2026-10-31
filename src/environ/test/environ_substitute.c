@@ -64,7 +64,7 @@ void compare(strbuf *sa, const char *a, const char *b)
 
     sa->len = 0 ;
     assert(environ_merge_string(sa, a) == 1) ;
-    assert(environ_substitute(sa, &info) == 1) ;
+    assert(environ_substitute(sa, &info, ENVIRON_EMPTY_DROP) == 1) ;
 
     assert(environ_merge_string(&expected, b) == 1) ;
 
@@ -255,7 +255,7 @@ void cyclic_reference()
     _cleanup_strbuf_ strbuf expected = STRBUF_ZERO ;
     subst_t info = SUBST_ZERO ;
     assert(environ_merge_string(&sa, "B=${A}\nA=${B}") == 1) ;
-    assert(environ_substitute(&sa, &info) == 0) ;        /* terminates, not a hang */
+    assert(environ_substitute(&sa, &info, ENVIRON_EMPTY_DROP) == 0) ;        /* terminates, not a hang */
     /* left literal: result sbl equals the decoded input sbl */
     assert(environ_merge_string(&expected, "B=${A}\nA=${B}") == 1) ;
     assert(sa.len == expected.len) ;
@@ -266,7 +266,7 @@ void cyclic_reference()
     sa.len = 0 ;
     subst_t info2 = SUBST_ZERO ;
     assert(environ_merge_string(&sa, "A=${B}\nB=${C}\nC=${A}") == 1) ;
-    assert(environ_substitute(&sa, &info2) == 0) ;
+    assert(environ_substitute(&sa, &info2, ENVIRON_EMPTY_DROP) == 0) ;
     subst_free(&info2) ;
 }
 
@@ -351,7 +351,7 @@ void getenv_precedence()
 
     const char *a = "OB_TEST_PRECEDENCE=fromentry\nUse=${OB_TEST_PRECEDENCE}" ;
     assert(environ_merge_string(&sa, a) == 1) ;
-    assert(environ_substitute(&sa, &info) == 1) ;
+    assert(environ_substitute(&sa, &info, ENVIRON_EMPTY_DROP) == 1) ;
 
     /* Use must take the env value, not the entry value */
     const char *b = "OB_TEST_PRECEDENCE=fromentry\nUse=fromenv" ;
@@ -367,7 +367,14 @@ static void feed(subst_t *info, const char *txt)
 {
     _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
     TEST_ASSERT(environ_merge_string(&sa, txt) == 1, "merge_string should succeed") ;
-    TEST_ASSERT(environ_substitute(&sa, info) == 1, "environ_substitute should succeed") ;
+    TEST_ASSERT(environ_substitute(&sa, info, ENVIRON_EMPTY_DROP) == 1, "environ_substitute should succeed") ;
+}
+
+static void feed_mode(subst_t *info, const char *txt, uint8_t empty)
+{
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
+    TEST_ASSERT(environ_merge_string(&sa, txt) == 1, "merge_string should succeed") ;
+    TEST_ASSERT(environ_substitute(&sa, info, empty) == 1, "environ_substitute should succeed") ;
 }
 
 static void expect_entry(subst_t *info, size_t i, size_t var, const char *name, size_t value, const char *val, unsigned int n)
@@ -405,7 +412,7 @@ void duplicate_in_one_source()
     /* the decoder keeps both entries: the duplicate really reaches the engine */
     expect_blob(&sa, "FOO=1\0FOO=2\0", 12, "source sbl must hold both entries") ;
 
-    TEST_ASSERT(environ_substitute(&sa, &info) == 1, "environ_substitute should succeed") ;
+    TEST_ASSERT(environ_substitute(&sa, &info, ENVIRON_EMPTY_DROP) == 1, "environ_substitute should succeed") ;
 
     expect_blob(&info.vars, "FOO\0\0", 5, "the name must be stored exactly once") ;
     TEST_ASSERT(genbuf_len(subst_entry_t, &info.data) == 1, "exactly one entry per name") ;
@@ -425,7 +432,7 @@ void duplicate_in_one_source_by_effect()
     subst_t info = SUBST_ZERO ;
 
     TEST_ASSERT(environ_merge_string(&sa, "FOO=1\nFOO=2") == 1, "merge_string should succeed") ;
-    TEST_ASSERT(environ_substitute(&sa, &info) == 1, "environ_substitute should succeed") ;
+    TEST_ASSERT(environ_substitute(&sa, &info, ENVIRON_EMPTY_DROP) == 1, "environ_substitute should succeed") ;
 
     TEST_ASSERT(subst(&out, "x=${FOO}\0", 9, &info) == 1, "exactly one word produced") ;
     expect_blob(&out, "x=1\0", 4, "substituted word") ;
@@ -549,6 +556,171 @@ void single_call_unchanged()
     subst_free(&info) ;
 }
 
+void keep_empty_whole_script()
+{
+    printf("Running test keep_empty_whole_script...\n") ;
+
+    _cleanup_strbuf_ strbuf out = STRBUF_ZERO ;
+    subst_t info = SUBST_ZERO ;
+
+    feed_mode(&info, "EMPTY=", ENVIRON_EMPTY_KEEP) ;
+
+    expect_blob(&info.vars, "EMPTY\0\0", 7, "names blob") ;
+    /* only the NUL of "" is appended */
+    expect_blob(&info.values, "\0", 1, "an empty kept value appends its NUL only") ;
+    TEST_ASSERT(genbuf_len(subst_entry_t, &info.data) == 1, "one entry") ;
+    expect_entry(&info, 0, 0, "EMPTY", 0, "", 1) ;
+
+    /* by effect: a whole script handed as ONE word keeps its text */
+    TEST_ASSERT(subst(&out, "prog ${EMPTY} -S\0", 17, &info) == 1, "the single word must survive") ;
+    expect_blob(&out, "prog  -S\0", 9, "the reference is replaced by nothing") ;
+
+    subst_free(&info) ;
+}
+
+void keep_empty_inside_word_and_indirect()
+{
+    printf("Running test keep_empty_inside_word_and_indirect...\n") ;
+
+    _cleanup_strbuf_ strbuf out = STRBUF_ZERO ;
+    subst_t info = SUBST_ZERO ;
+
+    /* REF is empty by indirection: it resolves to the empty EMPTY */
+    feed_mode(&info, "EMPTY=\nREF=${EMPTY}", ENVIRON_EMPTY_KEEP) ;
+
+    expect_blob(&info.vars, "EMPTY\0\0REF\0\0", 12, "names blob") ;
+    expect_blob(&info.values, "\0\0", 2, "two empty kept values") ;
+    TEST_ASSERT(genbuf_len(subst_entry_t, &info.data) == 2, "two entries") ;
+    expect_entry(&info, 0, 0, "EMPTY", 0, "", 1) ;
+    expect_entry(&info, 1, 7, "REF", 1, "", 1) ;
+
+    /* the prefix of the word is kept */
+    TEST_ASSERT(subst(&out, "-o${EMPTY}\0", 11, &info) == 1, "the word must survive") ;
+    expect_blob(&out, "-o\0", 3, "prefix kept, reference replaced by nothing") ;
+
+    /* the indirect entry behaves the same */
+    out.len = 0 ;
+    TEST_ASSERT(subst(&out, "x${REF}y\0", 9, &info) == 1, "the word must survive") ;
+    expect_blob(&out, "xy\0", 3, "indirect empty value replaced by nothing") ;
+
+    subst_free(&info) ;
+}
+
+void drop_empty_unchanged()
+{
+    printf("Running test drop_empty_unchanged...\n") ;
+
+    _cleanup_strbuf_ strbuf out = STRBUF_ZERO ;
+    subst_t info = SUBST_ZERO ;
+
+    feed_mode(&info, "EMPTY=\nREF=${EMPTY}", ENVIRON_EMPTY_DROP) ;
+
+    expect_blob(&info.vars, "EMPTY\0\0REF\0\0", 12, "names blob") ;
+    expect_blob(&info.values, "", 0, "dropped empty values append nothing") ;
+    TEST_ASSERT(genbuf_len(subst_entry_t, &info.data) == 2, "two entries") ;
+    expect_entry(&info, 0, 0, "EMPTY", 0, 0, 0) ;
+    expect_entry(&info, 1, 7, "REF", 0, 0, 0) ;
+
+    /* argv word list: the word holding the reference is removed */
+    TEST_ASSERT(subst(&out, "prog\0${EMPTY}\0-S\0", 17, &info) == 2, "the empty argument must vanish") ;
+    expect_blob(&out, "prog\0-S\0", 8, "remaining arguments") ;
+
+    /* the same reference inside a single word drops the whole word */
+    out.len = 0 ;
+    TEST_ASSERT(subst(&out, "prog ${EMPTY} -S\0", 17, &info) == 0, "the single word must vanish") ;
+    expect_blob(&out, "", 0, "nothing produced") ;
+
+    out.len = 0 ;
+    TEST_ASSERT(subst(&out, "-o${EMPTY}\0", 11, &info) == 0, "the word must vanish") ;
+    expect_blob(&out, "", 0, "nothing produced") ;
+
+    subst_free(&info) ;
+}
+
+void keep_empty_on_second_call()
+{
+    printf("Running test keep_empty_on_second_call...\n") ;
+
+    _cleanup_strbuf_ strbuf out = STRBUF_ZERO ;
+    subst_t info = SUBST_ZERO ;
+
+    feed_mode(&info, "FOO=1", ENVIRON_EMPTY_KEEP) ;
+    expect_entry(&info, 0, 0, "FOO", 0, "1", 1) ;
+
+    feed_mode(&info, "FOO=", ENVIRON_EMPTY_KEEP) ;
+
+    expect_blob(&info.vars, "FOO\0\0", 5, "the name is stored once") ;
+    TEST_ASSERT(genbuf_len(subst_entry_t, &info.data) == 1, "still one entry") ;
+    /* the superseded "1" stays, the kept "" is appended after it */
+    expect_blob(&info.values, "1\0" "\0", 3, "values blob") ;
+    expect_entry(&info, 0, 0, "FOO", 2, "", 1) ;
+
+    TEST_ASSERT(subst(&out, "x=${FOO}\0y\0", 11, &info) == 2, "both words kept") ;
+    expect_blob(&out, "x=\0y\0", 5, "the rewritten entry expands to nothing") ;
+
+    subst_free(&info) ;
+}
+
+/* Snapshot of every blob an invalid call must leave untouched. */
+static void expect_invalid_empty(strbuf *sa, subst_t *info, uint8_t empty)
+{
+    _cleanup_strbuf_ strbuf msa = STRBUF_ZERO ;
+    _cleanup_strbuf_ strbuf vars = STRBUF_ZERO ;
+    _cleanup_strbuf_ strbuf values = STRBUF_ZERO ;
+    _cleanup_strbuf_ strbuf modifs = STRBUF_ZERO ;
+    size_t ndata = genbuf_len(subst_entry_t, &info->data) ;
+    subst_entry_t d0 = { 0 } ;
+
+    if (ndata)
+        d0 = genbuf_s(subst_entry_t, &info->data)[0] ;
+
+    TEST_ASSERT(strbuf_copyb(&msa, sa->s, sa->len), "snapshot modifs") ;
+    TEST_ASSERT(strbuf_copyb(&vars, info->vars.s, info->vars.len), "snapshot vars") ;
+    TEST_ASSERT(strbuf_copyb(&values, info->values.s, info->values.len), "snapshot values") ;
+    TEST_ASSERT(strbuf_copyb(&modifs, info->modifs.s, info->modifs.len), "snapshot info modifs") ;
+
+    errno = 0 ;
+    TEST_ASSERT(environ_substitute(sa, info, empty) == 0, "an invalid empty must fail") ;
+    TEST_ASSERT(errno == EINVAL, "errno must be EINVAL") ;
+    errno = 0 ;
+
+    expect_blob(sa, msa.s, msa.len, "modifs must be untouched") ;
+    expect_blob(&info->vars, vars.s, vars.len, "info vars must be untouched") ;
+    expect_blob(&info->values, values.s, values.len, "info values must be untouched") ;
+    expect_blob(&info->modifs, modifs.s, modifs.len, "info modifs must be untouched") ;
+    TEST_ASSERT(genbuf_len(subst_entry_t, &info->data) == ndata, "info data must be untouched") ;
+    if (ndata) {
+        subst_entry_t *d = genbuf_s(subst_entry_t, &info->data) ;
+        TEST_ASSERT(d[0].var == d0.var && d[0].value == d0.value && d[0].n == d0.n, "first entry must be untouched") ;
+    }
+}
+
+void invalid_empty()
+{
+    printf("Running test invalid_empty...\n") ;
+
+    _cleanup_strbuf_ strbuf sa = STRBUF_ZERO ;
+    subst_t info = SUBST_ZERO ;
+
+    /* a context already populated, with an unexport record */
+    feed_mode(&info, "A=1\nU=!x", ENVIRON_EMPTY_DROP) ;
+    expect_blob(&info.modifs, "U\0\0", 3, "U registered") ;
+
+    /* a source that would change every blob if it were processed */
+    TEST_ASSERT(environ_merge_string(&sa, "A=2\nB=\nU=y") == 1, "merge_string should succeed") ;
+    expect_blob(&sa, "A=2\0B=\0U=y\0", 11, "source sbl") ;
+
+    expect_invalid_empty(&sa, &info, 2) ;
+    expect_invalid_empty(&sa, &info, 255) ;
+
+    /* an empty source still rejects the flag: the check comes first */
+    sa.len = 0 ;
+    expect_invalid_empty(&sa, &info, 2) ;
+    expect_invalid_empty(&sa, &info, 255) ;
+
+    subst_free(&info) ;
+}
+
 int main() {
 
     basic() ;
@@ -577,6 +749,11 @@ int main() {
     unexport_both_ways() ;
     empty_value_on_second_call() ;
     single_call_unchanged() ;
+    keep_empty_whole_script() ;
+    keep_empty_inside_word_and_indirect() ;
+    drop_empty_unchanged() ;
+    keep_empty_on_second_call() ;
+    invalid_empty() ;
 
     printf("All tests passed successfully.\n") ;
 

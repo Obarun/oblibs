@@ -4,8 +4,10 @@
 
 # In 0.4.1.0
 
-Feature release with one breaking change: file type selection now uses
-`FLAGS_*` bits. Consumers of `scan_mode`, `sbl_dir_*` and `get_flags` must adapt.
+Feature release with two breaking changes: file type selection now uses
+`FLAGS_*` bits, and `environ_substitute` takes an explicit empty-value mode.
+Consumers of `scan_mode`, `sbl_dir_*`, `get_flags` and `environ_substitute` must
+adapt.
 
 - Breaking changes:
     - `types`: `get_flags` is removed. `S_IF*` are values of the 4 bit `S_IFMT`
@@ -16,6 +18,12 @@ Feature release with one breaking change: file type selection now uses
     - `scan_mode`, `sbl_dir_get`, `sbl_dir_get_recursive` and
       `sbl_dir_get_element` take a `uint32_t` set of `FLAGS_*` instead of a
       `mode_t`, so several file types can be selected at once.
+    - `environ`: `environ_substitute` takes a third argument, `ENVIRON_EMPTY_DROP`
+      or `ENVIRON_EMPTY_KEEP`, any other value fails with `EINVAL`. An empty value
+      used to always give `n = 0`, which drops the whole word: right for an argv,
+      but a script substituted as one word vanished entirely. `ENVIRON_EMPTY_KEEP`
+      records `""` with `n = 1` instead, `ENVIRON_EMPTY_DROP` keeps the former
+      behaviour.
 
 - New functions:
     - `files`: `file_tmp_open` and `file_tmp_open_at` create a close-on-exec

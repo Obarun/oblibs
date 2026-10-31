@@ -76,6 +76,21 @@
  */
 #define VAR_UNEXPORT '!'
 
+/**
+ * @brief How `environ_substitute` records a variable whose value is empty.
+ *
+ * The right choice depends on what the caller later hands to `subst`:
+ *  - `ENVIRON_EMPTY_DROP`: the entry gets `n` = 0, so every word holding the
+ *    reference vanishes. For a list of words (an argv), an empty variable then
+ *    removes its argument.
+ *  - `ENVIRON_EMPTY_KEEP`: the entry gets `n` = 1 with the value `""`, so the
+ *    reference is replaced by nothing and the rest of the word stays. For a
+ *    whole text passed as ONE word (a script), where dropping the word would
+ *    drop the entire text.
+ */
+#define ENVIRON_EMPTY_DROP 0
+#define ENVIRON_EMPTY_KEEP 1
+
 /** Please POSIX */
 extern char **environ ;
 
@@ -161,8 +176,9 @@ extern uint8_t environ_parse_file(strbuf *sb, const char *file) ;
  *    its offset instead of being appended again.
  *  - `info->data`: AT MOST ONE entry per name. A name already carrying an entry
  *    has it REWRITTEN (new `value` offset, `n` recomputed) rather than getting a
- *    second one. `n` is 0 when the resolved value is empty (nothing is then
- *    appended to `info->values`), 1 otherwise.
+ *    second one. `n` is 1 for a non-empty resolved value. For an empty one it
+ *    follows @empty: 0 under `ENVIRON_EMPTY_DROP` (nothing is then appended to
+ *    `info->values`), 1 with the value `""` under `ENVIRON_EMPTY_KEEP`.
  *  - `info->modifs`: AT MOST ONE occurrence per key, same policy applied
  *    symmetrically. A value carrying `VAR_UNEXPORT` adds the key if absent; a
  *    value WITHOUT the marker REMOVES it if present — a real removal from the
@@ -202,16 +218,20 @@ extern uint8_t environ_parse_file(strbuf *sb, const char *file) ;
  *                        `info->values` are rolled back to the lengths they had
  *                        when the failing entry was entered; `info->modifs` and
  *                        `info->data` are NOT rolled back.
+ * @param[in] empty       `ENVIRON_EMPTY_DROP` or `ENVIRON_EMPTY_KEEP`: how an
+ *                        empty value is recorded, see those constants.
  *
  * @return 1 on success (including the empty-@modifs case).
  * @return 0 on failure:
+ *      - errno `EINVAL` when @empty is neither `ENVIRON_EMPTY_DROP` nor
+ *        `ENVIRON_EMPTY_KEEP`; checked first, @modifs and @info are untouched
  *      - errno `EOVERFLOW` when a `strbuf`/`sbl` copy or append cannot grow
  *      - errno as left by a failing sub-call (`environ_get_key`,
  *        `environ_get_value`, `environ_search_value`, `dollar_replace`,
  *        `genbuf_append`); see those for the exact value
  *        (e.g. `EINVAL` from `environ_get_value` when an entry has no `=`)
  */
-extern uint8_t environ_substitute(strbuf *modifs, subst_t *info) ;
+extern uint8_t environ_substitute(strbuf *modifs, subst_t *info, uint8_t empty) ;
 
 /**
  * @brief Extract the key (everything before the first `=`) of an entry.

@@ -203,8 +203,11 @@ static int dollar_replace(strbuf *old, const char *line, const char *mkey, subst
     return 1 ;
 }
 
-uint8_t environ_substitute(strbuf *modifs, subst_t *info)
+uint8_t environ_substitute(strbuf *modifs, subst_t *info, uint8_t empty)
 {
+    if (empty != ENVIRON_EMPTY_DROP && empty != ENVIRON_EMPTY_KEEP)
+        return (errno = EINVAL, 0) ;
+
     if (!modifs->len)
         return 1 ;
 
@@ -298,7 +301,9 @@ uint8_t environ_substitute(strbuf *modifs, subst_t *info)
          * more. */
         blah.value = info->values.len ;
 
-        if (!nval.s[0]) {
+        /* Under ENVIRON_EMPTY_KEEP an empty value takes the branch below, which
+         * appends nothing but its NUL: the entry holds "" with n=1. */
+        if (!nval.s[0] && empty == ENVIRON_EMPTY_DROP) {
 
             blah.n = 0 ;
 
