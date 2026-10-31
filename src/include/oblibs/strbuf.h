@@ -105,13 +105,28 @@ extern int strbuf_reserve(strbuf *sb, size_t n) ;
 /** @brief Replace the contents with @n bytes from @s. @return 1 / 0 (errno). */
 extern int strbuf_copyb(strbuf *sb, char const *s, size_t n) ;
 
-/** @brief Append @n bytes from @s. @return 1 / 0 (errno). */
+/**
+ * @brief Append @n bytes from @s. @return 1 / 0 (errno).
+ *
+ * @pre @s must not point into @sb: the buffer may be reallocated before @s is
+ * read. To reuse a string already held by @sb, keep its offset.
+ */
 extern int strbuf_catb(strbuf *sb, char const *s, size_t n) ;
 
-/** @brief Append the concatenation of @n iovec buffers. @return 1 / 0 (errno). */
+/**
+ * @brief Append the concatenation of @n iovec buffers. @return 1 / 0 (errno).
+ *
+ * @pre No iovec may point into @sb: the buffer may be reallocated before they
+ * are read.
+ */
 extern int strbuf_catv(strbuf *sb, struct iovec const *v, unsigned int n) ;
 
-/** @brief Insert @n bytes from @s at @offset (0..len). @return 1 / 0 (errno). */
+/**
+ * @brief Insert @n bytes from @s at @offset (0..len). @return 1 / 0 (errno).
+ *
+ * @pre @s must not point into @sb: the buffer may be reallocated, and its tail
+ * is shifted, before @s is read.
+ */
 extern int strbuf_insertb(strbuf *sb, size_t offset, char const *s, size_t n) ;
 
 /**

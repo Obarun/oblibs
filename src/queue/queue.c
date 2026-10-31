@@ -33,8 +33,10 @@ queue_t *queue_init(uint32_t capacity, compare_func_t cmp, compare_func_t rmcmp)
         return NULL ;
 
     q->data = malloc(sizeof(void *) * cap) ;
-    if (!q->data)
+    if (!q->data) {
         CLEAN_FREE(q) ;
+        return NULL ;
+    }
 
     q->cmp = cmp ;
     q->rmcmp = rmcmp ;
