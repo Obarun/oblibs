@@ -12,16 +12,16 @@
  * except according to the terms contained in the LICENSE file.
  */
 
-#include <stdbool.h>    // For bool, true, false
-#include <stdint.h>     // For uint32_t, uint64_t
-#include <errno.h>      // For errno, EINVAL, EPERM, EBADF, EAGAIN
-#include <string.h>     // For memset, strerror
-#include <stdlib.h>     // For malloc, free, realloc
-#include <sys/epoll.h>  // For epoll_create1, epoll_ctl, epoll_wait, struct epoll_event, EPOLL_CLOEXEC
-#include <sys/select.h> // For select, fd_set, FD_ZERO, FD_SET
-#include <sys/ioctl.h>  // For ioctl, FIONREAD
-#include <time.h>       // For clock_gettime, struct timespec, CLOCK_MONOTONIC
-#include <unistd.h>     // For close, read
+#include <stdbool.h>
+#include <stdint.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/epoll.h>
+#include <sys/select.h>
+#include <sys/ioctl.h>
+#include <time.h>
+#include <unistd.h>
 #include <sys/wait.h>
 
 #include <oblibs/log.h>
@@ -730,17 +730,14 @@ static void sse_dispatch_schedule(sse_watcher_t *w)
         log_warnsys("schedule watcher is NULL") ;
         return ;
     }
-    /* On a discontinuous CLOCK_REALTIME change a TFD_TIMER_CANCEL_ON_SET timer
-     * is cancelled and read() fails with ECANCELED -- it never returns 0. */
+
     uint64_t expirations ;
     ssize_t r = read(w->fd, &expirations, sizeof(expirations)) ;
     if (r < 0) {
         int e = errno ;
 
         if (e == ECANCELED) {
-            /** The clock was set: recompute the next fire time against the new
-             * clock (cron_next, via sse_getfire_schedule) and rearm. Not an
-             * error. */
+
             time_t when = sse_getfire_schedule(w) ;
 
             if (!sse_modify_schedule(w, when)) {
@@ -818,10 +815,6 @@ int sse_defer(sse_epoll_t *p, void (*fn)(void *), void *arg)
     return 1 ;
 }
 
-/* Run every deferred action then clear the list. Called once the dispatch (or
- * sse_free) no longer touches any watcher. The loop re-reads p->deferred each
- * step, so a deferred fn that itself calls sse_defer (and triggers a realloc)
- * stays safe; such re-deferred actions run within this same drain. */
 static void sse_drain_deferred(sse_epoll_t *p)
 {
     for (size_t i = 0 ; i < p->ndeferred ; i++)
@@ -836,7 +829,6 @@ void sse_dispatch(sse_epoll_t *p)
         return ;
 
     sse_watcher_t *w ;
-    sse_watcher_t *remove[p->pending->size + 1];
     size_t n = 0 ;
 
     FOREACH_QUEUE(p->pending, w) {
@@ -886,9 +878,8 @@ void sse_dispatch(sse_epoll_t *p)
          *
          * Everything that touches w must happen BEFORE the callback: a
          * callback may free the memory holding w (self-free), so the loop
-         * must not read or write w once w->cb has returned. The post-loop
-         * queue_remove_ptr only compares pointers, so it stays safe. */
-        remove[n++] = w ;
+         * must not read or write w once w->cb has returned. */
+        n++ ;
         int rev = w->revents & SSE_MASK ;
         w->revents = 0 ;
         if (w->cb) {
@@ -899,13 +890,15 @@ void sse_dispatch(sse_epoll_t *p)
         }
     }
 
-    for (size_t i = 0; i < n ; i++) {
-        if (!queue_remove_ptr(p->pending, remove[i]))
-            log_warnusys("remove watcher pointer from pending queue") ;
-    }
+    /* The n dispatched watchers are exactly data[0..n-1]: FOREACH_QUEUE walks
+     * the array in index order and nothing alters pending during the loop.
+     * Drop them by shifting the undispatched tail down, without calling cmp:
+     * a callback may have freed them. The tail stays sorted (queue_sort), so
+     * it is still a valid heap. */
+    size_t left = p->pending->size - n ;
+    memmove(p->pending->data, p->pending->data + n, left * sizeof(void *)) ;
+    p->pending->size = left ;
 
-    /* Safe point: no watcher of the pending queue is touched anymore. Run the
-     * frees/actions a callback deferred during this dispatch. */
     sse_drain_deferred(p) ;
 }
 

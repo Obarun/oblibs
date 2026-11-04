@@ -21,6 +21,9 @@
  *      freed memory further down the loop.
  *   3. sse_stream sibling: closing a sibling stream from a stream callback must
  *      not double-free nor UAF (deferred free + closed-guard in the callback).
+ *   4. multi self-free: several watchers (>= 3, mixed priorities) dispatched in
+ *      the same cycle each free their own container -> removing them from the
+ *      pending queue after the loop must not compare (cmp) freed watchers.
  *
  * Run under AddressSanitizer (-Db_sanitize=address) to actually prove the
  * absence of use-after-free / double-free; without ASan it only checks that the
@@ -185,8 +188,68 @@ static bool test_stream_sibling(void)
     return true ;
 }
 
-TEST_SUITE_BEGIN("SSE dispatch free-safety (self-free, sibling-free, stream sibling)")
+/* ---- Case 4: self-free of several watchers in the same dispatch cycle ---- */
+
+#define MULTI_N 5
+
+typedef struct { sse_watcher_t w ; int idx ; } multi_box_t ;
+
+static sse_epoll_t *g_multi_loop = NULL ;
+static int g_multi_calls[MULTI_N] ;
+static size_t g_multi_pending_seen[MULTI_N] ;
+
+static void multi_self_cb(sse_watcher_t *w, void *cbdata, int event)
+{
+    (void)w ; (void)event ;
+    multi_box_t *c = (multi_box_t *)cbdata ;
+    g_multi_calls[c->idx]++ ;
+    /* size of pending while dispatching: MULTI_N proves one single cycle */
+    g_multi_pending_seen[c->idx] = g_multi_loop->pending->size ;
+    sse_free_io(&c->w) ;   /* removes from epoll/hash, does NOT free memory */
+    free(c) ;              /* frees the memory holding c->w */
+}
+
+static bool test_multi_self_free(void)
+{
+    sse_epoll_t loop ;
+    int p[MULTI_N][2] ;
+    /* distinct and equal priorities mixed */
+    static const int prio[MULTI_N] = { 3, 1, 2, 2, 1 } ;
+
+    TEST_ASSERT(sse_new(&loop, 10), "create loop") ;
+    loop.running = true ;
+    g_multi_loop = &loop ;
+
+    for (int i = 0 ; i < MULTI_N ; i++) {
+        TEST_ASSERT(pipe(p[i]) == 0, "pipe") ;
+        multi_box_t *c = malloc(sizeof(*c)) ;
+        TEST_ASSERT_NOT_NULL(c, "alloc container") ;
+        c->idx = i ;
+        g_multi_calls[i] = 0 ;
+        g_multi_pending_seen[i] = 0 ;
+        TEST_ASSERT(sse_start_io(&loop, &c->w, multi_self_cb, c, p[i][0], SSE_READ, prio[i]), "start") ;
+    }
+
+    for (int i = 0 ; i < MULTI_N ; i++)
+        TEST_ASSERT(write(p[i][1], "x", 1) == 1, "trigger") ;
+
+    TEST_ASSERT(sse_run(&loop, 100), "run") ;
+
+    for (int i = 0 ; i < MULTI_N ; i++) {
+        TEST_ASSERT_EQ(1, g_multi_calls[i], "each callback ran exactly once") ;
+        TEST_ASSERT_EQ(MULTI_N, g_multi_pending_seen[i], "all watchers dispatched in the same cycle") ;
+    }
+    TEST_ASSERT_EQ(0, loop.pending->size, "pending queue empty after the cycle") ;
+
+    sse_free(&loop) ;
+    for (int i = 0 ; i < MULTI_N ; i++)
+        close(p[i][1]) ;   /* read ends closed by sse_free_io */
+    return true ;
+}
+
+TEST_SUITE_BEGIN("SSE dispatch free-safety (self-free, sibling-free, stream sibling, multi self-free)")
     RUN_TEST(test_self_free) ;
     RUN_TEST(test_sibling_free_defer) ;
     RUN_TEST(test_stream_sibling) ;
+    RUN_TEST(test_multi_self_free) ;
 TEST_SUITE_END()
