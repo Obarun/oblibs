@@ -37,8 +37,17 @@ adapt.
       previous one being put back on failure and removed on success.
     - `string`: `str_rsearch`, offset of the last occurrence of a character,
       `strlen` when absent.
+    - `log`: `set_verbosity_from_env` sets `VERBOSITY` from the `VERBOSITY`
+      environment variable. It returns 0 when the variable is unset, -1 with
+      `EINVAL` when it is not a whole decimal `uint32_t`, 1 otherwise.
 
 - Fixes:
+    - `sse`: `sse_dispatch` no longer reads watchers freed by their own
+      callback. Removing the dispatched watchers from the pending queue
+      reordered the heap with its comparison function, which read watchers
+      already freed when several of them freed themselves in the same cycle.
+    - `queue`: `queue_init` returns `NULL` when it cannot allocate the queue
+      data, it returned the queue it had just freed.
     - `string`: `str_start_with` no longer reports an empty string as
       starting with a non-empty prefix, it returned 0 (match) for `("", "foo")`.
     - `cdb`: `ocdb_make_finish` frees the maker's `hplist` on every failure
@@ -47,8 +56,25 @@ adapt.
       `file_tmp_rename_at`, so a failing `close()` is now reported and the
       temporary is close-on-exec.
 
+- Documentation:
+    - `strbuf`: the source of `strbuf_catb`, `strbuf_catv` and
+      `strbuf_insertb` must not point into the destination buffer, which may be
+      reallocated before the source is read.
+
+- Licensing:
+    - `environ`: the substitution engine adapted from execline carries the full
+      ISC notice of execline.
+
+- Build:
+    - The shared library embeds an absolute install RUNPATH,
+      `prefix/libdir`. It was `libdir` alone, a relative `lib` resolved against
+      the current directory of the process.
+    - CI: a `test-sanitizers` job runs the test suite under AddressSanitizer and
+      UndefinedBehaviorSanitizer.
+
 - Portability:
     - `str_search` no longer relies on the GNU `strchrnul`.
+    - `cron`: include `strings.h` for `strcasecmp`.
 
 ---
 

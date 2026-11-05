@@ -1,6 +1,6 @@
 project('oblibs',
         'c',
-        version: '0.4.0.1',
+        version: '0.4.1.0',
         meson_version: '>=1.1.0',
         license: 'ISC',
         default_options: [
